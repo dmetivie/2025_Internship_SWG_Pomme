@@ -22,6 +22,18 @@ A one site
 + Then temperature min/max
 + Then precipitation/Solar radiation
 
+### Evaluation Metric of models
+
+To select best model one has to define metrics and validation plots. From very basic to more complex
+
+- Monthly Mean
+
+- STD
+
+- quantile,
+
+- VMTX3 etc.
+
 ### Data
 
 On est en discussion avec des partenaires pour avoir des données météo dans les pays partenaires (Suède, France)
@@ -31,6 +43,9 @@ On est en discussion avec des partenaires pour avoir des données météo dans l
 - [CLIMATIK](https://agroclim.inrae.fr/climatik/ClimatikGwt.html#) (INRAE data base)
 
 - [DataGov MétéoFrance](https://www.data.gouv.fr/fr/datasets/fiche-climatologique-des-stations-de-meteo-france/). Voir fonction `collect_data_MeteoFrance` in my [package](https://dmetivie.github.io/StochasticWeatherGenerators.jl/dev/examples/tuto_add_station_variable/#Data-extraction-and-settings).
+
+
+[Example d'utilisation simple pour avoir la température moyenne](https://davidmetivier.mistea.inrae.fr/julia_weather/) (sur mon site). 
 
 ### Report
 
@@ -51,6 +66,10 @@ You can have a look on [the presentation](https://github.com/dmetivie/MyJuliaInt
 - Zotero for Bibliography. I heard of shared bibliography using Zotero, this might be an idea.
 
 I like the [PhD ressource website](https://phd-resources.github.io/) by Guillaume Dalle (heavy Julia user). He gives a lot of cool tips, software etc for students (not only PhD).
+
+### WSL
+
+Pour l'extraction des fichiers météo ECA j'utilise une commande de WSL. Si tu veux l'utiliser il fault l'installer avant ([voir ici par example](https://learn.microsoft.com/fr-fr/windows/wsl/install)).
 
 ## Collaborators
 
