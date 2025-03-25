@@ -3,7 +3,8 @@
 
 ## Température only
 
-A compléter
+- Cognot, C., Bel, L., Métivier, D., & Parey, S. (2025). [A spatio-temporal weather generator for the temperature over France](https://hal.science/hal-04891781/) 
+(avec ma doctorante) générateur température spatiale. L'intro peut être interessante pour donner des refs.
 
 ## Temperature + autres variables 
 
