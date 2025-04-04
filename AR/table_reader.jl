@@ -16,7 +16,7 @@ cd(@__DIR__)
 function ma_odd(x,p)
     #Filter the vector x with the simple mobile average method, for an odd period p.
 
-    out,m=ones(size(x))*mean(x),(p-1) ÷ 2
+    out,m=ones(size(x))*mean(x),(p-1) ÷ 2   
     return ma_odd!(x,out,m)
 end
 
@@ -40,7 +40,6 @@ function extract_series(file::String; year=nothing, plot=false)
         df=df[Date(year).<= df.DATE .< Date(year+1),:]
         if plot 
             fig, ax = lines(df.DATE, df[!,type_data])
-            #ax.title="Températures $(type_map[type_data]) journalières de la station n°$(num_station)"
             ax.title="Daily $(type_map[type_data]) temperatures from the station n°$(num_station)"
             ax.xlabel="Date"
             ax.ylabel="Temperature (°C)"
