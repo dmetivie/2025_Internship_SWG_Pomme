@@ -1,5 +1,5 @@
 try
-    using Optim, Dates, Statistics, StatsBase, DataFrames
+    using Optim, Dates, Statistics, StatsBase, DataFrames, LinearAlgebra
 catch ;
     import Pkg
     Pkg.add("Optim")
@@ -7,7 +7,8 @@ catch ;
     Pkg.add("Statistics")
     Pkg.add("StatsBase")
     Pkg.add("DataFrames")
-    using Optim, Dates, Statistics, StatsBase, DataFrames
+    Pkg.add("LinearAlgebra")
+    using Optim, Dates, Statistics, StatsBase, DataFrames, LinearAlgebra
 end
 
 include("utils.jl")
@@ -210,25 +211,29 @@ end
     AllEstimation(Monthly_temp::Vector,p::Int=1,Estimators::Vector=[zeros(p) ; 1e-5],algo=NelderMead(),Date_vec=nothing)
 
 Applies the three monthly AR(p) estimation methods on x. x can be an output of MonthlySeparateX or directly the whole series. In this last case, Date_vec must be put in argument.
-Each component of the list is a vector like [Φj_month_vec,Φj_month_concat,Φj_month_sumLL]
+The j-th component of the list is a vector like [Φj_month_vec,Φj_month_concat,Φj_month_sumLL]
 """
-function AllEstimation(x::Vector,p::Int=1 ; Estimators::Vector=[zeros(p) ; 1e-5],algo=NelderMead(),Date_vec=nothing, TrueParamVec=nothing , plot=true, meanparam=true, medianparam=true, ErrorTable=true, PerMethod=false)
+function AllEstimation(x::Vector,p::Int=1 ; Estimators::Vector=[zeros(p) ; 1e-5],algo=NelderMead(),Date_vec=nothing, TrueParamVec=nothing , plot=true, meanparam=true, medianparam=true, ErrorTable=true, PerMethod=false,lineplot=false)
     Monthly_temp = isnothing(Date_vec) ? copy(x) : MonthlySeparateX(x,Date_vec)
+    ErrorTable = isnothing(Date_vec) ? false : ErrorTable
 
     ParamOutput=[]
 
-    Monthly_Estimators=MonthlyEstimation(Monthly_temp,p,Estimators,algo)
-    Month_vecs=[[[month_param[1][j] for month_param in Monthly_Estimators[i]] for i in 1:12] for j in 1:p]
-    append!(Month_vecs,[[[month_param[2] for month_param in Monthly_Estimators[i]] for i in 1:12]])
+    Monthly_Estimators=MonthlyEstimation(Monthly_temp,p,Estimators,algo) #Monthly_Estimators[i][j][k][l] i-> month, j-> 1 if [Φ_1,Φ_2,...], 2 if σ,  k -> index of the parameter (Φⱼ) of year if σ, l -> year if Φ
+    Month_vecs=[[[month_param[1][k] for month_param in Monthly_Estimators[i]] for i in 1:12] for k in 1:p] 
+    append!(Month_vecs,[[[month_param[2] for month_param in Monthly_Estimators[i]] for i in 1:12]]) #Month_vecs[i][j][k] i-> index of the parameter (Φᵢ) or (σ) if i=p+1, j-> month,  k -> year
     append!(ParamOutput,[Month_vecs])
 
-    Φ_month_concat, σ_month_concat = MonthlyConcatanatedEstimation(Monthly_temp,p)
+    Φ_month_concat, σ_month_concat = MonthlyConcatanatedEstimation(Monthly_temp,p) #Φ_month_concat[i][j] : i-> month, j-> index of the parameter (Φⱼ) or (σ)
     append!(ParamOutput,[[invert(Φ_month_concat) ; [σ_month_concat]]])
 
     Φ_month_sumLL, σ_month_sumLL = MonthlyEstimationSumLL(Monthly_temp,p)
     append!(ParamOutput,[[invert(Φ_month_sumLL) ; [σ_month_sumLL]]])
 
-    Output = plot ? [ParamOutput, PlotParameters(isnothing(TrueParamVec) ? invert(ParamOutput) : invert([ParamOutput ; [TrueParamVec]]))] : [ParamOutput]
+    #ParamOutput[i][j] : i -> method, j -> index of the parameter (Φⱼ) or (σ)
+    # =Output or Output[1] if PerMethod = true
+
+    Output = plot ? [ParamOutput, PlotParameters(isnothing(TrueParamVec) ? invert(ParamOutput) : invert([ParamOutput ; [TrueParamVec]]),lineplot)] : [ParamOutput]
 
     meanparam ? append!(Output[1], [[mean.(Param) for Param in Output[1][1]]]) : nothing #p vectors param, param has a length of 12
     medianparam ? append!(Output[1], [[median.(Param) for Param in Output[1][1]]]) : nothing
@@ -237,7 +242,7 @@ function AllEstimation(x::Vector,p::Int=1 ; Estimators::Vector=[zeros(p) ; 1e-5]
 
     if length(Output) == 1
         Output = Output[1]
-        PerMethod ? nothing : Output = invert(Output)
+        PerMethod ? nothing : Output = invert(Output) #that is to say Output[i][j] : i -> index of the parameter (Φᵢ) or (σ), j -> method 
         ErrorTable ? Output = [[Output] ; TableError(Output, (medianparam && !meanparam) ? "median" : "mean")] : nothing
     else
         PerMethod ? nothing : Output[1] = invert(Output[1])

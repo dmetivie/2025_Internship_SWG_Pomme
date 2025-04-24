@@ -9,9 +9,11 @@ end
 
 """
     Iyear(date::Vector{Date},year::Int)
-Return a mask to select only the period of the year in argument.
+Return a mask to select only the period of the year(s) in argument.
 """
 Iyear(date::Vector{Date},year::Int) = Date(year).<=date.<Date(year + 1)
+Iyear(date::Vector{Date},years::UnitRange{Int64}) = Date(years[1]).<=date.<Date(years[end] + 1)
+Iyear(date::Vector{Date},years::Vector{Int64}) = Date(years[1]).<=date.<Date(years[end] + 1)
 
 """
     RootAR(Φ::Vector)
@@ -35,7 +37,7 @@ DaysPerMonth(year::Int)=length.([Date(year,i):(Date(year,i)+Month(1)-Day(1)) for
 
 """
     MAPE(x_hat::Float64,x::Float64)
-Return the mean absolute percentage error between estimated x_hat and the true x value. 
+Return the Mean Absolute Percentage Error between estimated x_hat and the true x value. 
 """
 MAPE(x_hat::Float64,x::Float64)=100*abs((x_hat-x) / x)
 MAPE(x_hat::Vector,x::Vector)=100*mean(abs.((x_hat-x) ./ x))

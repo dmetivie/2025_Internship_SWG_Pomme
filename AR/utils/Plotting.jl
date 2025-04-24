@@ -93,3 +93,42 @@ function PlotParameters(Parameters_vec::Vector)
     return fig
 end
 
+
+function PlotParameters(Parameters_vec::Vector,lines_::Bool=false)
+    fig=Figure(size=(800,600*length(Parameters_vec)))
+    month_vec,month_concat,month_sumLL,true_param=0,0,0,0
+    for (j,Parameters) in enumerate(Parameters_vec)
+        try
+            month_vec,month_concat,month_sumLL,true_param=Parameters
+        catch BoundsError
+            month_vec,month_concat,month_sumLL=Parameters
+            true_param=nothing
+        end
+        ax,plt1= boxplot(fig[1+3(j-1):2+3(j-1),1:2],fill(1,length(month_vec[1])), month_vec[1] ; width=0.3, color="orange")
+        for i in 2:12
+            boxplot!(ax, fill(i,length(month_vec[i])), month_vec[i] ; width=0.3 , color="orange")
+        end
+        lines_ ? pltl = lines!(ax,collect(1:12),median.(month_vec); color="blue") : nothing
+        plt2= isnothing(true_param) ? nothing : scatter!(ax,collect(1:12),true_param; color="Blue", markersize=15)
+        plt3=scatter!(ax,collect(1:12).+0.15,month_concat; color="red", marker=:utriangle, markersize=12.5)
+        plt4=scatter!(ax,collect(1:12).-0.15,month_sumLL; color="green", marker=:dtriangle, markersize=12.5)
+        str = j==length(Parameters_vec) ? "σ" : "Φ$(j)"
+        ax.title= isnothing(true_param) ? "Estimated $(str) with 3 methods" : "Real $(str) vs estimated $(str) with 3 methods"
+        ax.xticks=(1:12,Month_vec)
+        ax.xticklabelrotation=45.0
+        if isnothing(true_param)
+            if lines_
+                Legend(fig[3+3(j-1),1:2],[plt1,pltl,plt3,plt4],["Boxplots of $(str) estimated on each year and month","Median of $(str) estimated on each year and month","Estimated $(str) with months concatanated", "Estimated $(str) with sum of likelihoods"])
+            else
+                Legend(fig[3+3(j-1),1:2],[plt1,plt3,plt4],["Boxplots of $(str) estimated on each year and month","Estimated $(str) with months concatanated", "Estimated $(str) with sum of likelihoods"])
+            end
+        else
+            if lines_
+                Legend(fig[3+3(j-1),1:2],[plt2,plt1,pltl,plt3,plt4],["Real $(str)","Boxplots of $(str) estimated on each year and month","Median of $(str) estimated on each year and month","Estimated $(str) with months concatanated", "Estimated $(str) with sum of likelihoods"])
+            else
+                Legend(fig[3+3(j-1),1:2],[plt2,plt1,plt3,plt4],["Real $(str)","Boxplots of $(str) estimated on each year and month","Estimated $(str) with months concatanated", "Estimated $(str) with sum of likelihoods"])
+            end
+        end
+    end
+    return fig
+end

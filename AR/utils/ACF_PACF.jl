@@ -8,6 +8,8 @@ catch ;
     using CairoMakie, Statistics, StatsBase
 end
 
+Month_vec=["January", "February", "March", "April", "May", "Jun", "July", "August", "September", "October", "November", "December"]
+
 ##### ACF/PACF #####
 """
     ACF_PACF(x::Vector, return_data::Bool=false)
@@ -16,7 +18,7 @@ Return the graphs of the ACF and the PACF of the series x.
 If return_data = true, the function return a tuple with the ACF, the PACF and the figure object which contains the graphs.
 """
 function ACF_PACF(x::Vector, return_data::Bool=false)
-    fig=Figure(size=(800,400))
+    fig=Figure(size=(700,800))
     autocor_ = autocor(x,0:15)
     ax1 ,plt1 = barplot(fig[1,1], 0:15, autocor_)
     ax1.title = "ACF"
@@ -24,7 +26,7 @@ function ACF_PACF(x::Vector, return_data::Bool=false)
     ax1.xgridvisible = false
     ax1.yticks = round.(range(minimum(autocor_),maximum(autocor_),10),digits=2)
     pacf_ = pacf(x,1:15)
-    ax2 ,plt2 = barplot(fig[1,2],1:15, pacf_)
+    ax2 ,plt2 = barplot(fig[2,1],1:15, pacf_)
     ax2.title = "PACF"
     ax2.xticks = 1:15
     ax2.xgridvisible = false

@@ -12,7 +12,8 @@ end
 """
     simulation(x::Vector,Φ::Vector,σ::Number,n::Int)
 
-Return a simulation of n steps of an AR(p) model with parameters Φ, standard deviation of noise σ and initial condition x.
+Return a simulation of n steps of an AR(p) model with parameters Φ, standard deviation of noise σ and initial condition x. 
+The p initial conditions steps are not included in the output.
 """
 function simulation(x::Vector,Φ::Vector,σ::Number,n::Int)
     y,p=copy(x),length(x)
@@ -25,22 +26,26 @@ function simulation!(x::Vector,Φ::Vector,σ,n,y,p)
     return y[p+1:end]
 end
 simulation(x::Number,Φ::Number,σ,n) = simulation([x],[Φ],σ,n)
+simulation(x::Number,Φ::Vector,σ,n) = simulation([x],Φ,σ,n)
+simulation(x::Vector,Φ::Number,σ,n) = simulation(x,[Φ],σ,n)
+
 
 """
     sample_simulation(x::Vector,Φ::Vector,σ::Number,n_year::Int,periodicity::Vector)
 
 Return a sample of n_year*size_multiplicator annual simulations of weather, according to the AR(p) model. periodicity is the periodicity component we want to consider.
 """
-function sample_simulation(x::Vector,Φ::Vector,σ::Number,periodicity::Vector,n_year::Int=1,size_multiplicator::Int=1)
-    Output=[]
+function sample_simulation(x::Vector,Φ::Vector,σ::Number,periodicity::Vector,n_year::Int=1)
+    Output= [[x ; simulation(x,Φ,σ,365-length(x))]]
     p=length(x)
-    for _ in 1:size_multiplicator
-        simulated=simulation(x,Φ,σ,365*(n_year+1)-p) + periodicity[(1+p):365*(n_year+1)]
-        append!(Output,[simulated[(365i+1-p):365*(i+1)-p] for i in 1:n_year]) #We do not put the first period
+    if n_year > 1 
+        for _ in 2:n_year
+            append!(Output,[simulation(Output[end][(end-p+1):end],Φ,σ,365)])
+        end
     end
-    return Output
+    return [year_ .+ periodicity[1:365] for year_ in Output]
 end
-sample_simulation(x::Number,Φ::Number,σ::Number,periodicity::Vector,n_year::Int=1,size_multiplicator::Int=1)=sample_simulation(x[1],Φ[1],σ,n_year,periodicity,n_year,size_multiplicator)
+
 
 """
     SimulateMonth(x0,day_one,Φ_month,σ_month,n_month)
@@ -86,7 +91,7 @@ function SimulateMonth(x0::Vector,day_one::Date,Φ_month::Vector,σ_month::Vecto
         end
     end
     try
-        return x[p:end]
+        return x#[p:end]
     catch
         return x
     end
@@ -98,7 +103,7 @@ end
     
 Return a simulation of a month-conditional AR(p) model (one AR(p) model for each month), for n_years starting from day_one with x0[end].
 Each year generated has the same amount of days and correspond to one vector inside the output.
-It's recommanded to choose the first of a year (yearX,1,1) in day_one.  
+It's recommanded to choose the first day of a year (yearX,1,1) as day_one.  
 """
 function SimulateYears(x0::Number,day_one::Date,Φ_month::Vector,σ_month::Vector,n_years::Int)
     L=[SimulateMonth(x0,day_one,Φ_month,σ_month,12)]
