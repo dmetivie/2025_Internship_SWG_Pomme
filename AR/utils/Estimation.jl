@@ -1,6 +1,6 @@
 include("utils.jl")
 
-@tryusing "Optimization", "Dates", "Statistics", "StatsBase", "DataFrames", "LinearAlgebra", "ForwardDiff", "OptimizationOptimJL"
+@tryusing "Optimization", "Dates", "Statistics", "StatsBase", "DataFrames", "LinearAlgebra", "Zygote", "OptimizationOptimJL", "ForwardDiff"
 
 ##### ESTIMATION #####
 """
@@ -13,15 +13,8 @@ This function does not consider the likelihood of the initial conditiion x₁,x�
 """
 function Opp_Log_Likelihood_AR(Estimators::AbstractVector, x::AbstractVector)
     p = length(Estimators) - 1
-    R=reduce(hcat,[x[(p+1-i):(end-i)] for i in 1:p]) #matrix where each row is like (Xₜ₊₁,Xₜ₊₂,...Xₜ₊ₚ)
-    return -(-(length(x) - p) * (log(2π) + log(abs(Estimators[end]))) - transpose(x[p+1:end] - R*Estimators[1:(end-1)]) * (x[p+1:end] - R*Estimators[1:(end-1)]) / Estimators[end]) / 2
-end
-
-
-function Opp_Log_Likelihood_AR_old(Estimators::AbstractVector, x::AbstractVector)
-    p = length(Estimators) - 1
-    EV_vec = [dot(Estimators[1:end-1], x[(t-1):-1:(t-p)]) for t in (p+1):length(x)]
-    return (-(length(x) - p) * (log(2π) + log(abs(Estimators[end]))) - sum((x[p+1:end] - EV_vec) .^ 2) / Estimators[end]) / 2
+    R = reduce(hcat, [x[(p+1-i):(end-i)] for i in 1:p]) #matrix where each row is like (Xₜ₊₁,Xₜ₊₂,...Xₜ₊ₚ)
+    return -(-(length(x) - p) * (log(2π) + log(abs(Estimators[end]))) - transpose(x[p+1:end] - R * Estimators[1:(end-1)]) * (x[p+1:end] - R * Estimators[1:(end-1)]) / Estimators[end]) / 2
 end
 
 """
@@ -32,7 +25,7 @@ Estimators corresponds to the initialization of the algorithm.
 """
 function LL_AR_Estimation(x::AbstractVector, p::Integer, Estimators::AbstractVector=[[0.5 for _ in 1:p]; 1e-15], algo=Optim.NelderMead()) #NelderMead because I've tried many others like (L)BFGS, gradient_descent, Adam, and they don't work properly.
     p == length(Estimators) - 1 ? nothing : error("p (=$(p)) is not equal to the number of Φ initial parameters (=$(length(Estimators)-1))")
-    optf = OptimizationFunction(Opp_Log_Likelihood_AR, Optimization.AutoForwardDiff())
+    optf = OptimizationFunction(Opp_Log_Likelihood_AR, AutoZygote())
     prob = OptimizationProblem(optf, Estimators, x)
     Results = Optimization.solve(prob, algo, maxiters=10000) #maxiters should be modified if needed
     return Results[1:end-1], abs(Results[end])^0.5
@@ -45,10 +38,10 @@ Return the parameters of the AR(p) model on multiple series in x_vec (x_vec must
 """
 function LL_AR_Estimation_sum(x_vec::AbstractVector, p::Integer, Estimators::AbstractVector=[zeros(p); 1e-15], algo=NelderMead())
     p == length(Estimators) - 1 ? nothing : error("p (=$(p)) is not equal to the number of Φ initial parameters (=$(length(Estimators)-1))")
-    f(Estimators_,x_vec) = sum(Opp_Log_Likelihood_AR(Estimators_, x) for x in x_vec)
+    f(Estimators_, x_vec) = sum(Opp_Log_Likelihood_AR(Estimators_, x) for x in x_vec)
     optf = OptimizationFunction(f, AutoZygote())
     prob = OptimizationProblem(optf, Estimators, x_vec)
-    Results = Optimization.solve(prob, algo, maxiters=10000) 
+    Results = Optimization.solve(prob, algo, maxiters=10000)
     return Results[1:end-1], abs(Results[end])^0.5
 end
 
@@ -283,7 +276,7 @@ function AutoTakeParameters(AE_output)
 end
 AutoTakeParameters(Parameters_vec, ErrorTable) = AutoTakeParameters([Parameters_vec, ErrorTable])
 
-
+# @tryusing "ForwardDiff"
 # using Optimization, ForwardDiff, OptimizationOptimJL
 # rosenbrock(u, p) = (p[1] - u[1])^2 + p[2] * (u[2] - u[1]^2)^2
 # u0 = zeros(2)
@@ -293,5 +286,3 @@ AutoTakeParameters(Parameters_vec, ErrorTable) = AutoTakeParameters([Parameters_
 # prob = OptimizationProblem(optf, u0, p)
 
 # sol = solve(prob,  Optim.BFGS())
-
-
