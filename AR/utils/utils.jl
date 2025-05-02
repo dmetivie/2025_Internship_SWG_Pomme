@@ -1,18 +1,34 @@
-try
-    using Dates, Polynomials
-catch
-    import Pkg
-    Pkg.add("Dates")
-    Pkg.add("Polynomials")
-    using Dates, Polynomials
+macro tryusing(package::String)
+    try
+        eval(:(using $(Meta.parse(package))))
+    catch
+        eval(:(
+        import Pkg;
+        Pkg.add($package);
+        using $(Meta.parse(package))))
+    end
+end
+macro tryusing(package::Expr)
+    for s in package.args 
+        try
+            eval(:(using $(Meta.parse(s))))
+        catch
+            eval(:(
+            import Pkg;
+            Pkg.add($s);
+            using $(Meta.parse(s))))
+        end
+    end
 end
 
+@tryusing "Dates","Polynomials"
+    
 """
     Iyear(date::AbstractVector{Date},year::Integer)
 Return a mask to select only the period of the year(s) in argument.
 """
 Iyear(date::AbstractVector{Date}, year::Integer) = Date(year) .<= date .< Date(year + 1)
-Iyear(date::AbstractVector{Date}, years::AbstractVector) = Date(years[1]) .<= date .< Date(years[end] + 1)
+Iyear(date::AbstractVector{Date}, years::AbstractVector{<:Integer}) = Date(years[1]) .<= date .< Date(years[end] + 1)
 
 """
     RootAR(Φ::AbstractVector)

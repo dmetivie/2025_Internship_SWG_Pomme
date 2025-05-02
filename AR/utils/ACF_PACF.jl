@@ -1,12 +1,6 @@
-try
-    using CairoMakie, Statistics, StatsBase
-catch
-    import Pkg
-    Pkg.add("CairoMakie")
-    Pkg.add("Statistics")
-    Pkg.add("StatsBase")
-    using CairoMakie, Statistics, StatsBase
-end
+include("utils.jl")
+
+@tryusing "CairoMakie","Statistics","StatsBase"
 
 Month_vec = ["January", "February", "March", "April", "May", "Jun", "July", "August", "September", "October", "November", "December"]
 

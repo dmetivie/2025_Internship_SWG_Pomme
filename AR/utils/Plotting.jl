@@ -1,12 +1,6 @@
-try
-    using CairoMakie
-catch
-    import Pkg
-    Pkg.add("CairoMakie")
-    using CairoMakie
-end
-
 include("utils.jl")
+
+@tryusing "CairoMakie"
 
 ##### PLOTTING #####
 """
@@ -53,7 +47,7 @@ function PlotYearCurves(curvesvec::AbstractVector, labelvec::AbstractVector, tit
     Legend(fig[3, 1:2], pltvec, labelvec)
     return fig
 end
-PlotYearCurves(curvesvec::AbstractVector{AbstractFloat}, labelvec::String, title::String) = PlotYearCurves(curvesvec, [labelvec], title)
+# PlotYearCurves(curvesvec::AbstractVector{AbstractFloat}, labelvec::String, title::String) = PlotYearCurves(curvesvec, [labelvec], title)
 
 """
     PlotParameters(Parameters_vec::AbstractVector)

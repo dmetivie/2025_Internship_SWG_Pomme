@@ -1,10 +1,7 @@
-try
-    using Dates
-catch
-    import Pkg
-    Pkg.add("Dates")
-    using Dates
-end
+include("utils.jl")
+
+@tryusing "Dates"
+
 
 ##### SEPARATION #####
 """

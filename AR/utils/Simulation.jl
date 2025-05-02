@@ -1,12 +1,6 @@
-try
-    using Distributions, Dates, LinearAlgebra
-catch
-    import Pkg
-    Pkg.add("Distributions")
-    Pkg.add("Dates")
-    Pkg.add("LinearAlgebra")
-    using Distributions, Dates, LinearAlgebra
-end
+include("utils.jl")
+
+@tryusing "Dates","Distributions","LinearAlgebra"
 
 ##### SIMULATION #####
 """

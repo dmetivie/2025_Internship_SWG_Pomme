@@ -1,13 +1,6 @@
-try
-    using Dates, LinearAlgebra, DataInterpolations, RegularizationTools
-catch
-    import Pkg
-    Pkg.add("Dates")
-    Pkg.add("LinearAlgebra")
-    Pkg.add("DataInterpolations")
-    Pkg.add("RegularizationTools")
-    using Dates, LinearAlgebra, DataInterpolations, RegularizationTools
-end
+include("utils.jl")
+
+@tryusing "Dates", "LinearAlgebra", "DataInterpolations", "RegularizationTools"
 
 """
     n2t(Date_::Date)
