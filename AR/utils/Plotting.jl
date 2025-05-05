@@ -66,27 +66,37 @@ function PlotParameters(Parameters_vec::AbstractVector, lines_::Bool=false)
             month_vec, month_concat, month_sumLL = Parameters
             true_param = nothing
         end
+        if j == length(Parameters_vec) #i.e Parameter = σ
+            for i in 1:12
+                month_vec[i]=month_vec[i][month_vec[i].>1e-2] #I remove the values estimated close to 0.
+            end
+        end
+        month_vec[1]=month_vec[1][abs.(month_vec[1]).<1e5] #To remove problematical values (exploded values)
         ax, plt1 = boxplot(fig[1+3(j-1):2+3(j-1), 1:2], fill(1, length(month_vec[1])), month_vec[1]; width=0.3, color="orange")
         for i in 2:12
+            month_vec[i]=month_vec[i][abs.(month_vec[i]).<1e5]
             boxplot!(ax, fill(i, length(month_vec[i])), month_vec[i]; width=0.3, color="orange")
         end
-        lines_ ? pltl = lines!(ax, collect(1:12), median.(month_vec); color="blue") : nothing
+        lines_ ? pltl = lines!(ax, collect(1:12), j == length(Parameters_vec) ? mean.(month_vec) : median.(month_vec); color="blue") : nothing
         plt2 = isnothing(true_param) ? nothing : scatter!(ax, collect(1:12), true_param; color="Blue", markersize=15)
-        plt3 = scatter!(ax, collect(1:12) .+ 0.15, month_concat; color="red", marker=:utriangle, markersize=12.5)
-        plt4 = scatter!(ax, collect(1:12) .- 0.15, month_sumLL; color="green", marker=:dtriangle, markersize=12.5)
+        I_concat=findall(abs.(month_concat).<1e4) #To remove problematical values (exploded values)
+        plt3 = scatter!(ax, I_concat .+ 0.15, month_concat[I_concat]; color="red", marker=:utriangle, markersize=12.5)
+        I_sumLL=findall(abs.(month_sumLL).<1e4) #To remove problematical values (exploded values)
+        plt4 = scatter!(ax, I_sumLL .- 0.15, month_sumLL[I_sumLL]; color="green", marker=:dtriangle, markersize=12.5)
         str = j == length(Parameters_vec) ? "σ" : "Φ$(j)"
         ax.title = isnothing(true_param) ? "Estimated $(str) with 3 methods" : "Real $(str) vs estimated $(str) with 3 methods"
         ax.xticks = (1:12, Month_vec)
         ax.xticklabelrotation = 45.0
+        strline= j == length(Parameters_vec) ? "Mean of $(str) estimated on each year and month" : "Median of $(str) estimated on each year and month"
         if isnothing(true_param)
             if lines_
-                Legend(fig[3+3(j-1), 1:2], [plt1, pltl, plt3, plt4], ["Boxplots of $(str) estimated on each year and month", "Median of $(str) estimated on each year and month", "Estimated $(str) with months concatanated", "Estimated $(str) with sum of likelihoods"])
+                Legend(fig[3+3(j-1), 1:2], [plt1, pltl, plt3, plt4], ["Boxplots of $(str) estimated on each year and month", strline, "Estimated $(str) with months concatanated", "Estimated $(str) with sum of likelihoods"])
             else
                 Legend(fig[3+3(j-1), 1:2], [plt1, plt3, plt4], ["Boxplots of $(str) estimated on each year and month", "Estimated $(str) with months concatanated", "Estimated $(str) with sum of likelihoods"])
             end
         else
             if lines_
-                Legend(fig[3+3(j-1), 1:2], [plt2, plt1, pltl, plt3, plt4], ["Real $(str)", "Boxplots of $(str) estimated on each year and month", "Median of $(str) estimated on each year and month", "Estimated $(str) with months concatanated", "Estimated $(str) with sum of likelihoods"])
+                Legend(fig[3+3(j-1), 1:2], [plt2, plt1, pltl, plt3, plt4], ["Real $(str)", "Boxplots of $(str) estimated on each year and month", strline, "Estimated $(str) with months concatanated", "Estimated $(str) with sum of likelihoods"])
             else
                 Legend(fig[3+3(j-1), 1:2], [plt2, plt1, plt3, plt4], ["Real $(str)", "Boxplots of $(str) estimated on each year and month", "Estimated $(str) with months concatanated", "Estimated $(str) with sum of likelihoods"])
             end
@@ -94,3 +104,9 @@ function PlotParameters(Parameters_vec::AbstractVector, lines_::Bool=false)
     end
     return fig
 end
+
+
+v=[0,1,-4,2,1e150,0,2.5e50,7]
+I=findall(abs.(v).<1e200)
+v[I]
+v[I]==v
