@@ -55,6 +55,11 @@ idx_m = [findall(month.(df.DATE) .== m) for m in 1:12]
 
 mean_ts = [[mean(ts[idx_m[m]]) for m in 1:12] for ts in ts_smooth] |> stack
 std_ts = [[std(ts[idx_m[m]]) for m in 1:12] for ts in ts_smooth] |> stack
+max_ts = [[maximum(ts[idx_m[m]]) for m in 1:12] for ts in ts_smooth] |> stack
+
+idx_j = [findall(dayofyear_Leap.(df.DATE) .== m) for m in 1:366]
+
+mean_ts_j = [[mean(ts[idx_j[m]]) for m in 1:366] for ts in ts_smooth] |> stack
 
 md"""
 #
@@ -66,7 +71,7 @@ md"""
 
 df_month = @chain df begin
     @transform(:MONTH = month.(:DATE)) # add month column
-    @by(:MONTH, :MONTHLY_MEAN = mean(:TX), :MONTHLY_STD = std(:TX)) # grouby MONTH + takes the mean/std in each category 
+    @by(:MONTH, :MONTHLY_MEAN = mean(:TX), :MONTHLY_STD = std(:TX), :MAX_STD = maximum(:TX)) # grouby MONTH + takes the mean/std in each category 
 end
 
 #-
@@ -83,4 +88,25 @@ begin
     errorline!(monthabbr.(1:12), std_ts, centertype=:median, errortype=:percentile, percentiles=[0, 100], groupcolor=:gray, label = "Simu q0,100")
     errorline!(monthabbr.(1:12), std_ts, centertype=:median, errortype=:percentile, percentiles=[25, 75], groupcolor=:red, label = "Simu q25,75")
     ylims!(2.25,4)
+end
+
+begin
+    @df df_month scatter(monthabbr.(1:12), :MAX_STD, label = "MAX Temperature")
+    ylabel!("T(°C)")
+    errorline!(monthabbr.(1:12), max_ts, centertype=:median, errortype=:percentile, percentiles=[0, 100], groupcolor=:gray, label = "Simu q0,100")
+    errorline!(monthabbr.(1:12), max_ts, centertype=:median, errortype=:percentile, percentiles=[25, 75], groupcolor=:red, label = "Simu q25,75")
+    # ylims!(2.25,4)
+end
+
+
+df_day = @chain df begin
+    @transform(:DAY = dayofyear_Leap.(:DATE)) # add month column
+    @by(:DAY, :MONTHLY_MEAN = mean(:TX), :MONTHLY_STD = std(:TX), :MAX_STD = maximum(:TX)) # grouby MONTH + takes the mean/std in each category 
+end
+
+begin
+    @df df_day plot((1:366), :MONTHLY_MEAN, label = "Mean Temperature")
+    ylabel!("T(°C)")
+    errorline!(1:366, mean_ts_j, centertype=:median, errortype=:percentile, percentiles=[0, 100], groupcolor=:gray, label = "Simu q0,100")
+    errorline!(1:366, mean_ts_j, centertype=:median, errortype=:percentile, percentiles=[25, 75], groupcolor=:red, label = "Simu q25,75", fillalpha = 0.4)
 end
