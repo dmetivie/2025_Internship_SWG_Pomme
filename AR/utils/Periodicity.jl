@@ -1,51 +1,57 @@
 include("utils.jl")
 
-@tryusing "Dates", "LinearAlgebra", "DataInterpolations", "RegularizationTools"
+@tryusing "Dates", "LinearAlgebra", "DataInterpolations", "RegularizationTools", "GLM"
 
 """
-    n2t(Date_::Date)
+    dayofyear_Leap(Date_::Date)
 
-Return the index t ∈ [1:366] of the day in input.
+Return the index t ∈ [1:366] of the day in input. (Credits : David Métivier (dmetivie))
 """
-n2t(Date_::Date) = findfirst(t -> t == Date_ - Year(year(Date_)), Date(0):(Date(1)-Day(1)))
-#It brings back the day in the year 0 which is bissextile, and then it returns the corresponding index.
-
+dayofyear_Leap(d::Date) = @. dayofyear(d) + ((!isleapyear(d)) & (month(d) > 2))
 
 """
-    n2t(n::Int,Day_one::Date)
+    dayofyear_Leap(n::Int,Day_one::Date)
 
 Return the index t ∈ [1:366] of the index n, where n represents the total number of days starting from Day_one.
 """
-n2t(n::Integer, Day_one::Date) = n2t(Day_one + Day(n - 1))
+dayofyear_Leap(n::Integer, Day_one::Date) = dayofyear_Leap(Day_one + Day(n - 1))
 
 """
     fitted_periodicity_fonc(x::AbstractVector,return_parameters::Bool=false)
 
 Return a trigonometric function f of period 365.25 of equation f(t) = μ + a*cos(2π*t/365.25) + b*sin((2π*t/365.25) fitted on x. 
-If return_parameters=true, return a tuple with f and [μ,a,b].
+If return_parameters=true, return a tuple with f and [μ,a,b]. Be careful : the function returned takes the same arguments as dayofyear_Leap() (Either Date of Integer and Date, see above).
 """
-function fitted_periodicity_fonc(x::AbstractVector, return_parameters::Bool=false)
+function fitted_periodicity_fonc(x::AbstractVector, date_vec::AbstractVector; OrderTrig::Integer=1, return_parameters::Bool=false)
     N = length(x)
-    t_vec = collect(1:N)
-    Design = reduce(hcat, [ones(N), cos.((2π * t_vec) / 365.2422), sin.((2π * t_vec) / 365.2422)])
+    n2t = dayofyear_Leap.(date_vec)
+    ω = 2π / 365.2422
+    cos_nj = [cos.(ω * j * n2t) for j = 1:OrderTrig]
+    sin_nj = [sin.(ω * j * n2t) for j = 1:OrderTrig]
+    Design = reduce(hcat, [[ones(N)]; interleave2(cos_nj, sin_nj)])
     beta = inv(transpose(Design) * Design) * transpose(Design) * x
-    f(t) = dot(beta, [1, cos((2π * t) / 365.2422), sin((2π * t) / 365.2422)])
-    return return_parameters ? (f, beta) : f
+    function func(args...)
+        t = dayofyear_Leap(args...)
+        IL = interleave2([cos(ω * j * t) for j = 1:OrderTrig], [sin(ω * j * t) for j = 1:OrderTrig])
+        return dot(beta, [1; IL])
+    end
+    return return_parameters ? (func, beta) : func
 end
 
-# f = 2π / T
-# cos_nj = [cos(f * j * t) for t = 1:T, j = 1:d]
-# sin_nj = [sin(f * j * t) for t = 1:T, j = 1:d]
-# trig = [[1; interleave2(cos_nj[t, :], sin_nj[t, :])] for t = 1:T]
-# """
-#     Merge vectors with alternate elements
-#     For example
-#     ```julia
-#     x = [x₁, x₂]
-#     y = [y₁, y₂]
-#     interleave2(x, y) = [x₁, y₁, x₂, y₂]
-#     ```
-# """
-# interleave2(args...) = collect(Iterators.flatten(zip(args...)))
 
-# dayofyear_Leap(d) = @. dayofyear(d) + ((!isleapyear(d)) & (month(d) > 2))
+"""
+    Merge vectors with alternate elements (Credits : David Métivier (dmetivie))
+    For example
+    ```julia
+    x = [x₁, x₂]
+    y = [y₁, y₂]
+    interleave2(x, y) = [x₁, y₁, x₂, y₂]
+    ```
+"""
+interleave2(args...) = collect(Iterators.flatten(zip(args...)))
+d = 4
+T = 8
+f = 2π / T
+cos_nj = [cos(f * j * t) for t = (π/4)*0:T, j = 1:d]
+sin_nj = [sin(f * j * t) for t = (π/4)*0:T, j = 1:d]
+trig = reduce(hcat, [[1; interleave2(cos_nj[t, :], sin_nj[t, :])] for t = 1:(T+1)])

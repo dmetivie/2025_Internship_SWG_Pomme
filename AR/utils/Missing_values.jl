@@ -32,13 +32,13 @@ and then imputes the missing days with them. The series x_vec must be undrifted.
 function ImputeMissingValues!(x_vec::AbstractVector, date_vec::AbstractVector, median_::Bool=false)
     Days_list = [AbstractFloat[] for _ in 1:366]
     for (i, temp) in enumerate(x_vec)
-        push!(Days_list[n2t(i, date_vec[1])], temp)
+        push!(Days_list[dayofyear_Leap(i, date_vec[1])], temp)
     end
     typical_year = median_ ? median.(Days_list) : mean.(Days_list)
     Missing_days = [date_ for date_ in date_vec[1]:date_vec[end] if date_ ∉ date_vec]
     Missing_days_index = Mulfind(Missing_days, date_vec[1]:date_vec[end])
     #Missing_days_index::AbstractVector{Int}
-    Output = (Mulinsert!(x_vec, Missing_days_index, typical_year[n2t.(Missing_days)]),
+    Output = (Mulinsert!(x_vec, Missing_days_index, typical_year[dayofyear_Leap.(Missing_days)]),
         Mulinsert!(date_vec, Missing_days_index, Missing_days))
     println("$(length(Missing_days)) days imputated into the series")
     return Output
