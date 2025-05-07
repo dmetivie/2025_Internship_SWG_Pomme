@@ -57,6 +57,19 @@ Return the Mean Absolute Percentage Error between estimated x_hat and the true x
 MAPE(x_hat::AbstractFloat, x::AbstractFloat) = 100 * abs((x_hat - x) / x)
 MAPE(x_hat::AbstractVector, x::AbstractVector) = 100 * mean(abs.((x_hat - x) ./ x))
 
+"""
+    dayofyear_Leap(Date_::Date)
+
+Return the index t ∈ [1:366] of the day in input. (Credits : David Métivier (dmetivie))
+"""
+dayofyear_Leap(d::Date) = @. dayofyear(d) + ((!isleapyear(d)) & (month(d) > 2))
+
+"""
+    dayofyear_Leap(n::Int,Day_one::Date)
+
+Return the index t ∈ [1:366] of the index n, where n represents the total number of days starting from Day_one.
+"""
+dayofyear_Leap(n::Integer, Day_one::Date) = dayofyear_Leap(Day_one + Day(n - 1))
 
 """
 Deprecated for now

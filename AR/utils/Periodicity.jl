@@ -3,20 +3,6 @@ include("utils.jl")
 @tryusing "Dates", "LinearAlgebra", "DataInterpolations", "RegularizationTools", "GLM"
 
 """
-    dayofyear_Leap(Date_::Date)
-
-Return the index t ∈ [1:366] of the day in input. (Credits : David Métivier (dmetivie))
-"""
-dayofyear_Leap(d::Date) = @. dayofyear(d) + ((!isleapyear(d)) & (month(d) > 2))
-
-"""
-    dayofyear_Leap(n::Int,Day_one::Date)
-
-Return the index t ∈ [1:366] of the index n, where n represents the total number of days starting from Day_one.
-"""
-dayofyear_Leap(n::Integer, Day_one::Date) = dayofyear_Leap(Day_one + Day(n - 1))
-
-"""
     fitted_periodicity_fonc(x::AbstractVector,return_parameters::Bool=false)
 
 Return a trigonometric function f of period 365.25 of equation f(t) = μ + a*cos(2π*t/365.25) + b*sin((2π*t/365.25) fitted on x. 

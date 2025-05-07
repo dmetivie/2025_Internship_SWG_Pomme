@@ -8,18 +8,20 @@ include("utils.jl")
 
 Return the indexes of the middle of each month of the input year. For now it's useful only to display month labels in plots.
 """
-MiddleMonth(year::Integer) = (cumsum([0; DaysPerMonth(year)])[2:13] .+ cumsum([0; DaysPerMonth(year)])[1:12]) ./ 2
+MiddleMonth(year::Integer) = (cumsum(DaysPerMonth(year)) .+ cumsum([0; DaysPerMonth(year)])[1:12]) ./ 2
 
 """
     PlotYearCurves(curvesvec::AbstractVector, labelvec::AbstractVector, title::String="", bands::AbstractVector=[], colorbands::AbstractVector=[])
 
-Plot the annuel series in curvesvec. Their length must be 365. You can also plots bands : each band must be a tuple or a vector of two series, the first one corresponding to the bottom of the band.
+Plot the annuel series in curvesvec. Their length must be 365 or 366. You can also plots bands : each band must be a tuple or a vector of two series, the first one corresponding to the bottom of the band.
 You can choose the color of each band in the vector colorbands.
 """
 function PlotYearCurves(curvesvec::AbstractVector, labelvec::AbstractVector, title::String="", bands::AbstractVector=Tuple[], colorbands::AbstractVector=Tuple[])
     length(curvesvec) != 0 ? length(curvesvec[1]) == 1 ? curvesvec = [curvesvec] : nothing : nothing  #We test if curvesvec is one series or a vector of series
+    n_days = length(curvesvec) != 0 ? length(curvesvec[1]) : length(bands[1][1])
+    ReferenceYear = n_days == 366 ? 0 : 1
     fig = Figure()
-    ax2 = Axis(fig[1:2, 1:2], xticks=(MiddleMonth(1), Month_vec),
+    ax2 = Axis(fig[1:2, 1:2], xticks=(MiddleMonth(ReferenceYear), Month_vec),
         ygridvisible=false,
         yticksvisible=false,
         yticklabelsvisible=false,
@@ -27,23 +29,23 @@ function PlotYearCurves(curvesvec::AbstractVector, labelvec::AbstractVector, tit
         xticksvisible=false,
         xticklabelspace=5.0,
         xticklabelrotation=45.0)
-    ax2.limits = ([0; 365], nothing)
-    ax = Axis(fig[1:2, 1:2], xticks=[0; cumsum(DaysPerMonth(1))], xticklabelsvisible=false)
+    ax2.limits = ([0; n_days], nothing)
+    ax = Axis(fig[1:2, 1:2], xticks=[0; cumsum(DaysPerMonth(ReferenceYear))], xticklabelsvisible=false)
     pltbands = Plot[]
     for (band_, colorband) in zip(bands, colorbands)
-        append!(pltbands, [band!(ax, 1:365, band_[1], band_[2]; color=colorband)])
+        append!(pltbands, [band!(ax, 1:n_days, band_[1], band_[2]; color=colorband)])
     end
     pltlines = Plot[]
     for vec in curvesvec
-        append!(pltlines, [lines!(ax, 1:365, vec)])
+        append!(pltlines, [lines!(ax, 1:n_days, vec)])
     end
     pltvec = [pltlines; pltbands]
     ax.title = title
     ax.xlabel = "Day"
     ax.xlabelpadding = 30.0
     ax.ylabel = "Temperature (°C)"
-    ax.xticks = [0; cumsum(DaysPerMonth(1))]
-    ax.limits = ([0; 365], nothing)
+    ax.xticks = [0; cumsum(DaysPerMonth(ReferenceYear))]
+    ax.limits = ([0; n_days], nothing)
     Legend(fig[3, 1:2], pltvec, labelvec)
     return fig
 end
@@ -68,26 +70,26 @@ function PlotParameters(Parameters_vec::AbstractVector, lines_::Bool=false)
         end
         if j == length(Parameters_vec) #i.e Parameter = σ
             for i in 1:12
-                month_vec[i]=month_vec[i][month_vec[i].>1e-2] #I remove the values estimated close to 0.
+                month_vec[i] = month_vec[i][month_vec[i].>1e-2] #I remove the values estimated close to 0.
             end
         end
-        month_vec[1]=month_vec[1][abs.(month_vec[1]).<1e5] #To remove problematical values (exploded values)
+        month_vec[1] = month_vec[1][abs.(month_vec[1]).<1e5] #To remove problematical values (exploded values)
         ax, plt1 = boxplot(fig[1+3(j-1):2+3(j-1), 1:2], fill(1, length(month_vec[1])), month_vec[1]; width=0.3, color="orange")
         for i in 2:12
-            month_vec[i]=month_vec[i][abs.(month_vec[i]).<1e5]
+            month_vec[i] = month_vec[i][abs.(month_vec[i]).<1e5]
             boxplot!(ax, fill(i, length(month_vec[i])), month_vec[i]; width=0.3, color="orange")
         end
         lines_ ? pltl = lines!(ax, collect(1:12), j == length(Parameters_vec) ? mean.(month_vec) : median.(month_vec); color="blue") : nothing
         plt2 = isnothing(true_param) ? nothing : scatter!(ax, collect(1:12), true_param; color="Blue", markersize=15)
-        I_concat=findall(abs.(month_concat).<1e4) #To remove problematical values (exploded values)
+        I_concat = findall(abs.(month_concat) .< 1e4) #To remove problematical values (exploded values)
         plt3 = scatter!(ax, I_concat .+ 0.15, month_concat[I_concat]; color="red", marker=:utriangle, markersize=12.5)
-        I_sumLL=findall(abs.(month_sumLL).<1e4) #To remove problematical values (exploded values)
+        I_sumLL = findall(abs.(month_sumLL) .< 1e4) #To remove problematical values (exploded values)
         plt4 = scatter!(ax, I_sumLL .- 0.15, month_sumLL[I_sumLL]; color="green", marker=:dtriangle, markersize=12.5)
         str = j == length(Parameters_vec) ? "σ" : "Φ$(j)"
         ax.title = isnothing(true_param) ? "Estimated $(str) with 3 methods" : "Real $(str) vs estimated $(str) with 3 methods"
         ax.xticks = (1:12, Month_vec)
         ax.xticklabelrotation = 45.0
-        strline= j == length(Parameters_vec) ? "Mean of $(str) estimated on each year and month" : "Median of $(str) estimated on each year and month"
+        strline = j == length(Parameters_vec) ? "Mean of $(str) estimated on each year and month" : "Median of $(str) estimated on each year and month"
         if isnothing(true_param)
             if lines_
                 Legend(fig[3+3(j-1), 1:2], [plt1, pltl, plt3, plt4], ["Boxplots of $(str) estimated on each year and month", strline, "Estimated $(str) with months concatanated", "Estimated $(str) with sum of likelihoods"])
@@ -105,8 +107,3 @@ function PlotParameters(Parameters_vec::AbstractVector, lines_::Bool=false)
     return fig
 end
 
-
-v=[0,1,-4,2,1e150,0,2.5e50,7]
-I=findall(abs.(v).<1e200)
-v[I]
-v[I]==v

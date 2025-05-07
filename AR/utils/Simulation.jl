@@ -1,6 +1,6 @@
 include("utils.jl")
 
-@tryusing "Dates","Distributions","LinearAlgebra"
+@tryusing "Dates", "Distributions", "LinearAlgebra"
 
 ##### SIMULATION #####
 """
@@ -90,3 +90,74 @@ function SimulateYears(x0::AbstractVector, day_one::Date, Φ_month::AbstractVect
     return L
 end
 SimulateYears(x0::Number, day_one::Date, Φ_month::AbstractVector, σ_month::AbstractVector, n_month::Integer) = SimulateYears([x0], day_one, Φ_month, σ_month, n_month)
+
+
+#### Simulating scenarios ####
+
+
+"""
+    SimulateScenario(x0::AbstractVector, Date_vec::AbstractVector, Φ, σ, nspart=0)
+
+Simulate a temperature scenario during the Date_vec timeline following an AR model with parameters Φ and σ and non stationnary part (trend + periodicity) nspart.
+"""
+function SimulateScenario(x0::AbstractVector, Date_vec::AbstractVector, Φ, σ, nspart=0)
+    L, p = copy(x0), length(x0)
+    for date_ in Date_vec[p+1:end]
+        length(Φ) == 12 ? append!(L, dot(L[end:-1:end-p+1], Φ[month(date_)]) + σ[month(date_)] * randn()) : append!(L, dot(L[end:-1:end-p+1], Φ) + σ * randn())
+    end
+    return L .+ (length(nspart) == 366 ? nspart[dayofyear_Leap.(Date_vec)] : nspart)
+end
+SimulateScenario(x0::AbstractFloat, Date_vec::AbstractVector, Φ, σ, nspart=0) = SimulateScenario([x0], Date_vec, Φ, σ, nspart)
+
+"""
+    SimulateScenarios(x0::AbstractVector, Date_vec::AbstractVector, Φ, σ, nspart=0 ; n::Integer=1)
+
+Simulate n temperature scenarios during the Date_vec timeline following an AR model with parameters Φ and σ and non stationnary part (trend + periodicity) nspart.
+"""
+SimulateScenarios(x0, Date_vec::AbstractVector, Φ, σ, nspart=0; n::Integer=1) = [SimulateScenario(x0, Date_vec, Φ, σ, nspart) for _ in 1:n]
+
+
+"""
+    GatherYearScenario(Scenario::AbstractVector,Date_vec::AbstractVector)
+
+Create a vector where each sub-vector corresponds to a day of the year. 
+Each temperature of the scenario is put in his corresponding sub-vector according to his day of the year.
+For example, Output[1] = [temperature of the 1st january of the first year, temperature of the 1st january of the second year, etc...]
+"""
+function GatherYearScenario(Scenario::AbstractVector, Date_vec::AbstractVector)
+    Days_list = [AbstractFloat[] for _ in 1:366]
+    for (i, temp) in enumerate(Scenario)
+        push!(Days_list[dayofyear_Leap(Date_vec[i])], temp)
+    end
+    return Days_list
+end
+
+
+"""
+    concat2by2(L)
+
+Return the vector of the index-wise concatanations of the nested sub-sub-vectors in L.
+The sub-vectors (not necessarily sub-sub-vectors) in L must have the same size. 
+For example : 
+ ```julia
+    x = [[a₁, a₂],[a₃]]
+    y = [[b₁], [b₂, b₃]]
+    z = [[c₁], [c₂]]
+    concat2by2([x,y,z]) = [[a₁, a₂, b₁, c₁], [a₃, b₂, b₃, c₂]]
+```
+"""
+concat2by2(L1::AbstractVector, L2::AbstractVector) = [[u; v] for (u, v) in zip(L1, L2)]
+concat2by2(L::AbstractVector) = reduce(concat2by2, L)
+
+
+"""
+    GatherYearScenarios(Scenarios::AbstractVector,Date_vec::AbstractVector)
+
+Create a vector where each sub-vector corresponds to a day of the year. 
+Each temperature of each scenario is put in his corresponding sub-vector according to his day of the year.
+For example, Output[1] = [temperature of the 1st january of the first year of the first scenario, 
+temperature of the 1st january of the second year of the first scenario,
+...,
+temperature of the 1st january of the last year of the last scenario]
+"""
+GatherYearScenarios(Scenarios, Date_vec) = concat2by2(GatherYearScenario.(Scenarios, repeat([Date_vec], length(Scenarios))))
