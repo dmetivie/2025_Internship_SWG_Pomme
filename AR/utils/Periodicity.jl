@@ -35,9 +35,9 @@ end
     ```
 """
 interleave2(args...) = collect(Iterators.flatten(zip(args...)))
-d = 4
-T = 8
-f = 2π / T
-cos_nj = [cos(f * j * t) for t = (π/4)*0:T, j = 1:d]
-sin_nj = [sin(f * j * t) for t = (π/4)*0:T, j = 1:d]
-trig = reduce(hcat, [[1; interleave2(cos_nj[t, :], sin_nj[t, :])] for t = 1:(T+1)])
+# d = 4
+# T = 8
+# f = 2π / T
+# cos_nj = [cos(f * j * t) for t = (π/4)*0:T, j = 1:d]
+# sin_nj = [sin(f * j * t) for t = (π/4)*0:T, j = 1:d]
+# trig = reduce(hcat, [[1; interleave2(cos_nj[t, :], sin_nj[t, :])] for t = 1:(T+1)])

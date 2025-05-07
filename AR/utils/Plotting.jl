@@ -16,11 +16,11 @@ MiddleMonth(year::Integer) = (cumsum(DaysPerMonth(year)) .+ cumsum([0; DaysPerMo
 Plot the annuel series in curvesvec. Their length must be 365 or 366. You can also plots bands : each band must be a tuple or a vector of two series, the first one corresponding to the bottom of the band.
 You can choose the color of each band in the vector colorbands.
 """
-function PlotYearCurves(curvesvec::AbstractVector, labelvec::AbstractVector, title::String="", bands::AbstractVector=Tuple[], colorbands::AbstractVector=Tuple[])
+function PlotYearCurves(curvesvec::AbstractVector, labelvec::AbstractVector, title::String="", bands::AbstractVector=Tuple[], colorbands::AbstractVector=Tuple[] ; colors::AbstractVector=String[])
     length(curvesvec) != 0 ? length(curvesvec[1]) == 1 ? curvesvec = [curvesvec] : nothing : nothing  #We test if curvesvec is one series or a vector of series
     n_days = length(curvesvec) != 0 ? length(curvesvec[1]) : length(bands[1][1])
     ReferenceYear = n_days == 366 ? 0 : 1
-    fig = Figure()
+    fig = Figure(size=(900,750))
     ax2 = Axis(fig[1:2, 1:2], xticks=(MiddleMonth(ReferenceYear), Month_vec),
         ygridvisible=false,
         yticksvisible=false,
@@ -36,8 +36,14 @@ function PlotYearCurves(curvesvec::AbstractVector, labelvec::AbstractVector, tit
         append!(pltbands, [band!(ax, 1:n_days, band_[1], band_[2]; color=colorband)])
     end
     pltlines = Plot[]
-    for vec in curvesvec
-        append!(pltlines, [lines!(ax, 1:n_days, vec)])
+    if length(colors) != 0
+        for (vec,color_) in zip(curvesvec,colors)
+            append!(pltlines, [lines!(ax, 1:n_days, vec, color=color_)])
+        end
+    else
+        for vec in curvesvec
+            append!(pltlines, [lines!(ax, 1:n_days, vec)])
+        end
     end
     pltvec = [pltlines; pltbands]
     ax.title = title
