@@ -16,11 +16,11 @@ MiddleMonth(year::Integer) = (cumsum(DaysPerMonth(year)) .+ cumsum([0; DaysPerMo
 Plot the annuel series in curvesvec. Their length must be 365 or 366. You can also plots bands : each band must be a tuple or a vector of two series, the first one corresponding to the bottom of the band.
 You can choose the color of each band in the vector colorbands.
 """
-function PlotYearCurves(curvesvec::AbstractVector, labelvec::AbstractVector, title::String="", bands::AbstractVector=Tuple[], colorbands::AbstractVector=Tuple[] ; colors::AbstractVector=String[])
+function PlotYearCurves(curvesvec::AbstractVector, labelvec::AbstractVector, title::String="", bands::AbstractVector=Tuple[], colorbands::AbstractVector=Tuple[]; colors::AbstractVector=String[])
     length(curvesvec) != 0 ? length(curvesvec[1]) == 1 ? curvesvec = [curvesvec] : nothing : nothing  #We test if curvesvec is one series or a vector of series
     n_days = length(curvesvec) != 0 ? length(curvesvec[1]) : length(bands[1][1])
     ReferenceYear = n_days == 366 ? 0 : 1
-    fig = Figure(size=(900,750))
+    fig = Figure(size=(900, 750))
     ax2 = Axis(fig[1:2, 1:2], xticks=(MiddleMonth(ReferenceYear), Month_vec),
         ygridvisible=false,
         yticksvisible=false,
@@ -33,16 +33,16 @@ function PlotYearCurves(curvesvec::AbstractVector, labelvec::AbstractVector, tit
     ax = Axis(fig[1:2, 1:2], xticks=[0; cumsum(DaysPerMonth(ReferenceYear))], xticklabelsvisible=false)
     pltbands = Plot[]
     for (band_, colorband) in zip(bands, colorbands)
-        append!(pltbands, [band!(ax, 1:n_days, band_[1], band_[2]; color=colorband)])
+        push!(pltbands, CairoMakie.band!(ax, 1:n_days, band_[1], band_[2]; color=colorband))
     end
     pltlines = Plot[]
     if length(colors) != 0
-        for (vec,color_) in zip(curvesvec,colors)
-            append!(pltlines, [lines!(ax, 1:n_days, vec, color=color_)])
+        for (vec, color_) in zip(curvesvec, colors)
+            push!(pltlines, CairoMakie.lines!(ax, 1:n_days, vec, color=color_))
         end
     else
         for vec in curvesvec
-            append!(pltlines, [lines!(ax, 1:n_days, vec)])
+            push!(pltlines, CairoMakie.lines!(ax, 1:n_days, vec))
         end
     end
     pltvec = [pltlines; pltbands]
@@ -80,17 +80,17 @@ function PlotParameters(Parameters_vec::AbstractVector, lines_::Bool=false)
             end
         end
         month_vec[1] = month_vec[1][abs.(month_vec[1]).<1e5] #To remove problematical values (exploded values)
-        ax, plt1 = boxplot(fig[1+3(j-1):2+3(j-1), 1:2], fill(1, length(month_vec[1])), month_vec[1]; width=0.3, color="orange")
+        ax, plt1 = CairoMakie.boxplot(fig[1+3(j-1):2+3(j-1), 1:2], fill(1, length(month_vec[1])), month_vec[1]; width=0.3, color="orange")
         for i in 2:12
             month_vec[i] = month_vec[i][abs.(month_vec[i]).<1e5]
-            boxplot!(ax, fill(i, length(month_vec[i])), month_vec[i]; width=0.3, color="orange")
+            CairoMakie.boxplot!(ax, fill(i, length(month_vec[i])), month_vec[i]; width=0.3, color="orange")
         end
         lines_ ? pltl = lines!(ax, collect(1:12), j == length(Parameters_vec) ? mean.(month_vec) : median.(month_vec); color="blue") : nothing
-        plt2 = isnothing(true_param) ? nothing : scatter!(ax, collect(1:12), true_param; color="Blue", markersize=15)
+        plt2 = isnothing(true_param) ? nothing : CairoMakie.scatter!(ax, collect(1:12), true_param; color="Blue", markersize=15)
         I_concat = findall(abs.(month_concat) .< 1e4) #To remove problematical values (exploded values)
-        plt3 = scatter!(ax, I_concat .+ 0.15, month_concat[I_concat]; color="red", marker=:utriangle, markersize=12.5)
+        plt3 = CairoMakie.scatter!(ax, I_concat .+ 0.15, month_concat[I_concat]; color="red", marker=:utriangle, markersize=12.5)
         I_sumLL = findall(abs.(month_sumLL) .< 1e4) #To remove problematical values (exploded values)
-        plt4 = scatter!(ax, I_sumLL .- 0.15, month_sumLL[I_sumLL]; color="green", marker=:dtriangle, markersize=12.5)
+        plt4 = CairoMakie.scatter!(ax, I_sumLL .- 0.15, month_sumLL[I_sumLL]; color="green", marker=:dtriangle, markersize=12.5)
         str = j == length(Parameters_vec) ? "σ" : "Φ$(j)"
         ax.title = isnothing(true_param) ? "Estimated $(str) with 3 methods" : "Real $(str) vs estimated $(str) with 3 methods"
         ax.xticks = (1:12, Month_vec)
@@ -113,3 +113,43 @@ function PlotParameters(Parameters_vec::AbstractVector, lines_::Bool=false)
     return fig
 end
 
+"""
+    PlotMonthlyStats(RealStats::AbstractVector,SimulatedStats::AbstractMatrix,Stats::String)
+
+Plot the monthly statistics in RealStats, the range of the monthly stats from simulations in SimulatedStats (row=month,column=simulations) and the quantile interval (0.25,0.75) of the monthly stats from these simulations.
+"""
+function PlotMonthlyStats(RealStats::AbstractVector, SimulatedStats::AbstractMatrix, Stats::String, comment=nothing)
+    fig = Figure(size=(900, 750))
+    ax = Axis(fig[1:2, 1:2])
+    ax.title = isnothing(comment) ? "Real monthly $(Stats) vs range of simulated monthly $(Stats)" : "Real monthly $(Stats) vs range of simulated monthly $(Stats) $(comment)"
+    ax.xticks = (1:12, Month_vec)
+    ax.xticklabelrotation = 45.0
+    ax.ylabel = "Temperature (°C)"
+    pltvec = Plot[]
+    push!(pltvec, CairoMakie.scatter!(ax, RealStats, color="Orange"))
+    bands = [(minimum.(eachrow(SimulatedStats)), maximum.(eachrow(SimulatedStats))),
+        (quantile.(eachrow(SimulatedStats), 0.25), quantile.(eachrow(SimulatedStats), 0.75))
+    ]
+    colorbands = [("#009bff", 0.2), ("#009bff", 0.5)]
+    for (band_, colorband) in zip(bands, colorbands)
+        push!(pltvec, CairoMakie.band!(ax, 1:12, band_[1], band_[2]; color=colorband))
+    end
+    Legend(fig[3, 1:2], pltvec, ["Real monthly $(Stats)", "Range of simulated monthly $(Stats)", "Simulated monthly $(Stats) quantile interval, p ∈ [0.25,0.75]"])
+    return fig
+end
+
+"""
+    WrapPlotMonthlyStats(df_month::DataFrame,sample_::AbstractVector,sample_timeline::AbstractVector{Date})
+
+A wrapper for PlotMonthlyStats, where the real monthly statistics are in df_month (row=month), sample_ is a vector containing the simulations and sample_timeline a vector of the timeline of the simulations.
+Return three plots, for the mean, the standard deviation and the maximum.
+"""
+function WrapPlotMonthlyStats(df_month::DataFrame, sample_::AbstractVector, sample_timeline::AbstractVector{Date}, comment=nothing)
+    idx_m = [findall(month.(sample_timeline) .== m) for m in 1:12]
+    mean_ts = [[mean(ts[idx_m[m]]) for m in 1:12] for ts in sample_] |> stack
+    std_ts = [[std(ts[idx_m[m]]) for m in 1:12] for ts in sample_] |> stack
+    max_ts = [[maximum(ts[idx_m[m]]) for m in 1:12] for ts in sample_] |> stack
+    return PlotMonthlyStats(df_month.MONTHLY_MEAN, mean_ts, "mean", comment),
+    PlotMonthlyStats(df_month.MONTHLY_STD, std_ts, "standard deviation", comment),
+    PlotMonthlyStats(df_month.MONTHLY_MAX, max_ts, "maximum", comment)
+end

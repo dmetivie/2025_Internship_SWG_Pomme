@@ -14,7 +14,7 @@ function fitted_periodicity_fonc(x::AbstractVector, date_vec::AbstractVector; Or
     ω = 2π / 365.2422
     cos_nj = [cos.(ω * j * n2t) for j = 1:OrderTrig]
     sin_nj = [sin.(ω * j * n2t) for j = 1:OrderTrig]
-    Design = reduce(hcat, [[ones(N)]; interleave2(cos_nj, sin_nj)])
+    Design = stack([[ones(N)]; interleave2(cos_nj, sin_nj)])
     beta = inv(transpose(Design) * Design) * transpose(Design) * x
     function func(args...)
         t = dayofyear_Leap(args...)

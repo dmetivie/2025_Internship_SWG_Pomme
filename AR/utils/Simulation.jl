@@ -116,23 +116,6 @@ Simulate n temperature scenarios during the Date_vec timeline following an AR mo
 """
 SimulateScenarios(x0, Date_vec::AbstractVector, Φ, σ, nspart=0; n::Integer=1) = [SimulateScenario(x0, Date_vec, Φ, σ, nspart) for _ in 1:n]
 
-
-"""
-    GatherYearScenario(Scenario::AbstractVector,Date_vec::AbstractVector)
-
-Create a vector where each sub-vector corresponds to a day of the year. 
-Each temperature of the scenario is put in his corresponding sub-vector according to his day of the year.
-For example, Output[1] = [temperature of the 1st january of the first year, temperature of the 1st january of the second year, etc...]
-"""
-function GatherYearScenario(Scenario::AbstractVector, Date_vec::AbstractVector)
-    Days_list = [AbstractFloat[] for _ in 1:366]
-    for (i, temp) in enumerate(Scenario)
-        push!(Days_list[dayofyear_Leap(Date_vec[i])], temp)
-    end
-    return Days_list
-end
-
-
 """
     concat2by2(L)
 
@@ -150,14 +133,3 @@ concat2by2(L1::AbstractVector, L2::AbstractVector) = [[u; v] for (u, v) in zip(L
 concat2by2(L::AbstractVector) = reduce(concat2by2, L)
 
 
-"""
-    GatherYearScenarios(Scenarios::AbstractVector,Date_vec::AbstractVector)
-
-Create a vector where each sub-vector corresponds to a day of the year. 
-Each temperature of each scenario is put in his corresponding sub-vector according to his day of the year.
-For example, Output[1] = [temperature of the 1st january of the first year of the first scenario, 
-temperature of the 1st january of the second year of the first scenario,
-...,
-temperature of the 1st january of the last year of the last scenario]
-"""
-GatherYearScenarios(Scenarios, Date_vec) = concat2by2(GatherYearScenario.(Scenarios, repeat([Date_vec], length(Scenarios))))

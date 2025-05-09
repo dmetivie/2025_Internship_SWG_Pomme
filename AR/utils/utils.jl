@@ -3,26 +3,26 @@ macro tryusing(package::String)
         eval(:(using $(Meta.parse(package))))
     catch
         eval(:(
-        import Pkg;
-        Pkg.add($package);
-        using $(Meta.parse(package))))
+            import Pkg;
+            Pkg.add($package);
+            using $(Meta.parse(package))))
     end
 end
 macro tryusing(package::Expr)
-    for s in package.args 
+    for s in package.args
         try
             eval(:(using $(Meta.parse(s))))
         catch
             eval(:(
-            import Pkg;
-            Pkg.add($s);
-            using $(Meta.parse(s))))
+                import Pkg;
+                Pkg.add($s);
+                using $(Meta.parse(s))))
         end
     end
 end
 
-@tryusing "Dates","Polynomials"
-    
+@tryusing "Dates", "Polynomials", "DataFrames", "DataFramesMeta"
+
 """
     Iyear(date::AbstractVector{Date},year::Integer)
 Return a mask to select only the period of the year(s) in argument.
@@ -70,6 +70,33 @@ dayofyear_Leap(d::Date) = @. dayofyear(d) + ((!isleapyear(d)) & (month(d) > 2))
 Return the index t ∈ [1:366] of the index n, where n represents the total number of days starting from Day_one.
 """
 dayofyear_Leap(n::Integer, Day_one::Date) = dayofyear_Leap(Day_one + Day(n - 1))
+
+"""
+    GatherYearScenario(Scenario::AbstractVector,Date_vec::AbstractVector)
+
+Create a vector where each sub-vector corresponds to a day of the year. 
+Each temperature of the scenario is put in his corresponding sub-vector according to his day of the year.
+For example, Output[1] = [temperature of the 1st january of the first year, temperature of the 1st january of the second year, etc...]
+"""
+function GatherYearScenario(Scenario::AbstractVector, Date_vec::AbstractVector)
+    Days_list = [AbstractFloat[] for _ in 1:366]
+    for (i, temp) in enumerate(Scenario)
+        push!(Days_list[dayofyear_Leap(Date_vec[i])], temp)
+    end
+    return Days_list
+end
+
+"""
+    GatherYearScenarios(Scenarios::AbstractVector,Date_vec::AbstractVector)
+
+Create a vector where each sub-vector corresponds to a day of the year. 
+Each temperature of each scenario is put in his corresponding sub-vector according to his day of the year.
+For example, Output[1] = [temperature of the 1st january of the first year of the first scenario, 
+temperature of the 1st january of the second year of the first scenario,
+...,
+temperature of the 1st january of the last year of the last scenario]
+"""
+GatherYearScenarios(Scenarios, Date_vec) = concat2by2(GatherYearScenario.(Scenarios, repeat([Date_vec], length(Scenarios))))
 
 """
 Deprecated for now

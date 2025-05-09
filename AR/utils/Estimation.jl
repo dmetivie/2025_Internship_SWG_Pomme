@@ -13,7 +13,7 @@ This function does not consider the likelihood of the initial conditiion x₁,x�
 """
 function Opp_Log_Likelihood_AR(Estimators::AbstractVector, x::AbstractVector)
     p = length(Estimators) - 1
-    R = reduce(hcat, [x[(p+1-i):(end-i)] for i in 1:p]) #matrix where each row is like (Xₜ₊₁,Xₜ₊₂,...Xₜ₊ₚ)
+    R = stack([x[(p+1-i):(end-i)] for i in 1:p]) #matrix where each row is like (Xₜ₋₁,Xₜ₋₂,...Xₜ₋ₚ)
     return -(-(length(x) - p) * (log(2π) + log(abs(Estimators[end]))) - transpose(x[p+1:end] - R * Estimators[1:(end-1)]) * (x[p+1:end] - R * Estimators[1:(end-1)]) / Estimators[end]) / 2
 end
 

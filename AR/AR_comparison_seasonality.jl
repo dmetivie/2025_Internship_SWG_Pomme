@@ -51,9 +51,9 @@ end
 
 n2t = dayofyear_Leap.(df.DATE)
 idx_m = [findall(month.(df.DATE) .== m) for m in 1:12]
-@time ts_smooth = [rand(ar1sTX, n2t; y₁ = df.TX[1]) for i in 1:M]
+@time ts_smooth = [rand(ar1sTX, n2t; y₁ = df.TX[1]) for i in 1:M] #Les 1000 scenarios
 
-mean_ts = [[mean(ts[idx_m[m]]) for m in 1:12] for ts in ts_smooth] |> stack
+mean_ts = [[mean(ts[idx_m[m]]) for m in 1:12] for ts in ts_smooth] |> stack #Sans |> stack, correspond aux moyennes sur chaque mois de chaque scenarios (avec tous les mois de janvier "concaténés" par ex)
 std_ts = [[std(ts[idx_m[m]]) for m in 1:12] for ts in ts_smooth] |> stack
 max_ts = [[maximum(ts[idx_m[m]]) for m in 1:12] for ts in ts_smooth] |> stack
 
@@ -74,7 +74,7 @@ df_month = @chain df begin
     @by(:MONTH, :MONTHLY_MEAN = mean(:TX), :MONTHLY_STD = std(:TX), :MAX_STD = maximum(:TX)) # grouby MONTH + takes the mean/std in each category 
 end
 
-#-
+#- (1)
 begin
     @df df_month scatter(monthabbr.(1:12), :MONTHLY_MEAN, label = "Mean Temperature")
     ylabel!("T(°C)")
@@ -110,3 +110,7 @@ begin
     errorline!(1:366, mean_ts_j, centertype=:median, errortype=:percentile, percentiles=[0, 100], groupcolor=:gray, label = "Simu q0,100")
     errorline!(1:366, mean_ts_j, centertype=:median, errortype=:percentile, percentiles=[25, 75], groupcolor=:red, label = "Simu q25,75", fillalpha = 0.4)
 end
+
+
+include("utils/Plotting.jl")
+PlotMonthlyStats(df_month.MONTHLY_MEAN,mean_ts,"mean") #Same results as (1)
