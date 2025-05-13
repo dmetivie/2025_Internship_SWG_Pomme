@@ -26,7 +26,7 @@ Estimators corresponds to the initialization of the algorithm.
 function LL_AR_Estimation(x::AbstractVector, p::Integer, Estimators::AbstractVector=[[0.5 for _ in 1:p]; 1e-15], algo=Optim.NelderMead()) #NelderMead because I've tried many others like (L)BFGS, gradient_descent, Adam, and they don't work properly.
     p == length(Estimators) - 1 ? nothing : error("p (=$(p)) is not equal to the number of Φ initial parameters (=$(length(Estimators)-1))")
     optf = OptimizationFunction(Opp_Log_Likelihood_AR, AutoZygote())
-    prob = OptimizationProblem(optf, Estimators, x)
+    prob = OptimizationProblem(optf, Estimators, x, lb=[[-10 for _ in 1:p]; 1e-20],ub=[[10 for _ in 1:p]; 1e2])
     Results = Optimization.solve(prob, algo, maxiters=10000) #maxiters should be modified if needed
     return Results[1:end-1], abs(Results[end])^0.5
 end
@@ -40,7 +40,7 @@ function LL_AR_Estimation_sum(x_vec::AbstractVector, p::Integer, Estimators::Abs
     p == length(Estimators) - 1 ? nothing : error("p (=$(p)) is not equal to the number of Φ initial parameters (=$(length(Estimators)-1))")
     f(Estimators_, x_vec) = sum(Opp_Log_Likelihood_AR(Estimators_, x) for x in x_vec)
     optf = OptimizationFunction(f, AutoZygote())
-    prob = OptimizationProblem(optf, Estimators, x_vec)
+    prob = OptimizationProblem(optf, Estimators, x_vec, lb=[[-10 for _ in 1:p]; 1e-20],ub=[[10 for _ in 1:p]; 1e5])
     Results = Optimization.solve(prob, algo, maxiters=10000)
     return Results[1:end-1], abs(Results[end])^0.5
 end
@@ -207,7 +207,7 @@ function AllEstimation(x::AbstractVector, p::Integer=1; Estimators::AbstractVect
 
     ParamOutput = Vector[]
 
-    Monthly_Estimators = MonthlyEstimation(Monthly_temp, p, Estimators, algo) #Monthly_Estimators[i][j][k][l] i-> month, j-> 1 if [Φ_1,Φ_2,...], 2 if σ,  k -> index of the parameter (Φⱼ) of year if σ, l -> year if Φ
+    Monthly_Estimators = MonthlyEstimation(Monthly_temp, p, Estimators, algo) #Monthly_Estimators[i][j][k][l] i-> month, j-> year, k-> 1 for [Φ_1,Φ_2,...], 2 for σ, l -> index of the parameter (Φⱼ) of year if k=1
     Month_vecs = [[[month_param[1][k] for month_param in Monthly_Estimators[i]] for i in 1:12] for k in 1:p]
     append!(Month_vecs, [[[month_param[2] for month_param in Monthly_Estimators[i]] for i in 1:12]]) #Month_vecs[i][j][k] i-> index of the parameter (Φᵢ) or (σ) if i=p+1, j-> month,  k -> year
     append!(ParamOutput, [Month_vecs])
@@ -223,7 +223,7 @@ function AllEstimation(x::AbstractVector, p::Integer=1; Estimators::AbstractVect
 
     Output = plot ? [ParamOutput, PlotParameters(isnothing(TrueParamVec) ? invert(ParamOutput) : invert([ParamOutput; [TrueParamVec]]), lineplot)] : [ParamOutput]
 
-    meanparam ? append!(Output[1], [[mean.(Param) for Param in Output[1][1]]]) : nothing #p vectors param, param has a length of 12
+    meanparam ? append!(Output[1], [[mean.(Param) for Param in Output[1][1]]]) : nothing #p vectors param, param has a length of 12 ; param = Month_vecs[i]
     medianparam ? append!(Output[1], [[median.(Param) for Param in Output[1][1]]]) : nothing
 
     isnothing(TrueParamVec) ? nothing : append!(Output[1], [TrueParamVec])

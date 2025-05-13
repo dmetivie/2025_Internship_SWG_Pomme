@@ -43,3 +43,36 @@ function ImputeMissingValues!(x_vec::AbstractVector, date_vec::AbstractVector, m
     println("$(length(Missing_days)) days imputated into the series")
     return Output
 end
+
+
+function truncate_MV(df_full, temperature_type)
+    if temperature_type == "TX"
+        df = @chain df_full begin
+            @transform(:diff = [diff(:DATE); Day(1)])
+            @aside beg = _.DATE[findlast(_.diff .> Day(1))]
+            @subset(:DATE .> beg)
+            @transform(:TX = 0.1 * :TX)
+        end
+    elseif temperature_type == "TN"
+        df = @chain df_full begin
+            @transform(:diff = [diff(:DATE); Day(1)])
+            @aside beg = _.DATE[findlast(_.diff .> Day(1))]
+            @subset(:DATE .> beg)
+            @transform(:TN = 0.1 * :TN)
+        end
+    elseif temperature_type == "TG"
+        df = @chain df_full begin
+            @transform(:diff = [diff(:DATE); Day(1)])
+            @aside beg = _.DATE[findlast(_.diff .> Day(1))]
+            @subset(:DATE .> beg)
+            @transform(:TG = 0.1 * :TG)
+        end
+    end
+    if Date(year(df.DATE[1]), month(df.DATE[1]) + 1) - df.DATE[1] < Day(20) #If there are not enough days in the first month I remove it.
+        df = df[df.DATE .>= Date(year(df.DATE[1]), month(df.DATE[1]) + 1), :]
+    end
+    if df.DATE[end] - Date(year(df.DATE[end]), month(df.DATE[end])) < Day(19) #The same thing for the last month.
+        df = df[df.DATE .< Date(year(df.DATE[end]), month(df.DATE[end])), :]
+    end
+    return df
+end
