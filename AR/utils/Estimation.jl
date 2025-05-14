@@ -1,6 +1,6 @@
 include("utils.jl")
 
-@tryusing "Optimization", "Dates", "Statistics", "StatsBase", "DataFrames", "LinearAlgebra", "Zygote", "OptimizationOptimJL", "ForwardDiff"
+@tryusing "Optimization", "Dates", "Statistics", "StatsBase", "DataFrames", "LinearAlgebra", "OptimizationOptimJL", "ForwardDiff" #,"Zygote"
 
 ##### ESTIMATION #####
 """
@@ -23,9 +23,9 @@ end
 Return the parameters of the AR(p) model on x, estimated with likelihood computation.
 Estimators corresponds to the initialization of the algorithm.
 """
-function LL_AR_Estimation(x::AbstractVector, p::Integer, Estimators::AbstractVector=[[0.5 for _ in 1:p]; 1e-15], algo=Optim.NelderMead()) #NelderMead because I've tried many others like (L)BFGS, gradient_descent, Adam, and they don't work properly.
+function LL_AR_Estimation(x::AbstractVector, p::Integer, Estimators::AbstractVector=[[0.5 for _ in 1:p]; 1e-15], algo=LBFGS()) #NelderMead because I've tried many others like (L)BFGS, gradient_descent, Adam, and they don't work properly.
     p == length(Estimators) - 1 ? nothing : error("p (=$(p)) is not equal to the number of Φ initial parameters (=$(length(Estimators)-1))")
-    optf = OptimizationFunction(Opp_Log_Likelihood_AR, AutoZygote())
+    optf = OptimizationFunction(Opp_Log_Likelihood_AR, AutoForwardDiff())
     prob = OptimizationProblem(optf, Estimators, x, lb=[[-10 for _ in 1:p]; 1e-20],ub=[[10 for _ in 1:p]; 1e2])
     Results = Optimization.solve(prob, algo, maxiters=10000) #maxiters should be modified if needed
     return Results[1:end-1], abs(Results[end])^0.5
@@ -36,11 +36,11 @@ end
 
 Return the parameters of the AR(p) model on multiple series in x_vec (x_vec must be a vector of vector), estimated with the sum of their likelihood. 
 """
-function LL_AR_Estimation_sum(x_vec::AbstractVector, p::Integer, Estimators::AbstractVector=[zeros(p); 1e-15], algo=NelderMead())
+function LL_AR_Estimation_sum(x_vec::AbstractVector, p::Integer, Estimators::AbstractVector=[zeros(p); 1e-15], algo=LBFGS())
     p == length(Estimators) - 1 ? nothing : error("p (=$(p)) is not equal to the number of Φ initial parameters (=$(length(Estimators)-1))")
     f(Estimators_, x_vec) = sum(Opp_Log_Likelihood_AR(Estimators_, x) for x in x_vec)
-    optf = OptimizationFunction(f, AutoZygote())
-    prob = OptimizationProblem(optf, Estimators, x_vec, lb=[[-10 for _ in 1:p]; 1e-20],ub=[[10 for _ in 1:p]; 1e5])
+    optf = OptimizationFunction(f, AutoForwardDiff())
+    prob = OptimizationProblem(optf, Estimators, x_vec, lb=[[-10 for _ in 1:p]; 1e-20],ub=[[10 for _ in 1:p]; 1e2])
     Results = Optimization.solve(prob, algo, maxiters=10000)
     return Results[1:end-1], abs(Results[end])^0.5
 end
@@ -67,7 +67,7 @@ end
 Return the estimated parameters of an AR(p) on each month in Monthly_temp.
 Estimators corresponds to the initialization of the optimization algorithm.
 """
-function MonthlyEstimation(Monthly_temp::AbstractVector, p::Integer=1, Estimators::AbstractVector=[zeros(p); 1e-5], algo=NelderMead())
+function MonthlyEstimation(Monthly_temp::AbstractVector, p::Integer=1, Estimators::AbstractVector=[zeros(p); 1e-5], algo=LBFGS())
     Monthly_Estimators = [Tuple[] for _ in 1:12]
     for i in 1:12
         for x in Monthly_temp[i]
@@ -86,7 +86,7 @@ For each month, the series considered is the concatanation of all series corresp
 For instance, if our original series start from 1950, the series considered for January will be the concatenation of January 1950, January 1951, January 1952, etc. 
 Estimators corresponds to the initialization of the optimization algorithm.
 """
-function MonthlyConcatanatedEstimation(Monthly_temp::AbstractVector, p::Integer=1, Estimators::AbstractVector=[zeros(p); 1e-5], algo=NelderMead())
+function MonthlyConcatanatedEstimation(Monthly_temp::AbstractVector, p::Integer=1, Estimators::AbstractVector=[zeros(p); 1e-5], algo=LBFGS())
     C_Monthly_temp = reduce.(vcat, Monthly_temp)
     Φ_month_concat = p == 1 ? AbstractFloat[] : Vector[]
     σ_month_concat = AbstractFloat[]
@@ -105,7 +105,7 @@ Return the estimated parameters of an AR(p) for each month of the data in Monthl
 For instance, if our original series start from 1950, the likelihood considered to find the parameters of January will be the sum of the likelihoods of January 1950, January 1951, January 1952, etc. 
 Estimators corresponds to the initialization of the optimization algorithm.
 """
-function MonthlyEstimationSumLL(Monthly_temp::AbstractVector, p::Integer=1, Estimators::AbstractVector=[zeros(p); 1e-5], algo=NelderMead())
+function MonthlyEstimationSumLL(Monthly_temp::AbstractVector, p::Integer=1, Estimators::AbstractVector=[zeros(p); 1e-5], algo=LBFGS())
     Φ_month_sumLL = p == 1 ? AbstractFloat[] : Vector[]
     σ_month_sumLL = AbstractFloat[]
     for x_month in Monthly_temp
@@ -122,7 +122,7 @@ end
 Return a table of the estimation of an AR(p) model where each row corresponds to an initialization with a σ in σ_init and each column to a initialization with a Φ in Φ_init. 
 If sigma_est is true, the values returned are the estimations of σ. If true_param is not nothing, the values returned are the mean absolute percentage error (MAPE) between the parameters estimated and the true parameters input.  
 """
-function GridEstimation(Estimationfunc::Function, Monthly_temp::AbstractVector, Φ_init, σ_init, true_param=nothing; sigma_est::Bool=false, p::Integer=1, algo=NelderMead())
+function GridEstimation(Estimationfunc::Function, Monthly_temp::AbstractVector, Φ_init, σ_init, true_param=nothing; sigma_est::Bool=false, p::Integer=1, algo=LBFGS())
     if (true_param !== nothing) && (length(true_param) == 12) #For now we do not consider AR(12) models
         NewEstimationfunc(Monthly_temp, p, Estimators, algo) =
             (MAPE(Estimationfunc(Monthly_temp, p, Estimators, algo)[1], true_param),

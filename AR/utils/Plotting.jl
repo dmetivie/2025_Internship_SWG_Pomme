@@ -95,6 +95,7 @@ function PlotParameters(Parameters_vec::AbstractVector, lines_::Bool=false)
         ax.title = isnothing(true_param) ? "Estimated $(str) with 3 methods" : "Real $(str) vs estimated $(str) with 3 methods"
         ax.xticks = (1:12, Month_vec)
         ax.xticklabelrotation = 45.0
+        j == length(Parameters_vec) ? ax.ylabel = "Temperature (°C)" : nothing
         strline = j == length(Parameters_vec) ? "Mean of $(str) estimated on each year and month" : "Median of $(str) estimated on each year and month"
         if isnothing(true_param)
             if lines_
@@ -126,7 +127,6 @@ function PlotMonthlyStats(RealStats::AbstractVector, SimulatedStats::AbstractMat
     ax.xticklabelrotation = 45.0
     ax.ylabel = "Temperature (°C)"
     pltvec = Plot[]
-    push!(pltvec, CairoMakie.scatter!(ax, RealStats, color="Orange"))
     bands = [(minimum.(eachrow(SimulatedStats)), maximum.(eachrow(SimulatedStats))),
         (quantile.(eachrow(SimulatedStats), 0.25), quantile.(eachrow(SimulatedStats), 0.75))
     ]
@@ -134,7 +134,8 @@ function PlotMonthlyStats(RealStats::AbstractVector, SimulatedStats::AbstractMat
     for (band_, colorband) in zip(bands, colorbands)
         push!(pltvec, CairoMakie.band!(ax, 1:12, band_[1], band_[2]; color=colorband))
     end
-    Legend(fig[3, 1:2], pltvec, ["Real monthly $(Stats)", "Range of simulated monthly $(Stats)", "Simulated monthly $(Stats) quantile interval, p ∈ [0.25,0.75]"])
+    push!(pltvec, CairoMakie.scatter!(ax, RealStats, color="Orange"))
+    Legend(fig[3, 1:2], pltvec, ["Range of simulated monthly $(Stats)", "Simulated monthly $(Stats) quantile interval, p ∈ [0.25,0.75]","Real monthly $(Stats)"])
     return fig
 end
 
