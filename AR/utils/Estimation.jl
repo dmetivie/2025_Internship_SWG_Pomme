@@ -235,7 +235,7 @@ end
 Applies the three monthly AR(p) estimation methods on x. x can be an output of MonthlySeparateX or directly the whole series. In this last case, Date_vec must be put in argument.
 The j-th component of the list is a vector like [Φj_month_vec,Φj_month_concat,Φj_month_sumLL]
 """
-function AllEstimation(x::AbstractVector, p::Integer=1; Estimators::AbstractVector=[zeros(p); 1e-5], algo=NelderMead(), Date_vec=nothing, TrueParamVec=nothing, plot=true, meanparam=true, medianparam=true, ErrorTable=true, PerMethod=false, lineplot=false)
+function AllEstimation(x::AbstractVector, p::Integer=1; Estimators::AbstractVector=[zeros(p); 1e-5], algo=NelderMead(), Date_vec=nothing, TrueParamVec=nothing, plot=true, meanparam=true, medianparam=true, ErrorTable=false, PerMethod=false, lineplot=false)
     Monthly_temp = isnothing(Date_vec) ? copy(x) : MonthlySeparateX(x, Date_vec)
     ErrorTable = isnothing(Date_vec) ? false : ErrorTable
 
