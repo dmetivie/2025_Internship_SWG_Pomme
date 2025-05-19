@@ -62,16 +62,16 @@ end
 
 With a list of parameters estimated with the three methods studied in this project, this function return a figure object with all the parameters estimated.
 You can add the real parameters values, but it is optional.
-The input must be like this : [[Φ1_month_vec,Φ1_month_concat,Φ1_month_sumLL,Φ1_true_param],[Φ2_month_vec,Φ2_month_concat,Φ2_month_sumLL,Φ2_true_param],...,[σ_month_vec,σ_month_concat,σ_month_sumLL,σ_true_param]]
+The input must be like this : [[Φ1_month_vec,Φ1_month_concat,Φ1_month_sumLL,Φ1_month_MLL,Φ1_true_param],[Φ2_month_vec,Φ2_month_concat,Φ2_month_sumLL,Φ2_month_MLL,Φ2_true_param],...,[σ_month_vec,σ_month_concat,σ_month_sumLL,σ_month_MLL,σ_true_param]]
 """
-function PlotParameters(Parameters_vec::AbstractVector, lines_::Bool=false)
+function PlotParametersMLL(Parameters_vec::AbstractVector, lines_::Bool=false)
     fig = Figure(size=(800, 600 * length(Parameters_vec)))
-    month_vec, month_concat, month_sumLL, true_param = 0, 0, 0, 0
+    month_vec, month_concat, month_sumLL, month_MLL, true_param = 0, 0, 0, 0, 0
     for (j, Parameters) in enumerate(Parameters_vec)
         try
-            month_vec, month_concat, month_sumLL, true_param = Parameters
+            month_vec, month_concat, month_sumLL, month_MLL, true_param = Parameters
         catch BoundsError
-            month_vec, month_concat, month_sumLL = Parameters
+            month_vec, month_concat, month_sumLL, month_MLL = Parameters
             true_param = nothing
         end
         if j == length(Parameters_vec) #i.e Parameter = σ
@@ -91,6 +91,7 @@ function PlotParameters(Parameters_vec::AbstractVector, lines_::Bool=false)
         plt3 = CairoMakie.scatter!(ax, I_concat .+ 0.15, month_concat[I_concat]; color="red", marker=:utriangle, markersize=12.5)
         I_sumLL = findall(abs.(month_sumLL) .< 1e4) #To remove problematical values (exploded values)
         plt4 = CairoMakie.scatter!(ax, I_sumLL .- 0.15, month_sumLL[I_sumLL]; color="green", marker=:dtriangle, markersize=12.5)
+        plt5 = CairoMakie.scatter!(ax, collect(1:12), month_MLL; color="Purple", markersize=12.5)
         str = j == length(Parameters_vec) ? "σ" : "Φ$(j)"
         ax.title = isnothing(true_param) ? "Estimated $(str) with 3 methods" : "Real $(str) vs estimated $(str) with 3 methods"
         ax.xticks = (1:12, Month_vec)
@@ -99,20 +100,75 @@ function PlotParameters(Parameters_vec::AbstractVector, lines_::Bool=false)
         strline = j == length(Parameters_vec) ? "Mean of $(str) estimated on each year and month" : "Median of $(str) estimated on each year and month"
         if isnothing(true_param)
             if lines_
-                Legend(fig[3+3(j-1), 1:2], [plt1, pltl, plt3, plt4], ["Boxplots of $(str) estimated on each year and month", strline, "Estimated $(str) with months concatanated", "Estimated $(str) with sum of likelihoods"])
+                Legend(fig[3+3(j-1), 1:2], [plt1, pltl, plt3, plt4, plt5], ["Boxplots of $(str) estimated on each year and month", strline, "Estimated $(str) with months concatanated", "Estimated $(str) with sum of likelihoods", "Estimated $(str) with monthly likelihood"])
             else
-                Legend(fig[3+3(j-1), 1:2], [plt1, plt3, plt4], ["Boxplots of $(str) estimated on each year and month", "Estimated $(str) with months concatanated", "Estimated $(str) with sum of likelihoods"])
+                Legend(fig[3+3(j-1), 1:2], [plt1, plt3, plt4, plt5], ["Boxplots of $(str) estimated on each year and month", "Estimated $(str) with months concatanated", "Estimated $(str) with sum of likelihoods", "Estimated $(str) with monthly likelihood"])
             end
         else
             if lines_
-                Legend(fig[3+3(j-1), 1:2], [plt2, plt1, pltl, plt3, plt4], ["Real $(str)", "Boxplots of $(str) estimated on each year and month", strline, "Estimated $(str) with months concatanated", "Estimated $(str) with sum of likelihoods"])
+                Legend(fig[3+3(j-1), 1:2], [plt2, plt1, pltl, plt3, plt4, plt5], ["Real $(str)", "Boxplots of $(str) estimated on each year and month", strline, "Estimated $(str) with months concatanated", "Estimated $(str) with sum of likelihoods", "Estimated $(str) with monthly likelihood"])
             else
-                Legend(fig[3+3(j-1), 1:2], [plt2, plt1, plt3, plt4], ["Real $(str)", "Boxplots of $(str) estimated on each year and month", "Estimated $(str) with months concatanated", "Estimated $(str) with sum of likelihoods"])
+                Legend(fig[3+3(j-1), 1:2], [plt2, plt1, plt3, plt4, plt5], ["Real $(str)", "Boxplots of $(str) estimated on each year and month", "Estimated $(str) with months concatanated", "Estimated $(str) with sum of likelihoods", "Estimated $(str) with monthly likelihood"])
             end
         end
     end
     return fig
 end
+function PlotParameters(Parameters_vec::AbstractVector, lines_::Bool=false, MLL::Bool=false)
+    if MLL
+        return PlotParametersMLL(Parameters_vec, lines_)
+    else
+        fig = Figure(size=(800, 600 * length(Parameters_vec)))
+        month_vec, month_concat, month_sumLL, true_param = 0, 0, 0, 0
+        for (j, Parameters) in enumerate(Parameters_vec)
+            try
+                month_vec, month_concat, month_sumLL, true_param = Parameters
+            catch BoundsError
+                month_vec, month_concat, month_sumLL = Parameters
+                true_param = nothing
+            end
+            if j == length(Parameters_vec) #i.e Parameter = σ
+                for i in 1:12
+                    month_vec[i] = month_vec[i][month_vec[i].>1e-2] #I remove the values estimated close to 0.
+                end
+            end
+            month_vec[1] = month_vec[1][abs.(month_vec[1]).<1e5] #To remove problematical values (exploded values)
+            ax, plt1 = CairoMakie.boxplot(fig[1+3(j-1):2+3(j-1), 1:2], fill(1, length(month_vec[1])), month_vec[1]; width=0.3, color="orange")
+            for i in 2:12
+                month_vec[i] = month_vec[i][abs.(month_vec[i]).<1e5]
+                CairoMakie.boxplot!(ax, fill(i, length(month_vec[i])), month_vec[i]; width=0.3, color="orange")
+            end
+            lines_ ? pltl = lines!(ax, collect(1:12), j == length(Parameters_vec) ? mean.(month_vec) : median.(month_vec); color="blue") : nothing
+            plt2 = isnothing(true_param) ? nothing : CairoMakie.scatter!(ax, collect(1:12), true_param; color="Blue", markersize=15)
+            I_concat = findall(abs.(month_concat) .< 1e4) #To remove problematical values (exploded values)
+            plt3 = CairoMakie.scatter!(ax, I_concat .+ 0.15, month_concat[I_concat]; color="red", marker=:utriangle, markersize=12.5)
+            I_sumLL = findall(abs.(month_sumLL) .< 1e4) #To remove problematical values (exploded values)
+            plt4 = CairoMakie.scatter!(ax, I_sumLL .- 0.15, month_sumLL[I_sumLL]; color="green", marker=:dtriangle, markersize=12.5)
+            str = j == length(Parameters_vec) ? "σ" : "Φ$(j)"
+            ax.title = isnothing(true_param) ? "Estimated $(str) with 3 methods" : "Real $(str) vs estimated $(str) with 3 methods"
+            ax.xticks = (1:12, Month_vec)
+            ax.xticklabelrotation = 45.0
+            j == length(Parameters_vec) ? ax.ylabel = "Temperature (°C)" : nothing
+            strline = j == length(Parameters_vec) ? "Mean of $(str) estimated on each year and month" : "Median of $(str) estimated on each year and month"
+            if isnothing(true_param)
+                if lines_
+                    Legend(fig[3+3(j-1), 1:2], [plt1, pltl, plt3, plt4], ["Boxplots of $(str) estimated on each year and month", strline, "Estimated $(str) with months concatanated", "Estimated $(str) with sum of likelihoods"])
+                else
+                    Legend(fig[3+3(j-1), 1:2], [plt1, plt3, plt4], ["Boxplots of $(str) estimated on each year and month", "Estimated $(str) with months concatanated", "Estimated $(str) with sum of likelihoods"])
+                end
+            else
+                if lines_
+                    Legend(fig[3+3(j-1), 1:2], [plt2, plt1, pltl, plt3, plt4], ["Real $(str)", "Boxplots of $(str) estimated on each year and month", strline, "Estimated $(str) with months concatanated", "Estimated $(str) with sum of likelihoods"])
+                else
+                    Legend(fig[3+3(j-1), 1:2], [plt2, plt1, plt3, plt4], ["Real $(str)", "Boxplots of $(str) estimated on each year and month", "Estimated $(str) with months concatanated", "Estimated $(str) with sum of likelihoods"])
+                end
+            end
+        end
+        return fig
+    end
+end
+
+
 
 """
     PlotMonthlyStats(RealStats::AbstractVector,SimulatedStats::AbstractMatrix,Stats::String)
@@ -135,7 +191,7 @@ function PlotMonthlyStats(RealStats::AbstractVector, SimulatedStats::AbstractMat
         push!(pltvec, CairoMakie.band!(ax, 1:12, band_[1], band_[2]; color=colorband))
     end
     push!(pltvec, CairoMakie.scatter!(ax, RealStats, color="Orange"))
-    Legend(fig[3, 1:2], pltvec, ["Range of simulated monthly $(Stats)", "Simulated monthly $(Stats) quantile interval, p ∈ [0.25,0.75]","Real monthly $(Stats)"])
+    Legend(fig[3, 1:2], pltvec, ["Range of simulated monthly $(Stats)", "Simulated monthly $(Stats) quantile interval, p ∈ [0.25,0.75]", "Real monthly $(Stats)"])
     return fig
 end
 
