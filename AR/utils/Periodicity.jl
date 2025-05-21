@@ -68,7 +68,7 @@ trigo_version(j, t, ω=2π / 365.2422) = (j == 1) + iseven(j) * cos(ω * j * t /
 Return a trigonometric function the approximates the series x. Each component of the trigonometric decompositon (cos(ω h t) , sin(ω h t), with h the harmonic order) is chosen with the stepwise method to optimize AIC.
 If return_parameters=true, return a tuple with f and the parameters estimated. Be careful : the function returned takes the same arguments as dayofyear_Leap() (Either Date of Integer and Date, see above).
 """
-function fitted_periodicity_fonc_stepwise(x::AbstractVector, date_vec::AbstractVector; MaxOrder::Integer=100, return_parameters::Bool=false, verbose::Bool=false)
+function fitted_periodicity_fonc_stepwise(x::AbstractVector, date_vec::AbstractVector; MaxOrder::Integer=50, return_parameters::Bool=false, verbose::Bool=false)
     N = length(x)
     n2t = dayofyear_Leap.(date_vec)
     ω = 2π / 365.2422
