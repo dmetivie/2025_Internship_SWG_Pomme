@@ -13,7 +13,7 @@ struct ModelParams{TT<:AbstracTemperature,AC<:AbstractAction,F<:Real}
     do_chilling::Bool
     chilling_temp::TT
     chilling_model::AC
-    JED::F #Jour d'entrée en dormance
+    CPO::F #Jour d'entrée en dormance (Chilling period onset)
     chilling_threshold::F
     chilling_scale::F
     chilling_target::F
