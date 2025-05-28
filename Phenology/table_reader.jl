@@ -67,7 +67,7 @@ end
 function truncate_MV(df_full, temperature_type)
     df, f = copy(df_full), true
     while f
-        if any(diff(df.DATE[end-1000:end]) .> Day(1)) #If the last MV is close to the end of the series...
+        if any(diff(df.DATE[end-1000:end]) .> Day(1)) #If the last MV is close to the end the series...
             df = @chain df begin
                 @transform(:diff = [diff(:DATE); Day(1)])
                 @aside beg = _.DATE[findlast(_.diff .> Day(1))]
@@ -87,11 +87,11 @@ function truncate_MV(df_full, temperature_type)
         end
     end
     if Date(year(df.DATE[1]), month(df.DATE[1])) + Month(1) - df.DATE[1] < Day(20) #If there are not enough days in the first month I remove it.
-        df = df[df.DATE.>=Date(year(df.DATE[1]), month(df.DATE[1]) + 1), :]
+        df = df[df.DATE.>=(Date(year(df.DATE[1]), month(df.DATE[1])) + Month(1)), :]
     end
     if df.DATE[end] - Date(year(df.DATE[end]), month(df.DATE[end])) < Day(19) #The same thing for the last month.
         df = df[df.DATE.<Date(year(df.DATE[end]), month(df.DATE[end])), :]
     end
     return df
 end
-truncate_MV(df_full) = truncate_MV(df_full, temperature_type) #To avoid error 
+truncate_MV(df_full) = truncate_MV(df_full, nothing) #To avoid error 
