@@ -72,7 +72,7 @@ function fit_ARMonthlyParameters(y, date_vec, p, method_)
         Monthly_Estimators = MonthlyEstimation(Monthly_temp, p) #Monthly_Estimators[i][j][k][l] i-> month, j-> year, k-> 1 for [Φ_1,Φ_2,...], 2 for σ, l -> index of the parameter (Φⱼ) of year if k=1 
         Monthly_Estimators2 = [[[year_[1]; year_[2]] for year_ in Month] |> stack for Month in Monthly_Estimators]
         meanparam = mulmean.(eachrow.(Monthly_Estimators2)) |> stack
-        return eachrow(meanparam[1:2, :]'), meanparam[3, :]
+        return eachrow(meanparam[1:2, :]'), meanparam[3, :] #2 -> p, 3 -> p+1 (think about)
     elseif method_ == "median"
         Monthly_Estimators = MonthlyEstimation(Monthly_temp, p) #Monthly_Estimators[i][j][k][l] i-> month, j-> year, k-> 1 for [Φ_1,Φ_2,...], 2 for σ, l -> index of the parameter (Φⱼ) of year if k=1 
         Monthly_Estimators2 = [[[year_[1]; year_[2]] for year_ in Month] |> stack for Month in Monthly_Estimators]
