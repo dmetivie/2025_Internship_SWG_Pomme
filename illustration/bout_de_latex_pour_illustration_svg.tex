@@ -1,0 +1,44 @@
+\usepackage{mdframed}
+
+
+
+\begin{frame}{Stochastic Weather Generators}
+    \begin{minipage}{0.345\linewidth}
+        \centering
+        \textbf{Weather data}
+        \includegraphics[width =\linewidth]{TX_2003_real_49.pdf.pdf}
+    \end{minipage}\hfill%%
+    \begin{minipage}{0.05\linewidth}
+        $\longrightarrow$
+    \end{minipage}\hfill%%
+    \begin{minipage}{0.2\linewidth}
+        \begin{mdframed}
+            \centering
+            Stochastic Model
+            \includegraphics[width =0.8\linewidth]{logo_swg_dice.pdf}
+        \end{mdframed}
+    \end{minipage}\hfill%
+    \begin{minipage}{0.05\linewidth}
+        $\longrightarrow$
+    \end{minipage}\hfill%%
+    \begin{minipage}{0.345\linewidth}
+        \centering
+        \textbf{Simulations}
+        \includegraphics[width =\linewidth]{TX_simus_AR1_49.pdf}
+    \end{minipage}
+    \\
+    % \begin{figure}
+    %     \centering
+    %     % \includegraphics[width =\linewidth]{images/modsto_cropped.pdf}
+
+    % \end{figure}
+
+    \begin{itemize}
+        %\item Observations are a trajectory of a random model
+        \item Trained on observations or climate model outputs
+        \item Simulations: same statistical properties as observations
+        \item Spatio-temporal resolution depends on the model and the data
+        \item Monovariate/Multivariate e.g. (temperature and precipitation)
+        \item Fast
+    \end{itemize}
+\end{frame}
