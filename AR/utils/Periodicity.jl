@@ -28,24 +28,6 @@ AIC(n, p, SRS) = 2p + n * (log(2π * SRS / n) + 1)
 
 
 """
-    Merge vectors with alternate elements (Credits : David Métivier (dmetivie))
-    For example
-    ```julia
-    x = [x₁, x₂]
-    y = [y₁, y₂]
-    interleave2(x, y) = [x₁, y₁, x₂, y₂]
-    ```
-"""
-interleave2(args...) = collect(Iterators.flatten(zip(args...)))
-# d = 4
-# T = 8
-# f = 2π / T
-# cos_nj = [cos(f * j * t) for t = (π/4)*0:T, j = 1:d]
-# sin_nj = [sin(f * j * t) for t = (π/4)*0:T, j = 1:d]
-# trig = reduce(hcat, [[1; interleave2(cos_nj[t, :], sin_nj[t, :])] for t = 1:(T+1)])
-
-
-"""
     fitted_smooth_periodicity_fonc(x::AbstractVector, date_vec::AbstractVector, orderdiff::Integer=9)
 
 Return a function which is the smooth regularization of the mean year of x, with the timeline date_vec. 
@@ -68,7 +50,7 @@ trigo_version(j, t, ω=2π / 365.2422) = (j == 1) + iseven(j) * cos(ω * j * t /
 Return a trigonometric function the approximates the series x. Each component of the trigonometric decompositon (cos(ω h t) , sin(ω h t), with h the harmonic order) is chosen with the stepwise method to optimize AIC.
 If return_parameters=true, return a tuple with f and the parameters estimated. Be careful : the function returned takes the same arguments as dayofyear_Leap() (Either Date of Integer and Date, see above).
 """
-function fitted_periodicity_fonc_stepwise(x::AbstractVector, date_vec::AbstractVector; MaxOrder::Integer=100, return_parameters::Bool=false, verbose::Bool=false)
+function fitted_periodicity_fonc_stepwise(x::AbstractVector, date_vec::AbstractVector; MaxOrder::Integer=50, return_parameters::Bool=false, verbose::Bool=false)
     N = length(x)
     n2t = dayofyear_Leap.(date_vec)
     ω = 2π / 365.2422
