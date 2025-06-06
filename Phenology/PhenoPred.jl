@@ -213,7 +213,8 @@ name_first_of_month(m::Integer) = Month_vec2[m] * ",1ˢᵗ"
 name_fifteen_of_month(m::Integer) = Month_vec2[m] * ",15ᵗʰ"
 
 
-function Plot_Pheno_Dates(date_vecs, CPO; sample_=nothing, title=nothing, labelvec=nothing, BB=false, colors=nothing)
+
+function Plot_Pheno_Dates_ax!(subfig, date_vecs, CPO; sample_=nothing, title=nothing, labelvec=nothing, BB=false, colors=nothing)
 
     #If date_vecs is one series, it's transformed into a 1-length vector containing this series
     if typeof(date_vecs[1]) == Date
@@ -226,7 +227,7 @@ function Plot_Pheno_Dates(date_vecs, CPO; sample_=nothing, title=nothing, labelv
     NDSCPO_vecs = [ScaleDateCPO.(date_vec) for date_vec in date_vecs]
 
     #We concatanate the dates of each series to have the max and the min NDSCPO
-    Conc_date_vecs = isnothing(sample_) ? reduce(vcat, date_vecs) : [reduce(vcat, date_vecs) ; reduce(vcat, sample_)]
+    Conc_date_vecs = isnothing(sample_) ? reduce(vcat, date_vecs) : [reduce(vcat, date_vecs); reduce(vcat, sample_)]
 
     #The months presents in each series.
     CurrentMonths = unique(month.(Conc_date_vecs))
@@ -241,23 +242,13 @@ function Plot_Pheno_Dates(date_vecs, CPO; sample_=nothing, title=nothing, labelv
 
     last_month_str = name_first_of_month(month(Dates_month[argmax(NDSCPO_month)] + Month(1))) #And his string associated
 
-    fig = Figure(size=(700, 600))
-
-    ax = Axis(fig[1:2, 1:2], yticks=([NDSCPO_month; y_max], [Names_month; last_month_str])) #ytickslabel = NDSCPO of the dates of first and fifteen day of each month and y_max.
+    ax = Axis(subfig, yticks=([NDSCPO_month; y_max], [Names_month; last_month_str])) #ytickslabel = NDSCPO of the dates of first and fifteen day of each month and y_max.
     ax.limits = (nothing, [y_min, y_max])
     ax.xlabel = "Year"
+    ax.ylabel = "Date"
+    ax.ylabelpadding = 5.
 
     isnothing(title) ? nothing : ax.title = "$(title) dates for each year"
-
-    ax2 = Axis(fig[1:2, 1:2])
-    ax2.ylabelpadding = 65.0
-    ax2.ylabel = "Date"
-    ax2.yticklabelsvisible = false
-    ax2.yticksvisible = false
-    ax2.ygridvisible = false
-    ax2.xticksvisible = false
-    ax2.xgridvisible = false
-    ax2.xticklabelsvisible = false
 
     pltvec = Plot[]
     bands = nothing
@@ -304,8 +295,44 @@ function Plot_Pheno_Dates(date_vecs, CPO; sample_=nothing, title=nothing, labelv
         end
     end
 
+    return pltvec
+end
+
+
+function Plot_Pheno_Dates(date_vecs, CPO; sample_=nothing, title=nothing, labelvec=nothing, BB=false, colors=nothing)
+
+    fig = Figure(size=(700, 600))
+
+    pltvec = Plot_Pheno_Dates_ax!(fig[1:2, 1:2], date_vecs, CPO,
+        sample_=sample_,
+        title=title,
+        BB=BB,
+        colors=colors)
+
     #legend
     isnothing(labelvec) ? nothing : Legend(fig[3, 1:2], pltvec, labelvec)
+
+    return fig
+end
+
+
+
+function Plot_Both_Pheno_Dates(date_vecs_DB, date_vecs_BB, CPO; sample_DB=nothing, sample_BB=nothing, labelvec=nothing, colors=nothing)
+    fig = Figure(size=(700, 700))
+
+    Plot_Pheno_Dates_ax!(fig[1:2, 1:2], date_vecs_BB, CPO,
+        sample_=sample_BB,
+        title="Budbirst",
+        BB=true,
+        colors=colors)
+
+    pltvec = Plot_Pheno_Dates_ax!(fig[3:4, 1:2], date_vecs_DB, CPO,
+        sample_=sample_DB,
+        title="Dormancy break",
+        BB=false,
+        colors=colors)
+
+    isnothing(labelvec) ? nothing : Legend(fig[5, 1:2], pltvec, labelvec)
 
     return fig
 end

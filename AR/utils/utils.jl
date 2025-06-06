@@ -37,6 +37,7 @@ Return the roots of the polynomial associated to the AR model given by Φ.
 RootAR(Φ::AbstractVector) = roots(Polynomial([-1; Φ]))
 
 Month_vec = ["January", "February", "March", "April", "May", "Jun", "July", "August", "September", "October", "November", "December"]
+Month_vec2 = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
 
 """
     invert(L::AbstractVector)
