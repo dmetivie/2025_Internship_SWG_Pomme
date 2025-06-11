@@ -3,7 +3,7 @@ include("Prev2.jl")
 # ======= Apple Phenology ====== #    
 
 """
-    From a series of TG x, his dates in date_vec and the parameters of an apple phenology model, return the dormancy break dates and budbirst dates in two vectors respectively.
+    From a series of TG x, his dates in date_vec and the parameters of an apple phenology model, return the Endodormancy break dates and Budburst dates in two vectors respectively.
 """
 function Apple_Phenology_Pred(TG_vec::AbstractVector, #tip : put all arguments into one structure
     date_vec::AbstractVector{Date};
@@ -80,7 +80,7 @@ Transforms T*(h,n) (called Th_raw here) into T(h,n)
 Tcorrector(Th_raw, TOBc, TMBc) = (Th_raw - TOBc) * (TOBc <= Th_raw <= TMBc) + (TMBc - TOBc) * (TMBc < Th_raw)
 
 """
-    From a series of TN Tn_vec, a series of TX Tx_vec, their dates in date_vec and the parameters of an vine phenology model, return the dormancy break dates and budbirst dates in two vectors respectively.
+    From a series of TN Tn_vec, a series of TX Tx_vec, their dates in date_vec and the parameters of an vine phenology model, return the Endodormancy break dates and Budburst dates in two vectors respectively.
 """
 function Vine_Phenology_Pred(Tn_vec::AbstractVector, #tip : put all arguments into one structure
     Tx_vec::AbstractVector,
@@ -197,7 +197,7 @@ end
 """
     Return the number of days since the CPO (chilling period onset). 
     If previous_year=true, we consider that the CPO happened the year before whatever the situation,
-    so it's not appropriate if we want to return the NDSCPO before the dormancy break, which can happen in December for example. 
+    so it's not appropriate if we want to return the NDSCPO before the Endodormancy break, which can happen in December for example. 
 """
 function ScaleDate(date_::Date, CPO=(8, 1), previous_year=false)
     value_ = date_ - Date(year(date_) - (previous_year ? 1 : 0), CPO[1], CPO[2]) #The number days to go to the date_ from the CPO
@@ -221,7 +221,7 @@ function Plot_Pheno_Dates_ax!(subfig, date_vecs, CPO; sample_=nothing, title=not
         isnothing(labelvec) ? date_vecs = [date_vecs] : (date_vecs, labelvec) = ([date_vecs], [labelvec])
     end
 
-    ScaleDateCPO(date_) = ScaleDate(date_, CPO, BB) #If we consider the budbirst date, we are sure that the CPO happened the year before.
+    ScaleDateCPO(date_) = ScaleDate(date_, CPO, BB) #If we consider the Budburst date, we are sure that the CPO happened the year before.
 
     #We get the number of days since the CPO for each date. (NDSCPO)
     NDSCPO_vecs = [ScaleDateCPO.(date_vec) for date_vec in date_vecs]
@@ -317,22 +317,22 @@ end
 
 
 
-function Plot_Both_Pheno_Dates(date_vecs_DB, date_vecs_BB, CPO; sample_DB=nothing, sample_BB=nothing, labelvec=nothing, colors=nothing)
-    fig = Figure(size=(700, 700))
+function Plot_Both_Pheno_Dates(date_vecs_DB, date_vecs_BB, CPO; sample_DB=nothing, sample_BB=nothing, labelvec=nothing, colors=nothing, rightlegend=false)
+    fig = Figure(size=(700, 600))
 
     Plot_Pheno_Dates_ax!(fig[1:2, 1:2], date_vecs_BB, CPO,
         sample_=sample_BB,
-        title="Budbirst",
+        title="Budburst",
         BB=true,
         colors=colors)
 
     pltvec = Plot_Pheno_Dates_ax!(fig[3:4, 1:2], date_vecs_DB, CPO,
         sample_=sample_DB,
-        title="Dormancy break",
+        title="Endodormancy break",
         BB=false,
         colors=colors)
 
-    isnothing(labelvec) ? nothing : Legend(fig[5, 1:2], pltvec, labelvec)
+    isnothing(labelvec) ? nothing : (rightlegend ? Legend(fig[1:4, 3], pltvec, labelvec) : Legend(fig[5, 1:2], pltvec, labelvec))
 
     return fig
 end

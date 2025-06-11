@@ -55,15 +55,15 @@ function PlotCards(curvesvec, date_vec)
     length(curvesvec[1]) == 1 ? curvesvec = [curvesvec] : nothing
     iend = length(curvesvec)
 
-    colors = RGBf.((00:(160 ÷ iend -1):160) ./ 255, 151 / 255, 223 / 255)
+    colors = RGBf.((00:(160÷iend-1):160) ./ 255, 151 / 255, 223 / 255)
 
     M = 30
-    H, L = 2*M + 195 + 135 * (iend - 1), 400 + 50*iend + M
+    H, L = 2 * M + 195 + 135 * (iend - 1), 400 + 50 * iend + M
     f = Figure(size=(L, H))
 
-    axs = [CairoMakie.Axis(f, bbox=CairoMakie.BBox(0 + 50 * (i), 400 + 50 * (i), H - M -195 - 135 * (i - 1), H - M - (i - 1) * 135), backgroundcolor=(:white, 1), ylabel="T (°C)") for i in 1:iend-1]
+    axs = [CairoMakie.Axis(f, bbox=CairoMakie.BBox(0 + 50 * (i), 400 + 50 * (i), H - M - 195 - 135 * (i - 1), H - M - (i - 1) * 135), backgroundcolor=(:white, 1), ylabel="T (°C)") for i in 1:iend-1]
     i = iend
-    axend = CairoMakie.Axis(f, bbox=CairoMakie.BBox(0 + 50 * (i), 400 + 50 * (i), H - M -195 - 135 * (i - 1), H - M - (i - 1) * 135), xlabelrotation=30, xlabelsize=12, ylabel="T (°C)")
+    axend = CairoMakie.Axis(f, bbox=CairoMakie.BBox(0 + 50 * (i), 400 + 50 * (i), H - M - 195 - 135 * (i - 1), H - M - (i - 1) * 135), xlabelrotation=30, xlabelsize=12, ylabel="T (°C)")
 
     CairoMakie.linkxaxes!(axs..., axend)
     CairoMakie.linkyaxes!(axs..., axend)
@@ -81,3 +81,24 @@ function PlotCards(curvesvec, date_vec)
 
     return f
 end
+
+
+function PlotMonthlyRealStats(series::DataFrame, Stats::String; color="#ff6600")
+    df_month = @chain series begin
+        @transform(:TEMP = series[!, 2]) #Give a common name for TX, TN, etc...
+        @transform(:MONTH = month.(:DATE)) #add month column
+        @by(:MONTH, :MONTHLY_MEAN = mean(:TEMP), :MONTHLY_STD = std(:TEMP), :MONTHLY_MAX = maximum(:TEMP)) # grouby MONTH + takes the mean/std in each category 
+    end
+    Dictcase = Dict([("mean", df_month.MONTHLY_MEAN), ("standard deviation", df_month.MONTHLY_STD), ("maximum", df_month.MONTHLY_MAX)])
+    RealStats = Dictcase[Stats]
+    fig = Figure(size=(600, 450), fontsize = 17)
+    ax = Axis(fig[1:2, 1:2])
+    ax.title = "Real monthly $(Stats)"
+    ax.xticks = (1:12, Month_vec2)
+    ax.ylabel = "Temperature (°C)"
+    lines!(ax, RealStats, color=color)
+    return fig
+end
+
+PlotMonthlyRealStats(x::AbstractVector, date_vec::AbstractVector, Stats::String, color="#ff6600") = (
+    PlotMonthlyRealStats(DataFrame(DATE=date_vec, TEMP=x), Stats, color))

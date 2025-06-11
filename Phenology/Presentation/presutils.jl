@@ -212,8 +212,8 @@ function PlotCurveApple(temp, date_vec;
 
     labelvec = ["TG",
         "Chilling period onset",
-        "Dormancy break",
-        "Bud Birst",
+        "Endodormancy break",
+        "Budburst",
         "Chilling units sum",
         "Forcing units sum"]
 

@@ -51,6 +51,8 @@ date_range_sd = findfirst(series.DATE .== Date(2001, 1, 1)):findfirst(series.DAT
 x_sd, date_vec_sd = x[date_range_sd], date_vec[date_range_sd]
 
 #complete series
+colors = ["black"]
+
 fig = PlotCurves(x_sd, date_vec_sd; colors=colors, ylimits=[-4., 40.])
 save("ts2.png", fig; px_per_unit=2.0)
 
@@ -59,7 +61,6 @@ save("ts2.png", fig; px_per_unit=2.0)
 X = cat(ones(length(date_vec_sd)), 1:length(date_vec_sd), dims=2)
 beta = inv(transpose(X) * X) * transpose(X) * x_sd
 
-colors = ["black"]
 
 fig = PlotCurves([X * beta], date_vec_sd; colors=colors, ylimits=[-4., 40.], size_= (750,600))
 save("tendency.png", fig; px_per_unit=2.0)
@@ -68,7 +69,6 @@ save("tendency.png", fig; px_per_unit=2.0)
 trigo_function = fitted_periodicity_fonc(x_sd - X * beta, date_vec_sd, OrderTrig=5)
 periodicity = trigo_function.(date_vec_sd)
 
-colors = ["black"]
 
 fig = PlotCurves([periodicity], date_vec_sd; colors=colors, ylimits=[-20., 20.], size_= (750,600))
 save("seasonality.png", fig; px_per_unit=2.0)
@@ -76,7 +76,12 @@ save("seasonality.png", fig; px_per_unit=2.0)
 #stationnary part 
 y = x_sd - X * beta - periodicity
 
-colors = ["black"]
-
 fig = PlotCurves([y], date_vec_sd; colors=colors, ylimits=[-20., 20.], size_= (750,600))
 save("stationnary.png", fig; px_per_unit=2.0)
+
+
+##Estimation and simulation
+
+include("presutils.jl")
+fig = PlotMonthlyRealStats(series, "standard deviation")
+save("monthly_std.png", fig; px_per_unit=2.0)
