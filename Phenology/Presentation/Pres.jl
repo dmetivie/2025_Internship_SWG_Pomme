@@ -19,7 +19,7 @@ date_range_p = findfirst(series.DATE .== Date(2002, 10, 25)):findfirst(series.DA
 x_p, date_vec_p = x[date_range_p], date_vec[date_range_p]
 
 fig = PlotCurveApple(x_p, date_vec_p)
-save("Apple_phenology_Lille_2003.png", fig; px_per_unit=2.0)
+save("Apple_phenology_Lille_2003.pdf", fig; px_per_unit=2.0)
 # fig = PlotCurves(curvesvec, date_vec_p; colors=colors, ylimits=[-4., 45.], smallscale=true)
-# save("ts.png", fig; px_per_unit=2.0)
+# save("ts.pdf", fig; px_per_unit=2.0)
 
