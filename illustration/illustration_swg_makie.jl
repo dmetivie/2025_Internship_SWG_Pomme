@@ -56,3 +56,15 @@ f = CairoMakie.with_theme(CairoMakie.theme_latexfonts(), fontsize = 16) do
 end
 
 savefigcrop(f, "TX_simus_AR1_49.pdf", save_path);
+
+f = Figure()
+n = 5
+relative_size = 0.6
+for i in 1:n
+    align = (i - 1) / (n - 1)
+    ax = Axis(f[1, 1], width = Relative(relative_size), height = Relative(relative_size),
+        valign = 1 - align, halign = align, backgroundcolor = (:gray90, 0.8))
+    lines!(ax, cumsum(randn(1000)), color = :black)
+    translate!(ax.blockscene, 0, 0, 100 * i)
+end
+f

@@ -1,0 +1,13 @@
+- Avant 27/06
+  - Tendence LOESS
+  - Slide decomposition, motivation SWG vs model physics, ...)
+  - Indice de risques
+  - Entrainer sur les données DRIAS
+- le 30/06
+    - créé le template du rapport
+    - éris le nom des sections 
+    -> @David : pour en discuter
+- A partir du 30/06 
+    - Forme parametrique réchauffement
+    - TN et TX correlé ? AR multidim, Papier D. Allard et al.
+    - AR(p) parametric journalier 
