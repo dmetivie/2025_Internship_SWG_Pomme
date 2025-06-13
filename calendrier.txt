@@ -9,5 +9,6 @@
     -> @David : pour en discuter
 - A partir du 30/06 
     - Forme parametrique réchauffement
+    - Selection de model
     - TN et TX correlé ? AR multidim, Papier D. Allard et al.
     - AR(p) parametric journalier 
