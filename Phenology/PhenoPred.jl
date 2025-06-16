@@ -214,7 +214,7 @@ name_fifteen_of_month(m::Integer) = Month_vec2[m] * ",15ᵗʰ"
 
 
 
-function Plot_Pheno_Dates_ax!(subfig, date_vecs, CPO; sample_=nothing, title=nothing, labelvec=nothing, BB=false, colors=nothing)
+function Plot_Pheno_Dates_ax!(subfig, date_vecs, CPO; sample_=nothing, title=nothing, labelvec=nothing, BB=false, colors=nothing, dashindexes=Integer[])
 
     #If date_vecs is one series, it's transformed into a 1-length vector containing this series
     if typeof(date_vecs[1]) == Date
@@ -286,14 +286,25 @@ function Plot_Pheno_Dates_ax!(subfig, date_vecs, CPO; sample_=nothing, title=not
 
     #NDSCPO plots
     if isnothing(colors)
-        for (date_vec, NDSCPO_date_vec) in zip(date_vecs, NDSCPO_vecs)
-            push!(pltvec, lines!(ax, year.(date_vec), NDSCPO_date_vec))
+        for (date_vec, NDSCPO_date_vec, i) in zip(date_vecs, NDSCPO_vecs, eachindex(NDSCPO_vecs))
+            push!(pltvec, lines!(ax, year.(date_vec), NDSCPO_date_vec, linestyle=i ∈ dashindexes ? :dash : :solid))
         end
     else
-        for (date_vec, NDSCPO_date_vec, color_) in zip(date_vecs, NDSCPO_vecs, isnothing(bands) ? colors : colors[(length(bands)+1):end])
-            push!(pltvec, lines!(ax, year.(date_vec), NDSCPO_date_vec, color=color_))
+        for (date_vec, NDSCPO_date_vec, i, color_) in zip(date_vecs, NDSCPO_vecs, eachindex(NDSCPO_vecs), isnothing(bands) ? colors : colors[(length(bands)+1):end])
+            push!(pltvec, lines!(ax, year.(date_vec), NDSCPO_date_vec, linestyle=i ∈ dashindexes ? :dash : :solid, color=color_))
         end
     end
+
+    # if isnothing(colors)
+    #     for (date_vec, NDSCPO_date_vec) in zip(date_vecs, NDSCPO_vecs)
+    #         push!(pltvec, lines!(ax, year.(date_vec), NDSCPO_date_vec))
+    #     end
+    # else
+    #     for (date_vec, NDSCPO_date_vec, color_) in zip(date_vecs, NDSCPO_vecs, isnothing(bands) ? colors : colors[(length(bands)+1):end])
+    #         push!(pltvec, lines!(ax, year.(date_vec), NDSCPO_date_vec, color=color_))
+    #     end
+    # end
+
 
     return pltvec
 end
@@ -333,6 +344,107 @@ function Plot_Both_Pheno_Dates(date_vecs_DB, date_vecs_BB, CPO; sample_DB=nothin
         colors=colors)
 
     isnothing(labelvec) ? nothing : (rightlegend ? Legend(fig[1:4, 3], pltvec, labelvec) : Legend(fig[5, 1:2], pltvec, labelvec))
+
+    return fig
+end
+
+# using CairoMakie
+
+# lines([1, 2, 3, 4, 5], [1, -2, 4, 3, -7], linestyle=:dash)
+
+
+
+
+
+function Plot_Pheno_Dates_DB_BB(date_vecDB, date_vecBB, CPO; sample_DB=nothing, sample_BB=nothing, station_name="")
+
+    fig = Figure(size=(900, 400))
+
+    ScaleDateDB(date_) = ScaleDate(date_, CPO, false)
+    ScaleDateBB(date_) = ScaleDate(date_, CPO, true)
+
+    NDSCPO_DB = ScaleDateDB.(date_vecDB)
+    NDSCPO_BB = ScaleDateBB.(date_vecBB)
+
+    #We concatanate the dates of each series to have the max and the min NDSCPO
+    Conc_date_vecs_DB = isnothing(sample_DB) ? reduce(vcat, date_vecDB) : [reduce(vcat, date_vecDB); reduce(vcat, sample_DB)]
+    Conc_date_vecs_BB = isnothing(sample_BB) ? reduce(vcat, date_vecBB) : [reduce(vcat, date_vecBB); reduce(vcat, sample_BB)]
+
+    #The months presents in each series.
+    # CurrentMonths = unique([month.(Conc_date_vecs_DB) ; month.(Conc_date_vecs_BB)])
+    # 12 ∈ CurrentMonths && 1 ∉ CurrentMonths ? push!(1,CurrentMonths) : nothing
+
+
+    # Maxmonth = month(Conc_date_vecs_BB[argmax(ScaleDateBB.(Conc_date_vecs_BB))] + Month(1)) #The month after the month of the highest NDSCPO
+    # push!(CurrentMonths,Maxmonth)
+
+    # CurrentMonths = unique([CurrentMonths ; ])
+
+    #The dates of the first and fifteen day of each month.
+    Dates_month = interleave2(first_of_month.(1:12), fifteen_of_month.(1:12))
+    Names_month = interleave2(name_first_of_month.(1:12), name_fifteen_of_month.(1:12)) #Their string associated for the tickslabel.
+    NDSCPO_month = ScaleDateDB.(Dates_month) #And their NDSCPO
+
+    NDSCPO_inf=maximum(NDSCPO_month[NDSCPO_month .<= minimum(ScaleDateDB.(Conc_date_vecs_DB))]) #The optimal NDSCPO_month to minimise the true NDSCPO.
+    NDSCPO_sup=minimum(NDSCPO_month[NDSCPO_month .>= maximum(ScaleDateDB.(Conc_date_vecs_BB))]) #The optimal NDSCPO_month to maximise the true NDSCPO.
+
+    Dates_month = Dates_month[NDSCPO_sup .>= NDSCPO_month .>=  NDSCPO_inf]
+    Names_month = Names_month[NDSCPO_sup .>= NDSCPO_month .>=  NDSCPO_inf]
+    NDSCPO_month = NDSCPO_month[NDSCPO_sup .>= NDSCPO_month .>=  NDSCPO_inf]
+
+    # y_max = ScaleDateBB(Date(0, month(Dates_month[argmax(NDSCPO_month)] + Month(1)))) #y_max : NDSCPO of the first day of the month after the last month considered.
+
+    ax = Axis(fig[1:4, 1:4], yticks=(NDSCPO_month, Names_month)) #ytickslabel = NDSCPO of the dates of first and fifteen day of each month and y_max.
+    ax.limits = (nothing, [NDSCPO_inf, NDSCPO_sup])
+    ax.xlabel = "Year"
+    ax.ylabel = "Date"
+    ax.ylabelpadding = 5.
+
+    ax.title = "Endodormancy Break and Budburst dates for each year, $(station_name)"
+
+    pltvec = Plot[]
+    bands = nothing
+
+    for (sample_, colors, SD_func) in zip([sample_DB, sample_BB], [[("#e5ca20", 0.2), ("#e5ca20", 0.5)], [("#009bff", 0.2), ("#009bff", 0.5)]], [ScaleDateDB, ScaleDateBB])
+        if !isnothing(sample_) #If we want to consider a set of generated
+            #Pre-treating the sample to have data per year
+            Conc_sets = reduce(vcat, sample_)
+            years_ = unique(year.(Conc_sets))
+
+            Dictyears = Dict{Integer}{AbstractVector}()
+            for year_ in years_
+                Dictyears[year_] = Integer[]
+            end
+
+            for set in sample_
+                for date_ in set
+                    push!(Dictyears[year(date_)], SD_func(date_))
+                end
+            end
+
+            #Now we can make the bands :
+            bands = [(minimum.(values(Dictyears)), maximum.(values(Dictyears))), (quantile.(values(Dictyears), 0.25), quantile.(values(Dictyears), 0.75))]
+
+            #Bands plots
+            for (band, color_) in zip(bands, colors)
+                push!(pltvec, band!(ax, years_, band[1], band[2], color=color_))
+            end
+        end
+    end
+
+    #NDSCPO plots
+    push!(pltvec, lines!(ax, year.(date_vecDB), NDSCPO_DB, color="#ff6600"))
+    push!(pltvec, lines!(ax, year.(date_vecBB), NDSCPO_BB, color="green"))
+
+    #Legend
+
+    Legend(fig[3:4, 5], pltvec[[1, 2, 5]], ["Simulated EB Min-Max interval",
+        "Simulated EB [0.25 ; 0.75] quantile interval",
+        "Predicted EB in $(station_name)"])
+
+    Legend(fig[1:2, 5], pltvec[[3, 4, 6]], ["Simulated BB Min-Max interval",
+        "Simulated BB [0.25 ; 0.75] quantile interval",
+        "Predicted BB in $(station_name)"])
 
     return fig
 end
