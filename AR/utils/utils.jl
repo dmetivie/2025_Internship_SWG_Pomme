@@ -38,6 +38,7 @@ RootAR(Φ::AbstractVector) = roots(Polynomial([-1; Φ]))
 
 Month_vec = ["January", "February", "March", "April", "May", "Jun", "July", "August", "September", "October", "November", "December"]
 Month_vec2 = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
+Month_vec_low = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
 """
     invert(L::AbstractVector)

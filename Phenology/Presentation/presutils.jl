@@ -156,8 +156,8 @@ function PlotCurveApple(temp, date_vec;
     # n_days = length(date_vec)
     ticksindexes = findall(istickableday, date_vec)
     nameindexes = (ticksindexes[1:end-1] + ticksindexes[2:end]) / 2
-    println(ticksindexes)
-    println(nameindexes)
+    # println(ticksindexes)
+    # println(nameindexes)
 
     fig = Figure(size=size_)
 
