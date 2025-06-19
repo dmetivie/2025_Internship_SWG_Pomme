@@ -8,49 +8,49 @@ istickable(date_) = (month(date_) ∈ [1, 7]) && day(date_) == 1
 istickableday(date_) = day(date_) == 1
 
 
-function PlotCurves(curvesvec, date_vec; bands=nothing, labelvec=nothing, colors=nothing, ylimits=nothing, size_=nothing, smallscale=false)
-    length(curvesvec[1]) == 1 ? curvesvec = [curvesvec] : nothing
-    isnothing(size_) ? size_ = isnothing(labelvec) ? (750, 400) : (750, 600) : nothing
+# function PlotCurves(curvesvec, date_vec; bands=nothing, labelvec=nothing, colors=nothing, ylimits=nothing, size_=nothing, smallscale=false)
+#     length(curvesvec[1]) == 1 ? curvesvec = [curvesvec] : nothing
+#     isnothing(size_) ? size_ = isnothing(labelvec) ? (750, 400) : (750, 600) : nothing
 
-    n_days = length(date_vec)
-    ticksindexes = findall(smallscale ? istickableday : istickable, date_vec)
+#     n_days = length(date_vec)
+#     ticksindexes = findall(smallscale ? istickableday : istickable, date_vec)
 
-    fig = Figure(size=size_)
-    ax = Axis(fig[1:2, 1:2], xticks=(ticksindexes, string.(date_vec[ticksindexes])),
-        ylabel="Temperature (°C)")
-    isnothing(ylimits) ? nothing : ax.limits = (nothing, ylimits)
+#     fig = Figure(size=size_)
+#     ax = Axis(fig[1:2, 1:2], xticks=(ticksindexes, string.(date_vec[ticksindexes])),
+#         ylabel="Temperature (°C)")
+#     isnothing(ylimits) ? nothing : ax.limits = (nothing, ylimits)
 
-    pltvec = Plot[]
+#     pltvec = Plot[]
 
-    #Bands plots
-    if !isnothing(bands)
-        if isnothing(colors)
-            for band in bands
-                push!(pltvec, band!(ax, 1:n_days, band[1], band[2]))
-            end
-        else
-            for (band, color_) in zip(bands, colors[1:length(bands)])
-                push!(pltvec, band!(ax, 1:n_days, band[1], band[2], color=color_))
-            end
-        end
-    end
+#     #Bands plots
+#     if !isnothing(bands)
+#         if isnothing(colors)
+#             for band in bands
+#                 push!(pltvec, band!(ax, 1:n_days, band[1], band[2]))
+#             end
+#         else
+#             for (band, color_) in zip(bands, colors[1:length(bands)])
+#                 push!(pltvec, band!(ax, 1:n_days, band[1], band[2], color=color_))
+#             end
+#         end
+#     end
 
-    #temp series plots
-    if isnothing(colors)
-        for vec in curvesvec
-            push!(pltvec, lines!(ax, 1:n_days, vec))
-        end
-    else
-        for (vec, color_) in zip(curvesvec, isnothing(bands) ? colors : colors[(length(bands)+1):end])
-            push!(pltvec, lines!(ax, 1:n_days, vec, color=color_))
-        end
-    end
+#     #temp series plots
+#     if isnothing(colors)
+#         for vec in curvesvec
+#             push!(pltvec, lines!(ax, 1:n_days, vec))
+#         end
+#     else
+#         for (vec, color_) in zip(curvesvec, isnothing(bands) ? colors : colors[(length(bands)+1):end])
+#             push!(pltvec, lines!(ax, 1:n_days, vec, color=color_))
+#         end
+#     end
 
-    #legend
-    isnothing(labelvec) ? nothing : Legend(fig[3, 1:2], pltvec, labelvec)
+#     #legend
+#     isnothing(labelvec) ? nothing : Legend(fig[3, 1:2], pltvec, labelvec)
 
-    return fig
-end
+#     return fig
+# end
 
 
 function PlotCards(curvesvec, date_vec)
@@ -113,6 +113,8 @@ function PlotCurveApple(temp, date_vec;
     ylimits=nothing,
     size_=nothing,
     smallscale=false,
+    threshold=nothing,
+    TN_vec=nothing,
     CPO::Tuple{<:Integer,<:Integer}=(10, 30),
     chilling_model::AbstractAction=TriangularAction(1.1, 20.),
     chilling_target::AbstractFloat=56.0,
@@ -181,11 +183,15 @@ function PlotCurveApple(temp, date_vec;
     pltvec = Plot[]
 
     #temp series plots
+    # println([ind(BB), ind(date_vec[end])])
+
+    isnothing(threshold) ? nothing : pltTS = lines!(ax, [ind(BB), ind(date_vec[end])], [threshold, threshold], color="purple")
     push!(pltvec, lines!(ax, ind.(date_vec), temp, color="black"))
+    isnothing(TN_vec) ? nothing : pltTN = lines!(ax, ind(BB):ind(date_vec[end]), TN_vec[ind(BB):end], color="#23c8af")
     push!(pltvec, lines!(ax, [ind.(CPO_date), ind.(CPO_date)], [-10., 40], color="blue"))
     push!(pltvec, lines!(ax, [ind.(DB), ind.(DB)], [-10., 40], color="#ff6600"))
     push!(pltvec, lines!(ax, [ind.(BB), ind.(BB)], [-10., 40], color="green"))
-
+    
     ax22 = Axis(fig[3:4, 1:2], xticks=(nameindexes, Month_vec2[month.(date_vec[ticksindexes])][1:end-1]),
         ygridvisible=false,
         yticksvisible=false,
@@ -216,6 +222,16 @@ function PlotCurveApple(temp, date_vec;
         "Budburst",
         "Chilling units sum",
         "Forcing units sum"]
+
+    if !isnothing(threshold)
+        push!(pltvec, pltTS)
+        push!(labelvec, "Freezing risk threshold ($(threshold)°C)")
+    end
+
+    if !isnothing(TN_vec)
+        push!(pltvec, pltTN)
+        push!(labelvec, "TN")
+    end
 
     Legend(fig[1:4, 3], pltvec, labelvec)
 

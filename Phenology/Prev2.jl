@@ -38,15 +38,15 @@ end
 
 initTN(x::AbstractVector{<:AbstractFloat}, date_vec::AbstractVector{Date}) = TN(DataFrame(Dict(:DATE => date_vec, :TN => x)))
 initTN(df::DataFrame) = TN(df[:, [:DATE, :TN]])
-initTN(file::String) = initTN(truncate_MV(extract_series(file, plot=false), "TN"))
+initTN(file::String) = initTN(truncate_MV(extract_series(file, type_data="TN")))
 
 initTG(x::AbstractVector{<:AbstractFloat}, date_vec::AbstractVector{Date}) = TG(DataFrame(Dict(:DATE => date_vec, :TG => x)))
 initTG(df::DataFrame) = TG(df[:, [:DATE, :TG]])
-initTG(file::String) = initTG(truncate_MV(extract_series(file, plot=false), "TG"))
+initTG(file::String) = initTG(truncate_MV(extract_series(file, type_data="TG")))
 
 initTX(x::AbstractVector{<:AbstractFloat}, date_vec::AbstractVector{Date}) = TX(DataFrame(Dict(:DATE => date_vec, :TX => x)))
 initTX(df::DataFrame) = TX(df[:, [:DATE, :TX]])
-initTX(file::String) = initTX(truncate_MV(extract_series(file, plot=false), "TX"))
+initTX(file::String) = initTX(truncate_MV(extract_series(file, type_data="TX")))
 
 
 mutable struct VinePhenoModel

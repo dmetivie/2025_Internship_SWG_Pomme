@@ -139,8 +139,8 @@ function Vine_Phenology_Pred(
     TMBc::AbstractFloat=25.,
     Ghc::AbstractFloat=13236.)
 
-    TNdf = truncate_MV(extract_series(file_TN))
-    TXdf = truncate_MV(extract_series(file_TX))
+    TNdf = truncate_MV(extract_series(file_TN, type_data="TN"))
+    TXdf = truncate_MV(extract_series(file_TX, type_data="TX"))
     if TNdf.DATE != TXdf.DATE #If the timelines are differents, we take the common timeline of the two series.
         date_vec = max(TNdf.DATE[1], TXdf.DATE[1]):min(TNdf.DATE[end], TXdf.DATE[end])
         TN_vec = TNdf.TN[findfirst(TNdf.DATE .== date_vec[1]):findfirst(TNdf.DATE .== date_vec[end])]
@@ -189,3 +189,29 @@ function Vine_Phenology_Pred(M::VinePhenoModel)
     end
     return DB_vec, BB_vec
 end
+
+# ======= Freezing risk ====== #   
+
+function FreezingRisk(TN_vec::AbstractVector, Date_vec::AbstractVector{Date}, BB::Date; threshold=-2., PeriodOfInterest=Month(3), CPO=(8, 1))
+    if BB ∉ Date_vec || min(BB + Month(3), Date(year(BB), CPO[1], CPO[2])) ∉ Date_vec
+        return -1        
+    end
+    I = findall(BB .<= Date_vec .<= min(BB + Month(3), Date(year(BB), CPO[1], CPO[2])))
+    Cold_Day_Streak, Max_Cold_Day_Streak, TN_vec2 = 0, 0, TN_vec[I]
+    for TN in TN_vec2
+        if TN <= threshold
+            Cold_Day_Streak += 1
+            Max_Cold_Day_Streak = max(Max_Cold_Day_Streak, Cold_Day_Streak)
+        else
+            Cold_Day_Streak = 0
+        end
+    end
+    return Max_Cold_Day_Streak
+end
+
+function FreezingRisk(temp::TN, BB; threshold=-2., PeriodOfInterest=Month(3), CPO=(8, 1))
+    return FreezingRisk(temp.df.TN, temp.df.DATE, BB, threshold=threshold, PeriodOfInterest=PeriodOfInterest, CPO=CPO)
+end
+
+
+

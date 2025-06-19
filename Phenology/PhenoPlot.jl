@@ -1,5 +1,5 @@
 include("Phenopred.jl")
-    
+
 
 """
     Return the number of days since the CPO (chilling period onset). 
@@ -315,3 +315,107 @@ function Plot_Pheno_Dates_DB_BB(date_vecsDB, date_vecsBB, CPO;
 
     return fig
 end
+
+
+function Plot_Freeze_Risk(TN_vecs, dates_vecs_TN, date_vecsBB;
+    CPO=(8, 1),
+    colors=nothing,
+    label=nothing,
+    size=(800, 400),
+    threshold=-2)
+
+    Streak_vecs, date_vecsBB2 = Vector[], Vector[]
+
+    for (TN_vec, dates_vec_TN, date_vecBB) in zip(TN_vecs, dates_vecs_TN, date_vecsBB)
+        FreezingRiskBB(BB) = FreezingRisk(TN_vec, dates_vec_TN, BB, CPO=CPO, threshold=threshold)
+        Streak_vec = FreezingRiskBB.(date_vecBB)
+        Streak_vec, date_vecBB2 = Streak_vec[Streak_vec.>0], date_vecBB[Streak_vec.>0]
+        push!(Streak_vecs, Streak_vec)
+        push!(date_vecsBB2, date_vecBB2)
+    end
+
+    Ω = sort(unique(reduce(vcat, Streak_vecs)))
+    if length(Ω)==0
+        println("No days with TN ≤ -2°C after budburst in any of the series !")
+        return nothing
+    end
+
+    fig = Figure(size=size)
+
+    ax = Axis(fig[1:2, 1:2], yticks=Ω)
+    ax.xlabel = "Year"
+    ax.ylabel = "Days"
+    ax.title = "Max number of consecutives days with TN ≤ -2°C after budburst"
+
+    pltvec = Plot[]
+    K = length(Streak_vecs)
+    L = 0.05 * K
+
+    if isnothing(colors)
+        for (date_vecBB, Streak_vec, k) in zip(date_vecsBB2, Streak_vecs, eachindex(Streak_vecs))
+            push!(pltvec, scatter!(ax, year.(date_vecBB), Streak_vec - L / 2 + (k - 1) * L / (K - 1)))
+        end
+    else
+        for (date_vecBB, Streak_vec, color_, k) in zip(date_vecsBB2, Streak_vecs, colors, eachindex(Streak_vecs))
+            push!(pltvec, scatter!(ax, year.(date_vecBB), Streak_vec .- L / 2 .+ (k - 1) * L / (K - 1), color=color_))
+        end
+    end
+
+    isnothing(label) ? nothing : Legend(fig[1:2, 3], pltvec, label)
+
+    return fig
+end
+
+
+function Plot_Freeze_Risk_Bar(TN_vec, dates_vec_TN, date_vecBB;
+    CPO=(8, 1),
+    color=nothing,
+    label=nothing,
+    size=(800, 400),
+    threshold=-2)
+
+    FreezingRiskBB(BB) = FreezingRisk(TN_vec, dates_vec_TN, BB, CPO=CPO, threshold=threshold)
+    Streak_vec = FreezingRiskBB.(date_vecBB)
+    Streak_vec, date_vecBB2 = Streak_vec[Streak_vec.>0], date_vecBB[Streak_vec.>0]
+
+    Ω = 0:maximum(Streak_vec)
+
+    fig = Figure(size=size)
+
+    ax = Axis(fig[1:2, 1:2], yticks=Ω, xticks=year.(date_vecBB2))
+    ax.xgridvisible = false
+    ax.xticklabelrotation = 65 * (2π)/360
+    ax.xlabel = "Year"
+    ax.ylabel = "Days"
+    ax.title = "Max number of consecutives days with TN ≤ -2°C after budburst"
+    ax.titlesize = 17
+
+    println(Streak_vec)
+
+    if isnothing(colors)        
+        plt = barplot!(ax, year.(date_vecBB2), Streak_vec)
+    else
+        plt = barplot!(ax, year.(date_vecBB2), Streak_vec, color=color)
+    end
+
+    isnothing(label) ? nothing : Legend(fig[1:2, 3], [plt], [label])
+
+    return fig
+end
+
+function Plot_Freeze_Risk_Bar(temp::TN, date_vecBB;
+    CPO=(8, 1),
+    color=nothing,
+    label=nothing,
+    size=(800, 400),
+    threshold=-2)
+    return (Plot_Freeze_Risk_Bar(temp.df.TN, temp.df.DATE, date_vecBB;
+    CPO=CPO,
+    color=color,
+    label=label,
+    size=size,
+    threshold=threshold))
+end
+
+# using CairoMakie
+# barplot([1,2,5,7],[8,8,8,8.])
