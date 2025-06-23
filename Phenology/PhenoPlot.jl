@@ -1,6 +1,8 @@
 include("Phenopred.jl")
 
 
+# ========= PhenoDatesPlot ========= #
+
 """
     Return the number of days since the CPO (chilling period onset). 
     If previous_year=true, we consider that the CPO happened the year before whatever the situation,
@@ -160,7 +162,7 @@ end
 
 
 
-function Plot_Pheno_Dates_DB_BB(date_vecDB::Vector{Date}, date_vecBB::Vector{Date}, CPO; sample_DB=nothing, sample_BB=nothing, station_name="")
+function Plot_Pheno_Dates_DB_BB(date_vecDB::Vector{Date}, date_vecBB::Vector{Date}, CPO; sample_DB=nothing, sample_BB=nothing, station_name="", YearCut=nothing)
 
     fig = Figure(size=(900, 400))
 
@@ -229,8 +231,10 @@ function Plot_Pheno_Dates_DB_BB(date_vecDB::Vector{Date}, date_vecBB::Vector{Dat
     push!(pltvec, lines!(ax, year.(date_vecDB), NDSCPO_DB, color="#ff6600"))
     push!(pltvec, lines!(ax, year.(date_vecBB), NDSCPO_BB, color="green"))
 
-    #Legend
+    #Cut
+    isnothing(YearCut) ? nothing : lines!(ax, [YearCut, YearCut], [NDSCPO_inf, NDSCPO_sup], color="purple")
 
+    #Legend
     Legend(fig[3:4, 5], pltvec[[1, 2, 5]], ["Simulated EB Min-Max interval",
         "Simulated EB [0.25 ; 0.75] quantile interval",
         "Predicted EB in $(station_name)"])
@@ -316,6 +320,7 @@ function Plot_Pheno_Dates_DB_BB(date_vecsDB, date_vecsBB, CPO;
     return fig
 end
 
+# ========= Freezing Risk ========= #
 
 function Plot_Freeze_Risk(TN_vecs, dates_vecs_TN, date_vecsBB;
     CPO=(8, 1),
@@ -335,10 +340,6 @@ function Plot_Freeze_Risk(TN_vecs, dates_vecs_TN, date_vecsBB;
     end
 
     Ω = sort(unique(reduce(vcat, Streak_vecs)))
-    if length(Ω)==0
-        println("No days with TN ≤ -2°C after budburst in any of the series !")
-        return nothing
-    end
 
     fig = Figure(size=size)
 
@@ -384,7 +385,7 @@ function Plot_Freeze_Risk_Bar(TN_vec, dates_vec_TN, date_vecBB;
 
     ax = Axis(fig[1:2, 1:2], yticks=Ω, xticks=year.(date_vecBB2))
     ax.xgridvisible = false
-    ax.xticklabelrotation = 65 * (2π)/360
+    ax.xticklabelrotation = 65 * (2π) / 360
     ax.xlabel = "Year"
     ax.ylabel = "Days"
     ax.title = "Max number of consecutives days with TN ≤ -2°C after budburst"
@@ -392,7 +393,7 @@ function Plot_Freeze_Risk_Bar(TN_vec, dates_vec_TN, date_vecBB;
 
     println(Streak_vec)
 
-    if isnothing(colors)        
+    if isnothing(colors)
         plt = barplot!(ax, year.(date_vecBB2), Streak_vec)
     else
         plt = barplot!(ax, year.(date_vecBB2), Streak_vec, color=color)
@@ -410,12 +411,76 @@ function Plot_Freeze_Risk_Bar(temp::TN, date_vecBB;
     size=(800, 400),
     threshold=-2)
     return (Plot_Freeze_Risk_Bar(temp.df.TN, temp.df.DATE, date_vecBB;
-    CPO=CPO,
-    color=color,
-    label=label,
-    size=size,
-    threshold=threshold))
+        CPO=CPO,
+        color=color,
+        label=label,
+        size=size,
+        threshold=threshold))
 end
 
-# using CairoMakie
-# barplot([1,2,5,7],[8,8,8,8.])
+
+# ========= Histograms ========= #
+
+function PlotHistogram(date_vecDB::Vector{Date}, date_vecBB::Vector{Date}, CPO, year; sample_DB=nothing, sample_BB=nothing, station_name="", LineHeight=0.15, stationlegend=false, horline=true)
+    inyear(date_) = Date(year - 1, CPO[1], CPO[2]) < date_ .<= Date(year, CPO[1], CPO[2]) + Month(1)
+    DB, BB = date_vecDB[findfirst(inyear, date_vecDB)], date_vecBB[findfirst(inyear, date_vecBB)]
+
+    fig = stationlegend ? Figure(size=(800, 600)) : Figure(size=(900, 300))
+
+    ScaleDateDB(date_) = ScaleDate(date_, CPO, false)
+    ScaleDateBB(date_) = ScaleDate(date_, CPO, true)
+
+    NDSCPO_DB = ScaleDateDB(DB)
+    NDSCPO_BB = ScaleDateBB(BB)
+
+    sample_DB_year = reduce(vcat, sample_DB)
+    sample_DB_year = sample_DB_year[inyear.(sample_DB_year)]
+    sample_BB_year = reduce(vcat, sample_BB)
+    sample_BB_year = sample_BB_year[inyear.(sample_BB_year)]
+
+    #We concatanate the dates of each series to have the max and the min NDSCPO
+    Conc_date_vecs_DB = [[DB]; sample_DB_year]
+    Conc_date_vecs_BB = [[BB]; sample_BB_year]
+
+    #The dates of the first and fifteen day of each month.
+    Dates_month = interleave2(first_of_month.(1:12), fifteen_of_month.(1:12))
+    Names_month = interleave2(name_first_of_month.(1:12), name_fifteen_of_month.(1:12)) #Their string associated for the tickslabel.
+    NDSCPO_month = ScaleDateDB.(Dates_month) #And their NDSCPO
+
+    NDSCPO_inf = maximum(NDSCPO_month[NDSCPO_month.<=minimum(ScaleDateDB.(Conc_date_vecs_DB))]) #The optimal NDSCPO_month to minimise the true NDSCPO.
+    NDSCPO_sup = minimum(NDSCPO_month[NDSCPO_month.>=maximum(ScaleDateDB.(Conc_date_vecs_BB))]) #The optimal NDSCPO_month to maximise the true NDSCPO.
+
+    Names_month = Names_month[NDSCPO_sup.>=NDSCPO_month.>=NDSCPO_inf]
+    NDSCPO_month = NDSCPO_month[NDSCPO_sup.>=NDSCPO_month.>=NDSCPO_inf]
+
+    # y_max = ScaleDateBB(Date(0, month(Dates_month[argmax(NDSCPO_month)] + Month(1)))) #y_max : NDSCPO of the first day of the month after the last month considered.
+
+    ax = Axis(fig[1, 1:2], xticks=(NDSCPO_month, Names_month)) #ytickslabel = NDSCPO of the dates of first and fifteen day of each month and y_max.
+    ax.limits = ([NDSCPO_inf, NDSCPO_sup], nothing)
+    ax.xlabel = "Date"
+    ax.ylabel = "Frequency"
+    ax.xticklabelrotation = 45
+    ax.xlabelpadding = 5.
+
+    ax.title = "Histograms of Endodormancy Break and Budburst dates for the year $(year) in $(station_name)"
+    ax.titlesize = 17
+
+    pltvec = Plot[]
+
+    push!(pltvec, hist!(ax, ScaleDateDB.(sample_DB_year), color="#e5ca20", strokewidth=1, strokecolor=:black, normalization=:pdf))
+    push!(pltvec, lines!(ax, [ScaleDateDB(DB), ScaleDateDB(DB)], [0., LineHeight], color="#ff6600"))
+    push!(pltvec, hist!(ax, ScaleDateBB.(sample_BB_year), color="#009bff", strokewidth=1, strokecolor=:black, normalization=:pdf))
+    push!(pltvec, lines!(ax, [ScaleDateBB(BB), ScaleDateBB(BB)], [0., LineHeight], color="green"))
+
+    horline ? lines!(ax, [NDSCPO_inf, NDSCPO_sup], [-0.0015, -0.0015], color="purple", linewidth=4) : nothing
+
+    #Legend
+    if stationlegend
+        Legend(fig[2, 1], pltvec[1:2], ["Simulated EB Histogram", "Predicted EB in $(station_name)"])
+        Legend(fig[2, 2], pltvec[3:4], ["Simulated BB Histogram", "Predicted BB in $(station_name)"])
+    else
+        Legend(fig[1, 3], pltvec[[1, 3]], ["Simulated EB Histogram", "Simulated BB Histogram"])
+    end
+
+    return fig
+end

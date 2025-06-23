@@ -4,7 +4,7 @@ include("../utils/Structure.jl")
 include("presutils.jl")
 cd(@__DIR__)
 
-series = extract_series("../TX_STAID000737.txt", plot=false)
+series = extract_series("../../mystations/TX_Montpellier.txt", type_data="TX")
 series = truncate_MV(series)
 years = unique(Dates.year.(series.DATE))
 
@@ -65,8 +65,9 @@ save("ts2.pdf", fig; px_per_unit=2.0)
 X = cat(ones(length(date_vec_sd)), 1:length(date_vec_sd), dims=2)
 beta = inv(transpose(X) * X) * transpose(X) * x_sd
 
+curves = [X * beta .- beta[1], 0 * ones(length(date_vec_sd))]
 
-fig = PlotCurves([X * beta .- beta[1]], date_vec_sd; colors=colors, ylimits=[-10., 10.], size_=(750 * 0.6, 600 * 0.6), xtlfreq="year")
+fig = PlotCurves(curves, date_vec_sd; colors=["black", "#009bff"], ylimits=[-10., 10.], size_=(750 * 0.6, 600 * 0.6), xtlfreq="year", dashindexes=[2])
 save("tendency.pdf", fig; px_per_unit=2.0)
 
 #seasonality 
@@ -104,5 +105,13 @@ save("stationnary.pdf", fig; px_per_unit=2.0)
 ##Estimation and simulation
 
 include("presutils.jl")
-fig = PlotMonthlyRealStats(series, "standard deviation")
-save("monthly_std.pdf", fig; px_per_unit=2.0)
+
+model.Φ = [pm[1] for pm in model.Φ]
+model.σ
+
+fig = Figure(size=(1100, 450), fontsize=17)
+
+PlotMonthlyStatsAx(fig[1, 1], model.Φ, "Φ₁")
+PlotMonthlyStatsAx(fig[1, 2], model.σ, "σ", unit="°C")
+
+save("Monthly_parameters.pdf", fig; px_per_unit=2.0)

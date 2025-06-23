@@ -7,7 +7,7 @@ istickablemonth(date_) = day(date_) == 1
 istickableyear(date_) = month(date_) == 1 && day(date_) == 1
 
 
-function PlotCurves(curvesvec, date_vec; bands=nothing, labelvec=nothing, colors=nothing, ylimits=nothing, size_=nothing, noylabel=false, xtlfreq="", rotate_xtl=false)
+function PlotCurves(curvesvec, date_vec; bands=nothing, labelvec=nothing, colors=nothing, ylimits=nothing, size_=nothing, noylabel=false, xtlfreq="", rotate_xtl=false, dashindexes=Integer[])
     length(curvesvec[1]) == 1 ? curvesvec = [curvesvec] : nothing
     isnothing(size_) ? size_ = isnothing(labelvec) ? (750, 400) : (750, 600) : nothing
 
@@ -41,7 +41,7 @@ function PlotCurves(curvesvec, date_vec; bands=nothing, labelvec=nothing, colors
             xticklabelspace=24.0,
             xticklabelsize=18)
 
-        rotate_xtl ? ax12.xticklabelrotation=45 : nothing
+        rotate_xtl ? ax12.xticklabelrotation = 45 : nothing
 
         isnothing(ylimits) ? nothing : ax12.limits = (xlimits, ylimits)
 
@@ -69,7 +69,7 @@ function PlotCurves(curvesvec, date_vec; bands=nothing, labelvec=nothing, colors
         ax.ylabelsize = 25
         ax.yticklabelsize = 25
         ax.xticklabelsize = xtlfreq == "year" ? 25 : 18
-        rotate_xtl ? ax.xticklabelrotation=45 : nothing
+        rotate_xtl ? ax.xticklabelrotation = 45 : nothing
 
         isnothing(ylimits) ? nothing : ax.limits = (nothing, ylimits)
     end
@@ -91,12 +91,12 @@ function PlotCurves(curvesvec, date_vec; bands=nothing, labelvec=nothing, colors
 
     #temp series plots
     if isnothing(colors)
-        for vec in curvesvec
-            push!(pltvec, lines!(ax, 1:n_days, vec))
+        for (vec, i) in (curvesvec, eachindex(curvesvec))
+            push!(pltvec, lines!(ax, 1:n_days, vec, linestyle=i ∈ dashindexes ? :dash : :solid))
         end
     else
-        for (vec, color_) in zip(curvesvec, isnothing(bands) ? colors : colors[(length(bands)+1):end])
-            push!(pltvec, lines!(ax, 1:n_days, vec, color=color_))
+        for (vec, color_, i) in zip(curvesvec, isnothing(bands) ? colors : colors[(length(bands)+1):end], eachindex(curvesvec))
+            push!(pltvec, lines!(ax, 1:n_days, vec, color=color_, linestyle=i ∈ dashindexes ? :dash : :solid))
         end
     end
 
@@ -185,3 +185,15 @@ end
 
 PlotMonthlyRealStats(x::AbstractVector, date_vec::AbstractVector, Stats::String, color="#ff6600") = (
     PlotMonthlyRealStats(DataFrame(DATE=date_vec, TEMP=x), Stats, color))
+
+
+
+function PlotMonthlyStatsAx(subfig, Stats_vec::AbstractVector, Stats::String; unit="", title="Monthly $(Stats) parameters", color="purple")
+    ax = Axis(subfig)
+    ax.title = title
+    ax.titlesize = 22
+    ax.xticks = (1:12, Month_vec2)
+    ax.ylabel = unit != "" ? Stats * " (" * unit * ")" : Stats
+    scatterlines!(ax, 1:12, Stats_vec, color=color)
+    return ax
+end

@@ -1,8 +1,8 @@
-include("../table_reader.jl")
 include("../Prev2.jl")
 include("../PhenoPred.jl")
 include("presutils.jl")
 include("../../AR/utils/Structure.jl")
+include("../table_reader.jl")
 cd(@__DIR__)
 
 # series = extract_series("../TG_STAID000737.txt", plot=false)
@@ -38,3 +38,42 @@ include("presutils.jl")
 
 fig = PlotCurveApple(x_TG, date_vec ; TN_vec=x_TN, threshold=-2.)
 save("Apple_phenology_Bonn_2024.pdf", fig; px_per_unit=2.0)
+
+
+
+####Artificial risk of freezing for generated data####
+
+using Distributions
+
+##Artificial data##
+f(t) = pdf(Normal(1, 3), t)
+Mat = ones((7, 46))
+for date in 1980:2025
+    for m in 1:7
+        Mat[m, date-1979] = max(rand(Poisson(6exp(0.06(date - 1979)) * f(m))) - 1, 0)
+    end
+end
+Mat
+
+Mat = Mat / sum(Mat)
+
+##Heatmap##
+yearvec = 1980:2025
+
+interestingyear = yearvec[[any(Mat[:, year-1979] .>= 0.015) for year in yearvec]]
+
+fig = Figure(size=(700,350))
+ax = Axis(fig[1, 1],
+    xticks=([1980:10:2025; interestingyear]),
+    xticklabelrotation=65 * 2π / 360,
+    xlabel = "Year",
+    yticks=1:7,
+    ylabel = "Days",
+    title = "Frequency of max number of consecutives days with TN ≤ -2°C after budburst, \n for simulated temperatures",
+    titlesize=15
+    )
+
+
+heatplt = heatmap!(ax, 1980:2025, 1:7, transpose(Mat))
+Colorbar(fig[:, end+1], heatplt)
+save("Days_frequency.pdf", fig; px_per_unit=2.0)

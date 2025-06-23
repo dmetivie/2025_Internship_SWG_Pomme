@@ -26,13 +26,13 @@ function ma_odd!(x, out, m)
     return out
 end
 
-function extract_series(file::String; year=nothing, plot=false)
+function extract_series(file::String; year=nothing, plot=false, type_data=nothing)
     #Extract the temperature time series from the file. You can precise the year with the argument year.
     #If plot=True, return a tuple with the time series and the figure object, respectively.
 
     table = CSV.read(file, DataFrame, normalizenames=true, skipto=22, header=21, ignoreemptyrows=true)
-    type_data = file[end-17:end-16]
-    num_station = match(r"([1-9]\d*)", file).match
+    isnothing(type_data) ? type_data = file[end-17:end-16] : nothing
+    # num_station = match(r"([1-9]\d*)", file).match
     df = table[table[!, "Q_"*type_data].==0, ["DATE", type_data]]
     df.DATE = Date.(string.(df.DATE), dateformat"yyyymmdd")
     df[!, type_data] /= 10
@@ -41,7 +41,7 @@ function extract_series(file::String; year=nothing, plot=false)
         df = df[Date(year).<=df.DATE.<Date(year + 1), :]
         if plot
             fig, ax = lines(df.DATE, df[!, type_data])
-            ax.title = "Daily $(type_map[type_data]) temperatures from the station n°$(num_station)"
+            ax.title = "Daily $(type_map[type_data]) temperatures" #from the station n°$(num_station)"
             ax.xlabel = "Date"
             ax.ylabel = "Temperature (°C)"
             return df, fig
