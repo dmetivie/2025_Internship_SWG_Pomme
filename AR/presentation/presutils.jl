@@ -5,11 +5,12 @@ include("../utils/utils.jl")
 # istickable(date_) = (month(date_) ∈ [1, 7]) && day(date_) == 1
 istickablemonth(date_) = day(date_) == 1
 istickableyear(date_) = month(date_) == 1 && day(date_) == 1
+istickable10year(date_) = month(date_) == 1 && day(date_) == 1 && (year(date_) % 10 == 0)
 
 
-function PlotCurves(curvesvec, date_vec; bands=nothing, labelvec=nothing, colors=nothing, ylimits=nothing, size_=nothing, noylabel=false, xtlfreq="", rotate_xtl=false, dashindexes=Integer[])
+function PlotCurves(curvesvec, date_vec; bands=nothing, labelvec=nothing, colors=nothing, ylimits=nothing, size_=nothing, noylabel=false, xtlfreq="", rotate_xtl=false, dashindexes=Integer[], title=nothing, wide=false)
     length(curvesvec[1]) == 1 ? curvesvec = [curvesvec] : nothing
-    isnothing(size_) ? size_ = isnothing(labelvec) ? (750, 400) : (750, 600) : nothing
+    isnothing(size_) ? size_ = isnothing(labelvec) ? (750, 400) : (950, 400) : nothing
 
     n_days = length(date_vec)
     xlimits = [-5., n_days + 5]
@@ -47,17 +48,20 @@ function PlotCurves(curvesvec, date_vec; bands=nothing, labelvec=nothing, colors
 
         ax = Axis(fig[1:2, 1:2])
         noylabel ? nothing : ax.ylabel = "Temperature (°C)"
-        ax.ylabelsize = 25
-        ax.yticklabelsize = 25
+        # ax.ylabelsize = 25
+        # ax.yticklabelsize = 25
         ax.xticks = ticksindexes
         ax.xticklabelsvisible = false
 
         isnothing(ylimits) ? nothing : ax.limits = (xlimits, ylimits)
+        isnothing(title) ? nothing : ax.title = title
 
     else
-
         if xtlfreq == "year"
             ticksindexes = findall(istickableyear, date_vec)
+            xticklabel = strfunc.(date_vec[ticksindexes])
+        elseif xtlfreq == "10year"
+            ticksindexes = findall(istickable10year, date_vec)
             xticklabel = strfunc.(date_vec[ticksindexes])
         else
             ticksindexes = findall(istickablemonth, date_vec)
@@ -90,18 +94,30 @@ function PlotCurves(curvesvec, date_vec; bands=nothing, labelvec=nothing, colors
     end
 
     #temp series plots
-    if isnothing(colors)
-        for (vec, i) in (curvesvec, eachindex(curvesvec))
-            push!(pltvec, lines!(ax, 1:n_days, vec, linestyle=i ∈ dashindexes ? :dash : :solid))
+    if wide
+        if isnothing(colors)
+            for (vec, i) in zip(curvesvec, eachindex(curvesvec))
+                push!(pltvec, lines!(ax, 1:n_days, vec, linestyle=i ∈ dashindexes ? :dash : :solid, linewidth=2))
+            end
+        else
+            for (vec, color_, i) in zip(curvesvec, isnothing(bands) ? colors : colors[(length(bands)+1):end], eachindex(curvesvec))
+                push!(pltvec, lines!(ax, 1:n_days, vec, color=color_, linestyle=i ∈ dashindexes ? :dash : :solid, linewidth=2))
+            end
         end
     else
-        for (vec, color_, i) in zip(curvesvec, isnothing(bands) ? colors : colors[(length(bands)+1):end], eachindex(curvesvec))
-            push!(pltvec, lines!(ax, 1:n_days, vec, color=color_, linestyle=i ∈ dashindexes ? :dash : :solid))
+        if isnothing(colors)
+            for (vec, i) in zip(curvesvec, eachindex(curvesvec))
+                push!(pltvec, lines!(ax, 1:n_days, vec, linestyle=i ∈ dashindexes ? :dash : :solid))
+            end
+        else
+            for (vec, color_, i) in zip(curvesvec, isnothing(bands) ? colors : colors[(length(bands)+1):end], eachindex(curvesvec))
+                push!(pltvec, lines!(ax, 1:n_days, vec, color=color_, linestyle=i ∈ dashindexes ? :dash : :solid))
+            end
         end
     end
 
     #legend
-    isnothing(labelvec) ? nothing : Legend(fig[3, 1:2], pltvec, labelvec)
+    isnothing(labelvec) ? nothing : Legend(fig[1:2, 3], pltvec, labelvec)
 
     return fig
 end
@@ -122,6 +138,7 @@ function PlotCards(curvesvec, date_vec)
     axs = [CairoMakie.Axis(f, bbox=CairoMakie.BBox(0 + 50 * (i), 400 + 50 * (i), H - M - 195 - 135 * (i - 1), H - M - (i - 1) * 135), backgroundcolor=(:white, 1), ylabel="T (°C)", xticks=ticksindexes, xticklabelsvisible=false) for i in 1:iend-1]
     for ax in axs
         ax.limits = ([-10, length(curvesvec[end]) + 10], [-13., 45.])
+        ax.ylabelpadding = 0
     end
     i = iend
 
@@ -143,6 +160,7 @@ function PlotCards(curvesvec, date_vec)
     axend.ylabel = "T (°C)"
     axend.xticks = ticksindexes
     axend.xticklabelsvisible = false
+    axend.ylabelpadding = 0
 
     axend.limits = ([-10, length(curvesvec[end]) + 10], [-10, 40])
     ######
