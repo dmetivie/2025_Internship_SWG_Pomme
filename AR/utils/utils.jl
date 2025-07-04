@@ -131,3 +131,7 @@ interleave2(args...) = collect(Iterators.flatten(zip(args...)))
 # cos_nj = [cos(f * j * t) for t = (π/4)*0:T, j = 1:d]
 # sin_nj = [sin(f * j * t) for t = (π/4)*0:T, j = 1:d]
 # trig = reduce(hcat, [[1; interleave2(cos_nj[t, :], sin_nj[t, :])] for t = 1:(T+1)])
+
+
+unzip(a) = map(x -> getfield.(a, x), fieldnames(eltype(a)))
+## Source : https://stackoverflow.com/questions/36367482/unzip-an-array-of-tuples-in-julia

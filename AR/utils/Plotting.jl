@@ -1,4 +1,5 @@
 include("utils.jl")
+include("../presentation/presutils.jl")
 
 @tryusing "CairoMakie"
 
@@ -13,24 +14,23 @@ MiddleMonth(year::Integer) = (cumsum(DaysPerMonth(year)) .+ cumsum([0; DaysPerMo
 """
     PlotYearCurves(curvesvec::AbstractVector, labelvec::AbstractVector, title::String="", bands::AbstractVector=[], colorbands::AbstractVector=[])
 
-Plot the annuel series in curvesvec. Their length must be 365 or 366. You can also plots bands : each band must be a tuple or a vector of two series, the first one corresponding to the bottom of the band.
+Plot the annual series in curvesvec. Their length must be 365 or 366. You can also plots bands : each band must be a tuple or a vector of two series, the first one corresponding to the bottom of the band.
 You can choose the color of each band in the vector colorbands.
 """
-function PlotYearCurves(curvesvec::AbstractVector, labelvec::AbstractVector, title::String="", bands::AbstractVector=Tuple[], colorbands::AbstractVector=Tuple[]; colors::AbstractVector=String[])
+function PlotYearCurvesAxes!(fig, curvesvec::AbstractVector, title::String="", bands::AbstractVector=Tuple[], colorbands::AbstractVector=Tuple[]; colors::AbstractVector=String[], ylabel=true)
     length(curvesvec) != 0 ? length(curvesvec[1]) == 1 ? curvesvec = [curvesvec] : nothing : nothing  #We test if curvesvec is one series or a vector of series
     n_days = length(curvesvec) != 0 ? length(curvesvec[1]) : length(bands[1][1])
     ReferenceYear = n_days == 366 ? 0 : 1
-    fig = Figure(size=(900, 750))
-    ax2 = Axis(fig[1:2, 1:2], xticks=(MiddleMonth(ReferenceYear), Month_vec),
+    ax2 = Axis(fig, xticks=(MiddleMonth(ReferenceYear), Month_vec_low),
         ygridvisible=false,
         yticksvisible=false,
         yticklabelsvisible=false,
         xgridvisible=false,
         xticksvisible=false,
-        xticklabelspace=5.0,
-        xticklabelrotation=45.0)
+        xticklabelspace=5.0)
+    # xticklabelrotation=45.0)
     ax2.limits = ([0; n_days], nothing)
-    ax = Axis(fig[1:2, 1:2], xticks=[0; cumsum(DaysPerMonth(ReferenceYear))], xticklabelsvisible=false)
+    ax = Axis(fig, xticks=[0; cumsum(DaysPerMonth(ReferenceYear))], xticklabelsvisible=false)
     pltbands = Plot[]
     for (band_, colorband) in zip(bands, colorbands)
         push!(pltbands, CairoMakie.band!(ax, 1:n_days, band_[1], band_[2]; color=colorband))
@@ -49,13 +49,26 @@ function PlotYearCurves(curvesvec::AbstractVector, labelvec::AbstractVector, tit
     ax.title = title
     ax.xlabel = "Day"
     ax.xlabelpadding = 30.0
-    ax.ylabel = "Temperature (°C)"
+    ylabel ? ax.ylabel = "Temperature (°C)" : nothing
     ax.xticks = [0; cumsum(DaysPerMonth(ReferenceYear))]
     ax.limits = ([0; n_days], nothing)
+    return pltvec
+end
+
+function PlotYearCurves(curvesvec::AbstractVector, labelvec::AbstractVector, title::String="", bands::AbstractVector=Tuple[], colorbands::AbstractVector=Tuple[]; colors::AbstractVector=String[])
+    fig = Figure(size=(900, 750))
+    pltvec = PlotYearCurvesAxes!(fig[1:2, 1:2], curvesvec, title, bands, colorbands; colors=colors)
     Legend(fig[3, 1:2], pltvec, labelvec)
     return fig
 end
-# PlotYearCurves(curvesvec::AbstractVector{AbstractFloat}, labelvec::String, title::String) = PlotYearCurves(curvesvec, [labelvec], title)
+
+
+
+
+
+
+
+
 
 """
     PlotParameters(Parameters_vec::AbstractVector)
@@ -175,13 +188,12 @@ end
 
 Plot the monthly statistics in RealStats, the range of the monthly stats from simulations in SimulatedStats (row=month,column=simulations) and the quantile interval (0.25,0.75) of the monthly stats from these simulations.
 """
-function PlotMonthlyStats(RealStats::AbstractVector, SimulatedStats::AbstractMatrix, Stats::String, comment=nothing)
-    fig = Figure(size=(900, 750))
-    ax = Axis(fig[1:2, 1:2])
+function PlotMonthlyStatsAx!(fig, RealStats::AbstractVector, SimulatedStats::AbstractMatrix, Stats::String, comment=nothing; ylabel=true)
+    ax = Axis(fig)
     ax.title = isnothing(comment) ? "Real monthly $(Stats) vs range of simulated monthly $(Stats)" : "Real monthly $(Stats) vs range of simulated monthly $(Stats) $(comment)"
-    ax.xticks = (1:12, Month_vec)
-    ax.xticklabelrotation = 45.0
-    ax.ylabel = "Temperature (°C)"
+    ax.xticks = (1:12, Month_vec_low)
+    # ax.xticklabelrotation = 45.0
+    ylabel ? ax.ylabel = "Temperature (°C)" : nothing
     pltvec = Plot[]
     bands = [(minimum.(eachrow(SimulatedStats)), maximum.(eachrow(SimulatedStats))),
         (quantile.(eachrow(SimulatedStats), 0.25), quantile.(eachrow(SimulatedStats), 0.75))
@@ -191,9 +203,16 @@ function PlotMonthlyStats(RealStats::AbstractVector, SimulatedStats::AbstractMat
         push!(pltvec, CairoMakie.band!(ax, 1:12, band_[1], band_[2]; color=colorband))
     end
     push!(pltvec, CairoMakie.scatter!(ax, RealStats, color="Orange"))
+    return pltvec
+end
+
+function PlotMonthlyStats(RealStats::AbstractVector, SimulatedStats::AbstractMatrix, Stats::String, comment=nothing)
+    fig = Figure(size=(900, 750))
+    pltvec = PlotMonthlyStatsAx!(fig[1:2, 1:2], RealStats, SimulatedStats, Stats, comment)
     Legend(fig[3, 1:2], pltvec, ["Range of simulated monthly $(Stats)", "Simulated monthly $(Stats) quantile interval, p ∈ [0.25,0.75]", "Real monthly $(Stats)"])
     return fig
 end
+
 
 """
     WrapPlotMonthlyStats(df_month::DataFrame,sample_::AbstractVector,sample_timeline::AbstractVector{Date})
@@ -210,3 +229,79 @@ function WrapPlotMonthlyStats(df_month::DataFrame, sample_::AbstractVector, samp
     PlotMonthlyStats(df_month.MONTHLY_STD, std_ts, "standard deviation", comment),
     PlotMonthlyStats(df_month.MONTHLY_MAX, max_ts, "maximum", comment)
 end
+
+"""
+    Plot the monthly parameters in the vector MonthlyParams (MonthlyParams = [[Φ1Jan,Φ1Feb...],...[σJan,σFeb]])
+"""
+function PlotMonthlyparams(MonthlyParams)
+    fig = Figure(size=(100 + 420 * length(MonthlyParams), 400))
+    for (i, MonthlyParam) in enumerate(MonthlyParams)
+        if i == length(MonthlyParams)
+            PlotMonthlyStatsAx(fig[1, i], MonthlyParam, "σ", unit="C°")
+        else
+            PlotMonthlyStatsAx(fig[1, i], MonthlyParam, "Φ$(i)")
+        end
+    end
+    return fig
+end
+
+
+
+function Sample_diagnostic(sample_, date_vec, period, avg_day, max_day, df_month; format_="vertical", size=format_ == "vertical" ? (1200, 1900) : (1600, 900))
+    year_sample = GatherYearScenarios(sample_, date_vec)
+
+    idx_m = [findall(month.(date_vec) .== m) for m in 1:12]
+    mean_ts = [[mean(ts[idx_m[m]]) for m in 1:12] for ts in sample_] |> stack
+    std_ts = [[std(ts[idx_m[m]]) for m in 1:12] for ts in sample_] |> stack
+    max_ts = [[maximum(ts[idx_m[m]]) for m in 1:12] for ts in sample_] |> stack
+
+    fig = Figure(size=size)
+
+    if format_ == "horizontal"
+        figvec = [(fig[1:2, 1:3], fig[3, 2]),
+            (fig[1:2, 4:6], fig[3, 5]),
+            (fig[1:2, 7:9], fig[3, 8]),
+            (fig[4:5, 1:3], fig[6, 2]),
+            (fig[4:5, 4:6], fig[6, 5]),
+            (fig[4:5, 7:9], fig[6, 8])]
+    else
+        figvec = [(fig[1:2, 1:3], fig[3, 2]),
+            (fig[1:2, 4:6], fig[3, 5]),
+            (fig[4:5, 1:3], fig[6, 2]),
+            (fig[4:5, 4:6], fig[6, 5]),
+            (fig[7:8, 1:3], fig[9, 2]),
+            (fig[7:8, 4:6], fig[9, 5])]
+    end
+
+    ylabelBoolVec = format_ == "horizontal" ? [true, false, false, true, false, false] : [true, false, true, false, true, false]
+
+    plt1 = PlotYearCurvesAxes!(figvec[1][1], [period, mean.(year_sample)], "Average daily temperature during a year (centered)", ylabel=ylabelBoolVec[1])
+    Legend(figvec[1][2], plt1, ["Periodicity estimation", "Mean simulated temperatures"])
+
+    plt2 = PlotYearCurvesAxes!(figvec[2][1], [period, avg_day, max_day],
+        "Average daily temperature during a year (centered)",
+        [(minimum.(year_sample), maximum.(year_sample)), (quantile.(year_sample, 0.25), quantile.(year_sample, 0.75))],
+        [("#009bff", 0.2), ("#009bff", 0.5)],
+        colors=["blue", "orange", "red"],
+        ylabel=ylabelBoolVec[2])
+    Legend(figvec[2][2], plt2, ["Periodicity estimation", "Average recorded temperatures", "Maximum recorded temperatures", "Simulated temperatures range", "Simulated temperatures quantile interval, p ∈ [0.25,0.75]"])
+
+    plt3 = PlotYearCurvesAxes!(figvec[3][1], [maximum.(year_sample) .- minimum.(year_sample), quantile.(year_sample, 0.75) .- quantile.(year_sample, 0.25)],
+        "Simulated temperatures interquartile range",
+        ylabel=ylabelBoolVec[3])
+    Legend(figvec[3][2], plt3, ["Simulated temperatures range", "Simulated temperatures interquartile range, p ∈ [0.25,0.75]"])
+
+    plt4 = PlotMonthlyStatsAx!(figvec[4][1], df_month.MONTHLY_MEAN, mean_ts, "mean", ylabel=ylabelBoolVec[4])
+    Legend(figvec[4][2], plt4, ["Range of simulated monthly mean", "Simulated monthly mean quantile interval, p ∈ [0.25,0.75]", "Real monthly mean"])
+
+    plt5 = PlotMonthlyStatsAx!(figvec[5][1], df_month.MONTHLY_STD, std_ts, "standard deviation", ylabel=ylabelBoolVec[5])
+    Legend(figvec[5][2], plt5, ["Range of simulated monthly standard deviation", "Simulated monthly standard deviation quantile interval, p ∈ [0.25,0.75]", "Real monthly standard deviation"])
+
+    plt6 = PlotMonthlyStatsAx!(figvec[6][1], df_month.MONTHLY_MAX, max_ts, "maximum", ylabel=ylabelBoolVec[6])
+    Legend(figvec[6][2], plt6, ["Range of simulated monthly maximum", "Simulated monthly maximum quantile interval, p ∈ [0.25,0.75]", "Real monthly maximum"])
+
+    return fig
+end
+
+
+

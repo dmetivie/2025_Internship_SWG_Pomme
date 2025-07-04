@@ -2,6 +2,14 @@ include("utils.jl")
 
 @tryusing "Dates", "LinearAlgebra", "DataInterpolations", "RegularizationTools", "GLM"
 
+try 
+    using Loess
+catch
+    import Pkg;
+    Pkg.add(url = "https://github.com/JuliaStats/Loess.jl");
+    using Loess
+end
+
 function PolyTrendFunc(x, order, index=eachindex(x); return_parameters=false)
     Design = [index .^ i for i in 0:order] |> stack
     beta = inv(transpose(Design) * Design) * transpose(Design) * x
@@ -16,9 +24,9 @@ kernel(u) = (1 - abs(u)^3)^3
 Design(t_vec, p) = [(t_vec) .^ i for i in 0:p] |> stack
 LOESS_I!(X, Y, W, poly) = dot(((transpose(X) * W * X) \ (transpose(X) * W * Y)), poly)
 
-function LOESS(Y, h, X::AbstractArray)
+function MyLOESS(Y, h, X::AbstractArray)
     N = length(Y)
-    q = h < 1 ? Int(floor(N*h)) : h
+    q = h < 1 ? Int(floor(N * h)) : h
     X_beg, Y_beg = X[1:q, :], Y[1:q]
     X_end, Y_end = X[(N-q):N, :], Y[(N-q):N]
     if isodd(q)
@@ -71,4 +79,6 @@ function LOESS(Y, h, X::AbstractArray)
     return trend
 end
 
-LOESS(Y, h, p::Integer) = LOESS(Y,h, Design(eachindex(Y), p))
+MyLOESS(Y, h, p::Integer) = MyLOESS(Y, h, Design(eachindex(Y), p))
+
+LOESS(x, span=0.4, degree=1) = predict(loess(eachindex(x), x, span=span > 1 ? span / length(x) : span, degree=degree), eachindex(x))

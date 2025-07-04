@@ -195,7 +195,7 @@ function Plot_Pheno_Dates_DB_BB(date_vecDB::Vector{Date}, date_vecBB::Vector{Dat
     ax.ylabel = "Date"
     ax.ylabelpadding = 5.
 
-    ax.title = "Endodormancy Break and Budburst dates for each year, $(station_name)"
+    ax.title = "Predicted Endodormancy Break and Budburst dates for each year, $(station_name)"
 
     pltvec = Plot[]
     bands = nothing
@@ -235,13 +235,13 @@ function Plot_Pheno_Dates_DB_BB(date_vecDB::Vector{Date}, date_vecBB::Vector{Dat
     isnothing(YearCut) ? nothing : lines!(ax, [YearCut, YearCut], [NDSCPO_inf, NDSCPO_sup], color="purple")
 
     #Legend
-    Legend(fig[3:4, 5], pltvec[[1, 2, 5]], ["Simulated EB Min-Max interval",
-        "Simulated EB [0.25 ; 0.75] quantile interval",
-        "Predicted EB in $(station_name)"])
+    Legend(fig[3:4, 5], pltvec[[1, 2, 5]], ["Simulated EB\nMin-Max interval",
+        "Simulated EB\n[0.25 ; 0.75]\nquantile interval",
+        "EB pred from recorded\ntemperatures in $(station_name)"])
 
-    Legend(fig[1:2, 5], pltvec[[3, 4, 6]], ["Simulated BB Min-Max interval",
-        "Simulated BB [0.25 ; 0.75] quantile interval",
-        "Predicted BB in $(station_name)"])
+    Legend(fig[1:2, 5], pltvec[[3, 4, 6]], ["Simulated BB\nMin-Max interval",
+        "Simulated BB\n[0.25 ; 0.75]\nquantile interval",
+        "BB pred from recorded\ntemperatures in $(station_name)"])
 
     return fig
 end
@@ -288,7 +288,7 @@ function Plot_Pheno_Dates_DB_BB(date_vecsDB, date_vecsBB, CPO;
     ax.ylabel = "Date"
     ax.ylabelpadding = 5.
 
-    ax.title = "Endodormancy Break and Budburst dates for each year"
+    ax.title = "Predicted Endodormancy Break and Budburst dates for each year"
 
     pltvec = Plot[]
 
@@ -462,7 +462,7 @@ function PlotHistogram(date_vecDB::Vector{Date}, date_vecBB::Vector{Date}, CPO, 
     ax.xticklabelrotation = 45
     ax.xlabelpadding = 5.
 
-    ax.title = "Histograms of Endodormancy Break and Budburst dates for the year $(year) in $(station_name)"
+    ax.title = "Histograms of predicted EB and BB dates for the year $(year) in $(station_name)"
     ax.titlesize = 17
 
     pltvec = Plot[]

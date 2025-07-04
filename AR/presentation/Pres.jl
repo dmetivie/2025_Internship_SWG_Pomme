@@ -8,10 +8,9 @@ series = extract_series("../../mystations/TX_Montpellier.txt", type_data="TX")
 series = truncate_MV(series)
 years = unique(Dates.year.(series.DATE))
 
-x, date_vec = series[:, :TX], series[:, :DATE]
+x, date_vec = series[:, 2], series[:, :DATE]
 
 model = fit_MonthlyAR(x, date_vec)
-
 
 ##Principle
 date_range_p = findfirst(series.DATE .== Date(2003, 1, 1)):findfirst(series.DATE .== Date(2004, 1, 1))
@@ -44,56 +43,63 @@ bands = [(minimum.(SamplePerDate), maximum.(SamplePerDate)), (quantile.(SamplePe
 curvesvec = [x_p]
 
 colors = [("#009bff", 0.2), ("#009bff", 0.5), "black"]
-labelvec = ["Min-Max interval of generated series", "[0.25 ; 0.75] quantile interval of generated series", "Recorded temperatures"]
+labelvec = ["Min-Max interval\nof generated series", "[0.25 ; 0.75] quantile\ninterval of generated series", "Recorded temperatures"]
 
 fig = PlotCurves(curvesvec, date_vec_p; bands=bands, labelvec=labelvec, colors=colors, ylimits=[-13., 45.], xtlfreq="month")
 save("5000gens.pdf", fig; px_per_unit=2.0)
 
 ##Series decomposition
-date_range_sd = findfirst(series.DATE .== Date(2002, 1, 1)):findfirst(series.DATE .== Date(2005, 1, 1))
+date_range_sd = findfirst(series.DATE .== Date(1961, 1, 1)):findfirst(series.DATE .== Date(2019, 1, 1))
 x_sd, date_vec_sd = x[date_range_sd], date_vec[date_range_sd]
 
 #complete series
 include("presutils.jl")
 colors = ["black"]
 
-fig = PlotCurves(x_sd, date_vec_sd; colors=colors, ylimits=[-4., 40.], xtlfreq="year")
+
+date_range_c = findfirst(date_vec_sd .== Date(2002, 1, 1)):findfirst(date_vec_sd .== Date(2005, 1, 1))
+x_c, date_vec_c = x_sd[date_range_c], date_vec_sd[date_range_c]
+
+
+fig = PlotCurves(x_c, date_vec_c; colors=colors, ylimits=[-4., 40.], xtlfreq="year")
 save("ts2.pdf", fig; px_per_unit=2.0)
 
 
 #tendency
-X = cat(ones(length(date_vec_sd)), 1:length(date_vec_sd), dims=2)
-beta = inv(transpose(X) * X) * transpose(X) * x_sd
 
-curves = [X * beta .- beta[1], 0 * ones(length(date_vec_sd))]
+trend = LOESS(x_sd)
 
-fig = PlotCurves(curves, date_vec_sd; colors=["black", "#009bff"], ylimits=[-10., 10.], size_=(750 * 0.6, 600 * 0.6), xtlfreq="year", dashindexes=[2])
+# f = RegularizationSmooth(x_sd, date_range_sd, 25)
+curves = [trend .- minimum(trend), 0 * ones(length(date_vec_sd))]
+
+fig = PlotCurves(curves, date_vec_sd; colors=["green", "black"], ylimits=[-10., 10.], size_=(750 * 0.6, 600 * 0.6), xtlfreq="10year", wide=true)
 save("tendency.pdf", fig; px_per_unit=2.0)
 
 #seasonality 
-trigo_function = fitted_periodicity_fonc(x_sd - X * beta, date_vec_sd, OrderTrig=5)
+trigo_function = fitted_periodicity_fonc(x_sd - trend, date_vec_sd, OrderTrig=5)
 periodicity = trigo_function.(date_vec_sd)
 
 date_range_leap = findfirst(date_vec_sd .== Date(2004, 1, 1)):findfirst(date_vec_sd .== Date(2005, 1, 1))
 
 include("presutils.jl")
-fig = PlotCurves([periodicity[date_range_leap] .+ beta[1]],
+fig = PlotCurves([periodicity[date_range_leap] .+ mean(x_c)],
     date_vec_sd[date_range_leap];
-    colors=colors,
+    colors=["orange"],
     ylimits=[-4., 40.],
     size_=(750 * 0.6, 600 * 0.6),
     noylabel=true,
     xtlfreq="month",
-    rotate_xtl=true)
+    rotate_xtl=true,
+    wide=true)
 # fig
 save("seasonality.pdf", fig; px_per_unit=2.0)
 
 #stationnary part 
-y = x_sd - X * beta - periodicity
+y = x_sd - trend - periodicity
 
 fig = PlotCurves([y[date_range_leap]],
     date_vec_sd[date_range_leap];
-    colors=colors,
+    colors=["red"],
     ylimits=[-20., 20.],
     size_=(750 * 0.6, 600 * 0.6),
     noylabel=true,

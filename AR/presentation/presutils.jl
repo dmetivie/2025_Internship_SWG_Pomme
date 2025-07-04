@@ -8,7 +8,7 @@ istickableyear(date_) = month(date_) == 1 && day(date_) == 1
 istickable10year(date_) = month(date_) == 1 && day(date_) == 1 && (year(date_) % 10 == 0)
 
 
-function PlotCurves(curvesvec, date_vec; bands=nothing, labelvec=nothing, colors=nothing, ylimits=nothing, size_=nothing, noylabel=false, xtlfreq="", rotate_xtl=false, dashindexes=Integer[], title=nothing, wide=false)
+function PlotCurves(curvesvec, date_vec; bands=nothing, labelvec=nothing, colors=nothing, ylimits=nothing, size_=nothing, noylabel=false, xtlfreq="", rotate_xtl=false, dashindexes=Integer[], title=nothing, wide=false, diapomode=true)
     length(curvesvec[1]) == 1 ? curvesvec = [curvesvec] : nothing
     isnothing(size_) ? size_ = isnothing(labelvec) ? (750, 400) : (950, 400) : nothing
 
@@ -48,8 +48,10 @@ function PlotCurves(curvesvec, date_vec; bands=nothing, labelvec=nothing, colors
 
         ax = Axis(fig[1:2, 1:2])
         noylabel ? nothing : ax.ylabel = "Temperature (°C)"
-        # ax.ylabelsize = 25
-        # ax.yticklabelsize = 25
+        if diapomode
+            ax.ylabelsize = 25
+            ax.yticklabelsize = 25
+        end
         ax.xticks = ticksindexes
         ax.xticklabelsvisible = false
 
