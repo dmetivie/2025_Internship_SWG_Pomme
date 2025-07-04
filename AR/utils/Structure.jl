@@ -17,7 +17,9 @@ end
 mutable struct MonthlyAR <: AR_SWG
     Φ::AbstractVector
     σ::AbstractVector
-    nspart::AbstractVector
+    trend::AbstractVector
+    period::AbstractVector
+    date_vec::AbstractVector
     y₁::AbstractVector
 end
 
@@ -62,7 +64,12 @@ end
 inverse_dayofyear_Leap(n) = Date(0) + Day(n - 1)
 
 function Base.rand(rng::Random.AbstractRNG, model::AR_SWG, date_vec::AbstractVector{Date}, n::Integer=1; y₁=model.y₁)
-    return n == 1 ? SimulateScenario(y₁, date_vec, model.Φ, model.σ, model.nspart, rng) : SimulateScenarios(y₁, date_vec, model.Φ, model.σ, model.nspart, rng, n=n)
+    if date_vec == model.date_vec
+        return n == 1 ? SimulateScenario(y₁, date_vec, model.Φ, model.σ, model.trend .+ model.period[dayofyear_Leap.(model.date_vec)], rng) : SimulateScenarios(y₁, date_vec, model.Φ, model.σ, model.trend .+ model.period[dayofyear_Leap.(model.date_vec)], rng, n=n)
+    else
+        index_nspart = findall(t -> t ∈ date_vec, model.date_vec)
+        return n == 1 ? SimulateScenario(y₁, date_vec, model.Φ, model.σ, model.trend .+ model.period[dayofyear_Leap.(model.date_vec)], rng, index_nspart=index_nspart) : SimulateScenarios(y₁, date_vec, model.Φ, model.σ, model.trend .+ model.period[dayofyear_Leap.(model.date_vec)], rng, n=n, index_nspart=index_nspart)
+    end
 end
 function Base.rand(rng::Random.AbstractRNG, model::AR_SWG, n2t::AbstractVector{Integer}, n::Integer=1; y₁=model.y₁)
     return rand(rng, model, inverse_dayofyear_Leap.(n2t), n, y₁=y₁)
@@ -113,19 +120,19 @@ function fit_MonthlyAR(x, date_vec; p::Integer=1, method_::String="monthlyLL", p
 
     if periodicity_model == "trigo"
         trigo_function = fitted_periodicity_fonc(y, date_vec, OrderTrig=degree_period)
-        periodicity = trigo_function.(date_vec)
+        periodicity, period = trigo_function.(date_vec), trigo_function.(Date(0):(Date(1)-Day(1)))
     elseif periodicity_model == "smooth"
         smooth_function = fitted_smooth_periodicity_fonc(y, date_vec, OrderDiff=degree_period)
-        periodicity = smooth_function.(date_vec)
+        periodicity, period = smooth_function.(date_vec), smooth_function.(Date(0):(Date(1)-Day(1)))
     elseif periodicity_model == "autotrigo"
         autotrigo_function = fitted_periodicity_fonc_stepwise(y, date_vec, MaxOrder=degree_period)
-        periodicity = autotrigo_function.(date_vec)
+        periodicity, period = autotrigo_function.(date_vec), autotrigo_function.(Date(0):(Date(1)-Day(1)))
     end
     z = y - periodicity
 
     Φ, σ = fit_ARMonthlyParameters(z, date_vec, p, method_)
 
-    return MonthlyAR(Φ, σ, periodicity + trend, z[1:p])
+    return MonthlyAR(Φ, σ, trend, period, date_vec, z[1:p])
 end
 
 #If the degree period is not given, chooses the default degree period for each type of seasonality.
@@ -194,4 +201,3 @@ end
 # end
 # Base.rand(model::MonthlyAR, date_vec::AbstractVector{Date}, n::Integer=1; y₁=model.nspart[dayofyear_Leap.(date_vec[1:length(model.Φ[1])])]) = rand(Random.default_rng(), model, date_vec, n, y₁=y₁)
 # Base.rand(model::MonthlyAR, n2t::AbstractVector{Integer}, n::Integer=1; y₁=model.nspart[n2t[1:length(model.Φ[1])]]) = rand(Random.default_rng(), model, inverse_dayofyear_Leap.(n2t), n, y₁=y₁)
-

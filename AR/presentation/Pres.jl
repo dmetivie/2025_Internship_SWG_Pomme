@@ -11,7 +11,6 @@ years = unique(Dates.year.(series.DATE))
 x, date_vec = series[:, 2], series[:, :DATE]
 
 model = fit_MonthlyAR(x, date_vec)
-
 ##Principle
 date_range_p = findfirst(series.DATE .== Date(2003, 1, 1)):findfirst(series.DATE .== Date(2004, 1, 1))
 x_p, date_vec_p = x[date_range_p], date_vec[date_range_p]

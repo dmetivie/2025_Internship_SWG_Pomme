@@ -100,21 +100,21 @@ SimulateYears(x0::Number, day_one::Date, Φ_month::AbstractVector, σ_month::Abs
 
 Simulate a temperature scenario during the Date_vec timeline following an AR model with parameters Φ and σ and non stationnary part (trend + periodicity) nspart.
 """
-function SimulateScenario(x0::AbstractVector, Date_vec::AbstractVector, Φ, σ, nspart=0, rng=Random.default_rng())
+function SimulateScenario(x0::AbstractVector, Date_vec::AbstractVector, Φ, σ, nspart=0, rng=Random.default_rng(); index_nspart=nothing)
     L, p = copy(x0), length(x0)
     for date_ in Date_vec[p+1:end]
         length(Φ) == 12 ? append!(L, dot(L[end:-1:end-p+1], Φ[month(date_)]) + σ[month(date_)] * randn(rng)) : append!(L, dot(L[end:-1:end-p+1], Φ) + σ * randn(rng))
     end
-    return L .+ (length(nspart) == 366 ? nspart[dayofyear_Leap.(Date_vec)] : nspart)
+    return L .+ (length(nspart) == 366 ? nspart[dayofyear_Leap.(Date_vec)] : (isnothing(index_nspart) ? nspart : nspart[index_nspart]))
 end
-SimulateScenario(x0::AbstractFloat, Date_vec::AbstractVector, Φ, σ, nspart=0, rng=Random.default_rng()) = SimulateScenario([x0], Date_vec, Φ, σ, nspart, rng)
+SimulateScenario(x0::AbstractFloat, Date_vec::AbstractVector, Φ, σ, nspart=0, rng=Random.default_rng(); index_nspart=nothing) = SimulateScenario([x0], Date_vec, Φ, σ, nspart, rng, index_nspart=index_nspart)
 
 """
     SimulateScenarios(x0::AbstractVector, Date_vec::AbstractVector, Φ, σ, nspart=0 ; n::Integer=1)
 
 Simulate n temperature scenarios during the Date_vec timeline following an AR model with parameters Φ and σ and non stationnary part (trend + periodicity) nspart.
 """
-SimulateScenarios(x0, Date_vec::AbstractVector, Φ, σ, nspart=0, rng=Random.default_rng(); n::Integer=1) = [SimulateScenario(x0, Date_vec, Φ, σ, nspart, rng) for _ in 1:n]
+SimulateScenarios(x0, Date_vec::AbstractVector, Φ, σ, nspart=0, rng=Random.default_rng(); n::Integer=1, index_nspart=nothing) = [SimulateScenario(x0, Date_vec, Φ, σ, nspart, rng, index_nspart=index_nspart) for _ in 1:n]
 
 """
     concat2by2(L)
