@@ -98,7 +98,7 @@ y = x_sd - trend - periodicity
 
 fig = PlotCurves([y[date_range_leap]],
     date_vec_sd[date_range_leap];
-    colors=["red"],
+    colors=["blue"],
     ylimits=[-20., 20.],
     size_=(750 * 0.6, 600 * 0.6),
     noylabel=true,

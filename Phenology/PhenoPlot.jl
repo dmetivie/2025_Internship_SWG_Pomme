@@ -198,32 +198,22 @@ function Plot_Pheno_Dates_DB_BB(date_vecDB::Vector{Date}, date_vecBB::Vector{Dat
     ax.title = "Predicted Endodormancy Break and Budburst dates for each year, $(station_name)"
 
     pltvec = Plot[]
-    bands = nothing
+
+    inyear(date_, year_) = year(date_ + min(Month(2),Year(1) - Month(CPO[1]) - Day(CPO[2]))) == year_
+    #For exemple is the EB happens the 15/12/2010, I consider that it belongs to the year 2011, so I had the time to reach 2011.
+    #If the CPO is very early (eg the 1st of august 2010) and the BB is very late (e.g the 15th of august 2010), I don't want to consider this BB
+    #to belong to year 2011 so I consider EB to belongs to 2011 at least two months before 2011 not before.
 
     for (sample_, colors, SD_func) in zip([sample_DB, sample_BB], [[("#e5ca20", 0.2), ("#e5ca20", 0.5)], [("#009bff", 0.2), ("#009bff", 0.5)]], [ScaleDateDB, ScaleDateBB])
-        if !isnothing(sample_) #If we want to consider a set of generated
-            #Pre-treating the sample to have data per year
+        if !isnothing(sample_) 
             Conc_sets = reduce(vcat, sample_)
-            years_ = unique(year.(Conc_sets))
 
-            Dictyears = Dict{Integer}{AbstractVector}()
-            for year_ in years_
-                Dictyears[year_] = Integer[]
-            end
+            years_ = unique(year.(Conc_sets + min(Month(2),Year(1) - Month(CPO[1]) - Day(CPO[2]))))
 
-            for set in sample_
-                for date_ in set
-                    push!(Dictyears[year(date_)], SD_func(date_))
-                end
-            end
+            DictYearsVec = [SD_func.(Conc_sets[inyear.(Conc_sets, year_)]) for year_ in years_]
 
-            #Now we can make the bands :
-            bands = [(minimum.(values(Dictyears)), maximum.(values(Dictyears))), (quantile.(values(Dictyears), 0.25), quantile.(values(Dictyears), 0.75))]
-
-            #Bands plots
-            for (band, color_) in zip(bands, colors)
-                push!(pltvec, band!(ax, years_, band[1], band[2], color=color_))
-            end
+            push!(pltvec, band!(ax, years_, minimum.(DictYearsVec), maximum.(DictYearsVec), color=colors[1]))
+            push!(pltvec, band!(ax, years_, quantile.(DictYearsVec, 0.25), quantile.(DictYearsVec, 0.75), color=colors[2]))
         end
     end
 
@@ -421,8 +411,8 @@ end
 
 # ========= Histograms ========= #
 
-function PlotHistogram(date_vecDB::Vector{Date}, date_vecBB::Vector{Date}, CPO, year; sample_DB=nothing, sample_BB=nothing, station_name="", LineHeight=0.15, stationlegend=false, horline=true)
-    inyear(date_) = Date(year - 1, CPO[1], CPO[2]) < date_ .<= Date(year, CPO[1], CPO[2]) + Month(1)
+function PlotHistogram(date_vecDB::Vector{Date}, date_vecBB::Vector{Date}, CPO, year; sample_DB=nothing, sample_BB=nothing, station_name="", LineHeight=0.15, stationlegend=false, horline=true, PlotQuantile=false)
+    inyear(date_) = Date(year - 1, CPO[1], CPO[2]) + Month(1) .<= date_ .< Date(year, CPO[1], CPO[2]) + Month(1)
     DB, BB = date_vecDB[findfirst(inyear, date_vecDB)], date_vecBB[findfirst(inyear, date_vecBB)]
 
     fig = stationlegend ? Figure(size=(800, 600)) : Figure(size=(900, 300))
@@ -467,10 +457,19 @@ function PlotHistogram(date_vecDB::Vector{Date}, date_vecBB::Vector{Date}, CPO, 
 
     pltvec = Plot[]
 
-    push!(pltvec, hist!(ax, ScaleDateDB.(sample_DB_year), color="#e5ca20", strokewidth=1, strokecolor=:black, normalization=:pdf))
+    SDDB = ScaleDateDB.(sample_DB_year)
+    SDBB = ScaleDateBB.(sample_BB_year)
+
+    push!(pltvec, hist!(ax, SDDB, color="#e5ca20", strokewidth=1, strokecolor=:black, normalization=:pdf))
     push!(pltvec, lines!(ax, [ScaleDateDB(DB), ScaleDateDB(DB)], [0., LineHeight], color="#ff6600"))
-    push!(pltvec, hist!(ax, ScaleDateBB.(sample_BB_year), color="#009bff", strokewidth=1, strokecolor=:black, normalization=:pdf))
+    push!(pltvec, hist!(ax, SDBB, color="#009bff", strokewidth=1, strokecolor=:black, normalization=:pdf))
     push!(pltvec, lines!(ax, [ScaleDateBB(BB), ScaleDateBB(BB)], [0., LineHeight], color="green"))
+    if PlotQuantile
+        push!(pltvec, lines!(ax, [quantile(SDDB, 0.25), quantile(SDDB, 0.25)], [0., LineHeight], color="black"))
+        push!(pltvec, lines!(ax, [quantile(SDDB, 0.75), quantile(SDDB, 0.75)], [0., LineHeight], color="black"))
+        push!(pltvec, lines!(ax, [quantile(SDBB, 0.25), quantile(SDBB, 0.25)], [0., LineHeight], color="black"))
+        push!(pltvec, lines!(ax, [quantile(SDBB, 0.75), quantile(SDBB, 0.75)], [0., LineHeight], color="black"))
+    end
 
     horline ? lines!(ax, [NDSCPO_inf, NDSCPO_sup], [-0.0015, -0.0015], color="purple", linewidth=4) : nothing
 
