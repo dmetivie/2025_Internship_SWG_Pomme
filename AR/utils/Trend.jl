@@ -82,3 +82,6 @@ end
 MyLOESS(Y, h, p::Integer) = MyLOESS(Y, h, Design(eachindex(Y), p))
 
 LOESS(x, span=0.4, degree=1) = predict(loess(eachindex(x), x, span=span > 1 ? span / length(x) : span, degree=degree), eachindex(x))
+
+
+#!!Savoir interpreter span

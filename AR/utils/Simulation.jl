@@ -116,6 +116,50 @@ Simulate n temperature scenarios during the Date_vec timeline following an AR mo
 """
 SimulateScenarios(x0, Date_vec::AbstractVector, Φ, σ, nspart=0, rng=Random.default_rng(); n::Integer=1, index_nspart=nothing) = [SimulateScenario(x0, Date_vec, Φ, σ, nspart, rng, index_nspart=index_nspart) for _ in 1:n]
 
+
+#### Simulating paired scenarios ####
+
+collectpdx0(x0::AbstractMatrix) = size(x0)
+collectpdx0(x0::AbstractVector) = 1, length(x0)
+"""
+    SimulateScenario(x0::AbstractVector, Date_vec::AbstractVector, Φ, σ, nspart=0)
+
+Simulate a temperature scenario during the Date_vec timeline following an AR model with parameters Φ and σ and non stationnary part (trend + periodicity) nspart.
+"""
+function SimulatePairedScenario(x0::AbstractArray, Date_vec::AbstractVector, Φ, Σ, nspart=0, rng=Random.default_rng(); index_nspart=nothing)
+    M = copy(x0)
+    p, d = collectpdx0(x0)
+    p == 1 ? M = reshape(M, (1, d)) : nothing
+    for date_ in Date_vec[p+1:end]
+        M = vcat(M, reshape(sum(Φ[j] * M[end+1-j, :] for j in 1:p) .+ Σ * randn(rng, d), (1, d)))
+    end
+    return M .+ (length(nspart) == 366 ? nspart[dayofyear_Leap.(Date_vec)] : (isnothing(index_nspart) ? nspart : nspart[index_nspart]))
+end
+
+
+
+
+function SimulatePairedScenarioMonth(x0::AbstractArray, Date_vec::AbstractVector, Φ, Σ, nspart=0, rng=Random.default_rng(); index_nspart=nothing)
+    M = copy(x0)
+    p, d = collectpdx0(x0)
+    p == 1 ? M = reshape(M, (1, d)) : nothing
+    for date_ in Date_vec[p+1:end]
+        M = vcat(M, reshape(sum(Φ[month(date_)][j] * M[end+1-j, :] for j in 1:p) .+ Σ[month(date_)] * randn(rng, d), (1, d)))
+    end
+    return M .+ (length(nspart) == 366 ? nspart[dayofyear_Leap.(Date_vec)] : (isnothing(index_nspart) ? nspart : nspart[index_nspart]))
+end
+
+
+"""
+    SimulateScenarios(x0::AbstractVector, Date_vec::AbstractVector, Φ, σ, nspart=0 ; n::Integer=1)
+
+Simulate n temperature scenarios during the Date_vec timeline following an AR model with parameters Φ and σ and non stationnary part (trend + periodicity) nspart.
+"""
+# SimulateScenarios(x0, Date_vec::AbstractVector, Φ, σ, nspart=0, rng=Random.default_rng(); n::Integer=1, index_nspart=nothing) = [SimulateScenario(x0, Date_vec, Φ, σ, nspart, rng, index_nspart=index_nspart) for _ in 1:n]
+
+
+
+
 """
     concat2by2(L)
 
