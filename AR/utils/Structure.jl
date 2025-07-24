@@ -6,6 +6,8 @@ include("Simulation.jl")
 include("Trend.jl")
 include("Multi_AR_Estimation.jl")
 
+@tryusing "FileIO", "JLD2"
+
 abstract type AR_SWG end
 
 mutable struct SimpleAR <: AR_SWG
@@ -30,10 +32,13 @@ mutable struct MonthlyAR <: AR_SWG
     σ::AbstractVector
     trend::AbstractVector
     period::AbstractVector
+    period_order::Integer
     σ_trend::AbstractVector
     σ_period::AbstractVector
+    σ_period_order::Integer
     date_vec::AbstractVector
     y₁::AbstractVector
+    z::AbstractVector
 end
 
 
@@ -46,6 +51,7 @@ mutable struct Multi_MonthlyAR <: AR_SWG
     σ_period::AbstractArray
     date_vec::AbstractArray
     y₁::AbstractArray
+    z::AbstractArray
 end
 
 
@@ -143,7 +149,7 @@ end
 
 
 defaultparam = Dict([("LOESS", 0.08), ("polynomial", 1), ("null", 1)])
-defaultorder = Dict([("trigo", 5), ("smooth", 9), ("autotrigo", 50),("stepwise_trigo", 50)])
+defaultorder = Dict([("trigo", 5), ("smooth", 9), ("autotrigo", 50), ("stepwise_trigo", 50)])
 function fit_AR(x, date_vec;
     p::Integer=1,
     method_::String="monthlyLL",
@@ -171,16 +177,21 @@ function fit_AR(x, date_vec;
     degree_period == 0 ? degree_period = defaultorder[periodicity_model] : nothing
 
     if periodicity_model == "trigo"
+        period_order = degree_period
         trigo_function = fitted_periodicity_fonc(y, date_vec, OrderTrig=degree_period)
         periodicity, period = trigo_function.(date_vec), trigo_function.(Date(0):(Date(1)-Day(1)))
+
     elseif periodicity_model == "smooth"
+        period_order = degree_period
         smooth_function = fitted_smooth_periodicity_fonc(y, date_vec, OrderDiff=degree_period)
         periodicity, period = smooth_function.(date_vec), smooth_function.(Date(0):(Date(1)-Day(1)))
+
     elseif periodicity_model == "autotrigo"
-        autotrigo_function = fitted_periodicity_fonc_auto(y, date_vec, MaxOrder=degree_period)
+        autotrigo_function, period_order = fitted_periodicity_fonc_auto(y, date_vec, MaxOrder=degree_period)
         periodicity, period = autotrigo_function.(date_vec), autotrigo_function.(Date(0):(Date(1)-Day(1)))
+
     elseif periodicity_model == "stepwise_trigo"
-        autotrigo_function = fitted_periodicity_fonc_stepwise(y, date_vec, MaxOrder=degree_period)
+        autotrigo_function, period_order = fitted_periodicity_fonc_stepwise(y, date_vec, MaxOrder=degree_period)
         periodicity, period = autotrigo_function.(date_vec), autotrigo_function.(Date(0):(Date(1)-Day(1)))
     end
     z = y - periodicity
@@ -203,17 +214,23 @@ function fit_AR(x, date_vec;
     σ_periodicity_model != "null" ? σ_degree_period == 0 ? σ_degree_period = defaultorder[σ_periodicity_model] : nothing : nothing
 
     if σ_periodicity_model == "trigo"
+        σ_period_order = σ_degree_period
         trigo_function = fitted_periodicity_fonc(z .^ 2, date_vec, OrderTrig=σ_degree_period)
         σ_periodicity, σ_period = trigo_function.(date_vec) .^ 0.5, trigo_function.(Date(0):(Date(1)-Day(1))) .^ 0.5
+
     elseif σ_periodicity_model == "smooth"
+        σ_period_order = σ_degree_period
         smooth_function = fitted_smooth_periodicity_fonc(z .^ 2, date_vec, OrderDiff=σ_degree_period)
         σ_periodicity, σ_period = smooth_function.(date_vec) .^ 0.5, smooth_function.(Date(0):(Date(1)-Day(1))) .^ 0.5
+
     elseif σ_periodicity_model == "autotrigo"
-        autotrigo_function = fitted_periodicity_fonc_auto(z .^ 2, date_vec, MaxOrder=σ_degree_period)
+        autotrigo_function, σ_period_order = fitted_periodicity_fonc_auto(z .^ 2, date_vec, MaxOrder=σ_degree_period)
         σ_periodicity, σ_period = autotrigo_function.(date_vec) .^ 0.5, autotrigo_function.(Date(0):(Date(1)-Day(1))) .^ 0.5
+
     elseif σ_periodicity_model == "stepwise_trigo"
-        autotrigo_function = fitted_periodicity_fonc_stepwise(z .^ 2, date_vec, MaxOrder=σ_degree_period)
+        autotrigo_function, σ_period_order = fitted_periodicity_fonc_stepwise(z .^ 2, date_vec, MaxOrder=σ_degree_period)
         σ_periodicity, σ_period = autotrigo_function.(date_vec) .^ 0.5, autotrigo_function.(Date(0):(Date(1)-Day(1))) .^ 0.5
+        
     else
         σ_periodicity, σ_period = ones(length(z)), ones(366)
     end
@@ -223,7 +240,7 @@ function fit_AR(x, date_vec;
 
     Φ, σ = fit_ARMonthlyParameters(z, date_vec, p, method_)
 
-    return MonthlyAR(Φ, σ, trend, period, σ_trend, σ_period, date_vec, z[1:p])
+    return MonthlyAR(Φ, σ, trend, period, period_order, σ_trend, σ_period, σ_period_order, date_vec, z[1:p], z)
 end
 
 
@@ -313,9 +330,27 @@ function fit_Multi_AR(x, date_vec;
         nothing #Take Φ Σ daily (e.g 366-length list of matrix for Σ)
     end
 
-    return Multi_MonthlyAR(Φ, Σ, trend_mat, period_mat, σ_trend_mat, σ_period_mat, date_vec, z[1:p, :])
+    return Multi_MonthlyAR(Φ, Σ, trend_mat, period_mat, σ_trend_mat, σ_period_mat, date_vec, z[1:p, :], z)
 end
 #works
 
-save_model(model, title="model.JLD2") = save(title, "model", GetAllAttributes(model))
-load_model(file, struct_=Multi_MonthlyAR) = Multi_MonthlyAR(load(file)["model"]...)
+save_model(model, title="model.JLD2") = save(title, "model", model)
+load_model(file, struct_=Multi_MonthlyAR) = load(file)["model"]
+
+mutable struct CaracteristicsSeries
+    avg_day::AbstractVector
+    max_day::AbstractVector
+    df_month::DataFrame
+end
+
+function init_CaracteristicsSeries(series)
+    Days_list = GatherYearScenario(series[!, 2], series.DATE)
+    avg_day = mean.(Days_list)
+    max_day = maximum.(Days_list)
+    df_month = @chain series begin
+        @transform(:TEMP = series[!, 2]) #Give a common name for TX, TN, etc...
+        @transform(:MONTH = month.(:DATE)) #add month column
+        @by(:MONTH, :MONTHLY_MEAN = mean(:TEMP), :MONTHLY_STD = std(:TEMP), :MONTHLY_MAX = maximum(:TEMP)) # grouby MONTH + takes the mean/std in each category 
+    end
+    return CaracteristicsSeries(avg_day, max_day, df_month)
+end

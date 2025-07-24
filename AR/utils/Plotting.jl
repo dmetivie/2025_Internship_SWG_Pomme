@@ -1,5 +1,6 @@
 include("utils.jl")
 include("../presentation/presutils.jl")
+include("ACF_PACF.jl")
 
 @tryusing "CairoMakie"
 
@@ -304,4 +305,19 @@ function Sample_diagnostic(sample_, date_vec, period, avg_day, max_day, df_month
 end
 
 
+function Sample_diagnostic(sample_,Caracteristics_Series,Model;format_="vertical", size=format_ == "vertical" ? (1200, 1900) : (1600, 900))
+    fig1 = PlotMonthlyparams([invert(Model.Φ) ; [Model.σ]])
+    fig2 = Sample_diagnostic(sample_, 
+    Model.date_vec,
+    Model.period .+ mean(Model.trend), 
+    Caracteristics_Series.avg_day,
+    Caracteristics_Series.max_day,
+    Caracteristics_Series.df_month,
+    format_=format_,
+    size=size
+    )
+    fig3=Plot_Sample_MonthlyACF(sample_,Model.date_vec,Model.z)
+    fig4=Plot_Sample_MonthlyPACF(sample_,Model.date_vec,Model.z)
+    return (fig1,fig2,fig3,fig4)
+end
 

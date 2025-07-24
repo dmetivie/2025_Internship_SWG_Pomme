@@ -61,7 +61,7 @@ function MonthlyACF(Monthly_temp::AbstractVector, return_data::Bool=false)
     end
     return return_data ? (autocor_data, fig) : fig
 end
-MonthlyACF(x::AbstractVector{T}, sample_timeline::AbstractVector, return_data=false) = MonthlyACF(MonthlySeparateX(x, sample_timeline), return_data)
+MonthlyACF(x::AbstractVector{T}, sample_timeline::AbstractVector, return_data=false) where T<:AbstractFloat = MonthlyACF(MonthlySeparateX(x, sample_timeline), return_data)
 
 
 """
@@ -98,7 +98,7 @@ function MonthlyPACF(Monthly_temp, return_data::Bool=false)
     end
     return return_data ? (pacf_data, fig) : fig
 end
-MonthlyPACF(x::AbstractVector{T}, sample_timeline::AbstractVector, return_data=false) = MonthlyPACF(MonthlySeparateX(x, sample_timeline), return_data)
+MonthlyPACF(x::AbstractVector{T}, sample_timeline::AbstractVector, return_data=false) where T<:AbstractFloat = MonthlyPACF(MonthlySeparateX(x, sample_timeline), return_data)
 
 ###Monthly ACF samples###
 """
@@ -130,36 +130,29 @@ end
 
 Plot the boxplots of the mean monthly ACF of the scenarios in samples and if asked the mean monthly ACF of the series in Monthly_temp.
 """
-function Plot_Sample_MonthlyACF(samples::AbstractVector, sample_timeline::AbstractVector{Date}, Monthly_temp=nothing)
+function Plot_Sample_MonthlyACF(samples::AbstractVector, sample_timeline::AbstractVector{Date}, true_matrix=nothing)
     list_matrix = Sample_MonthlyACF(samples, sample_timeline)
-    isnothing(Monthly_temp) ? nothing : true_matrix = MatrixMonthlyACF(Monthly_temp)
     fig = Figure(size=(800, 800))
     supertitle = Label(fig[1, 1:4], "Monthly average ACF", fontsize=20)
     ax_vec = Axis[]
     min_y, max_y = 0, 0
     for i in 1:11
-        sample_acf = [matrix_[i, 1] for matrix_ in list_matrix]
-        ax, _ = CairoMakie.boxplot(fig[((i-1)÷4)+2, (i-1)%4+1], fill(1, length(sample_acf)), sample_acf; color="blue")
+        sample_acf = invert([matrix_[i, :] for matrix_ in list_matrix])
+        ax, _ = CairoMakie.barplot(fig[((i-1)÷4)+2, (i-1)%4+1], 1:10, maximum.(sample_acf); fillto=minimum.(sample_acf), color=("#009bff", 0.5))
+        scatter!(ax, 1:10, median.(sample_acf), color=("#009bff", 0.8), marker=:hline, markersize=15)
         ax.title = Month_vec[i]
-        for j in 2:10
-            sample_acf = [matrix_[i, j] for matrix_ in list_matrix]
-            CairoMakie.boxplot!(ax, fill(j, length(sample_acf)), sample_acf; color="blue")
-        end
-        isnothing(Monthly_temp) ? nothing : scatter!(ax, 1:10, true_matrix[i, :], color="#e57420", marker=:hline, markersize=15)
+        isnothing(true_matrix) ? nothing : scatter!(ax, 1:10, true_matrix[i, :], color="#e57420", marker=:hline, markersize=15)
         push!(ax_vec, ax)
         CompleteMonthlySample = [reduce(vcat, [matrix_[i, :] for matrix_ in list_matrix]); true_matrix[i, :]] #All the autocorrelations in the i-th month.
         max_y = max(maximum(CompleteMonthlySample), max_y)
         min_y = min(minimum(CompleteMonthlySample), min_y)
     end
     ##### Same part as inside the for loop but we keep plot1 and plot2 for legends.
-    sample_acf = [matrix_[12, 1] for matrix_ in list_matrix]
-    ax, plot1 = CairoMakie.boxplot(fig[((12-1)÷4)+2, (12-1)%4+1], fill(1, length(sample_acf)), sample_acf; color="blue")
+    sample_acf = invert([matrix_[12, :] for matrix_ in list_matrix])
+    ax, plot1 = CairoMakie.barplot(fig[((12-1)÷4)+2, (12-1)%4+1], 1:10, maximum.(sample_acf); fillto=minimum.(sample_acf), color=("#009bff", 0.5))
+    plot2 = scatter!(ax, 1:10, median.(sample_acf), color=("#009bff", 0.8), marker=:hline, markersize=15)
     ax.title = Month_vec[12]
-    for j in 2:10
-        sample_acf = [matrix_[12, j] for matrix_ in list_matrix]
-        CairoMakie.boxplot!(ax, fill(j, length(sample_acf)), sample_acf; color="blue")
-    end
-    isnothing(Monthly_temp) ? nothing : plot2 = scatter!(ax, 1:10, true_matrix[12, :], color="#e57420", marker=:hline, markersize=15)
+    isnothing(true_matrix) ? nothing : plot3 = scatter!(ax, 1:10, true_matrix[12, :], color="#e57420", marker=:hline, markersize=15)
     push!(ax_vec, ax)
     CompleteMonthlySample = [reduce(vcat, [matrix_[12, :] for matrix_ in list_matrix]); true_matrix[12, :]]
     max_y = max(maximum(CompleteMonthlySample), max_y)
@@ -170,9 +163,10 @@ function Plot_Sample_MonthlyACF(samples::AbstractVector, sample_timeline::Abstra
         ax.xgridvisible = false
         ax.xticks = 0:10
     end
-    Legend(fig[5, 1:4], [plot1, plot2], ["boxplot of means (on a simulation) autocorrelations of the simulated temperatures", "mean autocorrelation of the recorded temperatures"])
+    Legend(fig[5, 1:4], [plot1, plot2, plot3], ["Range of means autocorrelations of the simulated temperatures","Median of means autocorrelation of the simulated temperatures", "mean autocorrelation of the recorded temperatures"])
     return fig
 end
+Plot_Sample_MonthlyACF(samples::AbstractVector, sample_timeline::AbstractVector{Date}, Monthly_temp::AbstractVector{T}) where T<:AbstractVector = Plot_Sample_MonthlyACF(samples, sample_timeline, MatrixMonthlyACF(Monthly_temp))
 Plot_Sample_MonthlyACF(samples::AbstractVector, sample_timeline::AbstractVector{Date}, x::AbstractVector{T}) where T<:AbstractFloat = Plot_Sample_MonthlyACF(samples, sample_timeline, MonthlySeparateX(x, sample_timeline))
 
 """
@@ -218,36 +212,71 @@ end
 
 Plot the boxplots of the mean monthly PACF of the scenarios in samples and if asked the mean monthly PACF of the series in Monthly_temp.
 """
-function Plot_Sample_MonthlyPACF(samples::AbstractVector, sample_timeline::AbstractVector{Date}, Monthly_temp=nothing)
+# function Plot_Sample_MonthlyPACF(samples::AbstractVector, sample_timeline::AbstractVector{Date}, true_matrix=nothing)
+#     list_matrix = Sample_MonthlyPACF(samples, sample_timeline)
+#     fig = Figure(size=(800, 750))
+#     supertitle = Label(fig[1, 1:4], "Monthly average PACF", fontsize=20)
+#     ax_vec = Axis[]
+#     min_y, max_y = 0, 0
+#     for i in 1:11
+#         sample_acf = [matrix_[i, 1] for matrix_ in list_matrix]
+#         ax, _ = CairoMakie.boxplot(fig[((i-1)÷4)+2, (i-1)%4+1], fill(1, length(sample_acf)), sample_acf; color="blue")
+#         ax.title = Month_vec[i]
+#         for j in 2:10
+#             sample_acf = [matrix_[i, j] for matrix_ in list_matrix]
+#             CairoMakie.boxplot!(ax, fill(j, length(sample_acf)), sample_acf; color="blue")
+#         end
+#         isnothing(true_matrix) ? nothing : scatter!(ax, 1:10, true_matrix[i, :], color="#e57420", marker=:hline, markersize=15)
+#         push!(ax_vec, ax)
+#         CompleteMonthlySample = [reduce(vcat, [matrix_[i, :] for matrix_ in list_matrix]); true_matrix[i, :]] #All the PACF in the i-th month.
+#         max_y = max(maximum(CompleteMonthlySample), max_y)
+#         min_y = min(minimum(CompleteMonthlySample), min_y)
+#     end
+#     ##### Same part as inside the for loop but we keep plot1 and plot2 for legends.
+#     sample_acf = [matrix_[12, 1] for matrix_ in list_matrix]
+#     ax, plot1 = CairoMakie.boxplot(fig[((12-1)÷4)+2, (12-1)%4+1], fill(1, length(sample_acf)), sample_acf; color="blue")
+#     ax.title = Month_vec[12]
+#     for j in 2:10
+#         sample_acf = [matrix_[12, j] for matrix_ in list_matrix]
+#         CairoMakie.boxplot!(ax, fill(j, length(sample_acf)), sample_acf; color="blue")
+#     end
+#     isnothing(true_matrix) ? nothing : plot2 = scatter!(ax, 1:10, true_matrix[12, :], color="#e57420", marker=:hline, markersize=15)
+#     push!(ax_vec, ax)
+#     CompleteMonthlySample = [reduce(vcat, [matrix_[12, :] for matrix_ in list_matrix]); true_matrix[12, :]]
+#     max_y = max(maximum(CompleteMonthlySample), max_y)
+#     min_y = min(minimum(CompleteMonthlySample), min_y)
+#     #####
+#     for ax in ax_vec
+#         ax.limits = (nothing, [min_y - 0.15, max_y + 0.15])
+#         ax.xgridvisible = false
+#         ax.xticks = 0:10
+#     end
+#     Legend(fig[5, 1:4], [plot1, plot2], ["boxplot of means (on a simulation) PACF of the simulated temperatures", "mean PACF of the recorded temperatures"])
+#     return fig
+# end
+function Plot_Sample_MonthlyPACF(samples::AbstractVector, sample_timeline::AbstractVector{Date}, true_matrix=nothing)
     list_matrix = Sample_MonthlyPACF(samples, sample_timeline)
-    isnothing(Monthly_temp) ? nothing : true_matrix = MatrixMonthlyPACF(Monthly_temp)
-    fig = Figure(size=(800, 750))
+    fig = Figure(size=(800, 800))
     supertitle = Label(fig[1, 1:4], "Monthly average PACF", fontsize=20)
     ax_vec = Axis[]
     min_y, max_y = 0, 0
     for i in 1:11
-        sample_acf = [matrix_[i, 1] for matrix_ in list_matrix]
-        ax, _ = CairoMakie.boxplot(fig[((i-1)÷4)+2, (i-1)%4+1], fill(1, length(sample_acf)), sample_acf; color="blue")
+        sample_pacf = invert([matrix_[i, :] for matrix_ in list_matrix])
+        ax, _ = CairoMakie.barplot(fig[((i-1)÷4)+2, (i-1)%4+1], 1:10, maximum.(sample_pacf); fillto=minimum.(sample_pacf), color=("#009bff", 0.5))
+        scatter!(ax, 1:10, median.(sample_pacf), color=("#009bff", 0.8), marker=:hline, markersize=15)
         ax.title = Month_vec[i]
-        for j in 2:10
-            sample_acf = [matrix_[i, j] for matrix_ in list_matrix]
-            CairoMakie.boxplot!(ax, fill(j, length(sample_acf)), sample_acf; color="blue")
-        end
-        isnothing(Monthly_temp) ? nothing : scatter!(ax, 1:10, true_matrix[i, :], color="#e57420", marker=:hline, markersize=15)
+        isnothing(true_matrix) ? nothing : scatter!(ax, 1:10, true_matrix[i, :], color="#e57420", marker=:hline, markersize=15)
         push!(ax_vec, ax)
-        CompleteMonthlySample = [reduce(vcat, [matrix_[i, :] for matrix_ in list_matrix]); true_matrix[i, :]] #All the PACF in the i-th month.
+        CompleteMonthlySample = [reduce(vcat, [matrix_[i, :] for matrix_ in list_matrix]); true_matrix[i, :]] #All the pacf in the i-th month.
         max_y = max(maximum(CompleteMonthlySample), max_y)
         min_y = min(minimum(CompleteMonthlySample), min_y)
     end
     ##### Same part as inside the for loop but we keep plot1 and plot2 for legends.
-    sample_acf = [matrix_[12, 1] for matrix_ in list_matrix]
-    ax, plot1 = CairoMakie.boxplot(fig[((12-1)÷4)+2, (12-1)%4+1], fill(1, length(sample_acf)), sample_acf; color="blue")
+    sample_pacf = invert([matrix_[12, :] for matrix_ in list_matrix])
+    ax, plot1 = CairoMakie.barplot(fig[((12-1)÷4)+2, (12-1)%4+1], 1:10, maximum.(sample_pacf); fillto=minimum.(sample_pacf), color=("#009bff", 0.5))
+    plot2 = scatter!(ax, 1:10, median.(sample_pacf), color=("#009bff", 0.8), marker=:hline, markersize=15)
     ax.title = Month_vec[12]
-    for j in 2:10
-        sample_acf = [matrix_[12, j] for matrix_ in list_matrix]
-        CairoMakie.boxplot!(ax, fill(j, length(sample_acf)), sample_acf; color="blue")
-    end
-    isnothing(Monthly_temp) ? nothing : plot2 = scatter!(ax, 1:10, true_matrix[12, :], color="#e57420", marker=:hline, markersize=15)
+    isnothing(true_matrix) ? nothing : plot3 = scatter!(ax, 1:10, true_matrix[12, :], color="#e57420", marker=:hline, markersize=15)
     push!(ax_vec, ax)
     CompleteMonthlySample = [reduce(vcat, [matrix_[12, :] for matrix_ in list_matrix]); true_matrix[12, :]]
     max_y = max(maximum(CompleteMonthlySample), max_y)
@@ -258,9 +287,10 @@ function Plot_Sample_MonthlyPACF(samples::AbstractVector, sample_timeline::Abstr
         ax.xgridvisible = false
         ax.xticks = 0:10
     end
-    Legend(fig[5, 1:4], [plot1, plot2], ["boxplot of means (on a simulation) PACF of the simulated temperatures", "mean PACF of the recorded temperatures"])
+    Legend(fig[5, 1:4], [plot1, plot2, plot3], ["Range of means PACF of the simulated temperatures","Median of means PACF of the simulated temperatures", "mean PACF of the recorded temperatures"])
     return fig
 end
+Plot_Sample_MonthlyPACF(samples::AbstractVector, sample_timeline::AbstractVector{Date}, Monthly_temp::AbstractVector{T}) where T<:AbstractVector = Plot_Sample_MonthlyPACF(samples, sample_timeline, MatrixMonthlyPACF(Monthly_temp))
 Plot_Sample_MonthlyPACF(samples::AbstractVector, sample_timeline::AbstractVector{Date}, x::AbstractVector{T}) where T<:AbstractFloat = Plot_Sample_MonthlyPACF(samples, sample_timeline, MonthlySeparateX(x, sample_timeline))
 
 

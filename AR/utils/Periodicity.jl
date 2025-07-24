@@ -90,7 +90,8 @@ function fitted_periodicity_fonc_stepwise(x::AbstractVector, date_vec::AbstractV
         trigo_decompo = [trigo_version(j, t) for j in I]
         return dot(beta, trigo_decompo)
     end
-    return return_parameters ? (func, beta) : func
+    Order = Integer(trunc(maximum(I)/2))
+    return return_parameters ? (func, beta) : (func,Order)
 end
 
 
@@ -118,6 +119,5 @@ function fitted_periodicity_fonc_auto(x::AbstractVector, date_vec::AbstractVecto
         return dot(beta, [1; IL])
     end
     Verbose ? println("Best AIC ($(trunc(minimum(AIC_vec)))) reached for i=$(I)") : nothing
-    return return_parameters ? (func, beta) : func
+    return return_parameters ? (func, beta) : func,I
 end
-
