@@ -10,7 +10,7 @@ years = unique(Dates.year.(series.DATE))
 
 x, date_vec = series[:, 2], series[:, :DATE]
 
-model = fit_MonthlyAR(x, date_vec)
+model = fit_AR(x, date_vec)
 ##Principle
 date_range_p = findfirst(series.DATE .== Date(2003, 1, 1)):findfirst(series.DATE .== Date(2004, 1, 1))
 x_p, date_vec_p = x[date_range_p], date_vec[date_range_p]
@@ -28,13 +28,13 @@ save("ts.pdf", fig; px_per_unit=2.0)
 
 #3 gen
 include("presutils.jl")
-sample_ = rand(model, date_vec_p, 3)
+sample_ = rand(model, 3, date_vec_p)
 fig = PlotCards(sample_, date_vec_p)
 save("3gen.pdf", fig; px_per_unit=2.0)
 
 
 #5000 gens
-sample_ = rand(model, date_vec_p, 5000)
+sample_ = rand(model, 5000, date_vec_p)
 SamplePerDate = invert(sample_)
 
 bands = [(minimum.(SamplePerDate), maximum.(SamplePerDate)), (quantile.(SamplePerDate, 0.25), quantile.(SamplePerDate, 0.75))]

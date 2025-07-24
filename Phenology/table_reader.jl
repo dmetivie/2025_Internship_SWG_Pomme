@@ -33,14 +33,14 @@ function extract_series(file::String; year=nothing, plot=false, type_data=nothin
     table = CSV.read(file, DataFrame, normalizenames=true, skipto=22, header=21, ignoreemptyrows=true)
     isnothing(type_data) ? type_data = file[end-17:end-16] : nothing
     # num_station = match(r"([1-9]\d*)", file).match
-    df = table[table[!, "Q_"*type_data].==0, ["DATE", type_data]]
+    df = table[table[!, 5].==0, [3, 4]]
     df.DATE = Date.(string.(df.DATE), dateformat"yyyymmdd")
-    df[!, type_data] /= 10
+    df[!, 2] /= 10
     type_map = Dict("TX" => "maximum", "TN" => "minimum", "TG" => "average")
     if year != nothing
         df = df[Date(year).<=df.DATE.<Date(year + 1), :]
         if plot
-            fig, ax = lines(df.DATE, df[!, type_data])
+            fig, ax = lines(df.DATE, df[!, 2])
             ax.title = "Daily $(type_map[type_data]) temperatures" #from the station n°$(num_station)"
             ax.xlabel = "Date"
             ax.ylabel = "Temperature (°C)"
@@ -50,8 +50,8 @@ function extract_series(file::String; year=nothing, plot=false, type_data=nothin
         end
     elseif plot
         fig = Figure()
-        ax, plot1 = lines(fig[1:2, 1:2], df.DATE, df[!, type_data])
-        plot2 = lines!(ax, df.DATE, ma_odd(df[!, type_data], 365))
+        ax, plot1 = lines(fig[1:2, 1:2], df.DATE, df[!, 2])
+        plot2 = lines!(ax, df.DATE, ma_odd(df[!, 2], 365))
         ax.title = "Daily $(type_map[type_data]) temperatures from the station n°$(num_station)"
         ax.xlabel = "Date"
         ax.ylabel = "Temperature (°C)"
@@ -87,11 +87,11 @@ function truncate_MV(df_full, temperature_type)
         end
     end
     if Date(year(df.DATE[1]), month(df.DATE[1])) + Month(1) - df.DATE[1] < Day(20) #If there are not enough days in the first month I remove it.
-        df = df[df.DATE.>=(Date(year(df.DATE[1]), month(df.DATE[1]))+Month(1)), :]
+        df = df[df.DATE.>=(Date(year(df.DATE[1]), month(df.DATE[1])) + Month(1)), :]
     end
     if df.DATE[end] - Date(year(df.DATE[end]), month(df.DATE[end])) < Day(19) #The same thing for the last month.
         df = df[df.DATE.<Date(year(df.DATE[end]), month(df.DATE[end])), :]
     end
     return df
 end
-truncate_MV(df_full) = truncate_MV(df_full, nothing) #To avoid error with old call of this function, where temperature_type was necessary 
+truncate_MV(df_full) = truncate_MV(df_full, nothing) #To avoid error 

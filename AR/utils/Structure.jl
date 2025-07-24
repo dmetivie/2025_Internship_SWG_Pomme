@@ -4,6 +4,7 @@ include("../table_reader.jl")
 include("Estimation.jl")
 include("Simulation.jl")
 include("Trend.jl")
+include("Multi_AR_Estimation.jl")
 
 abstract type AR_SWG end
 
@@ -14,14 +15,40 @@ mutable struct SimpleAR <: AR_SWG
     y₁::AbstractVector
 end
 
+# mutable struct MonthlyAR <: AR_SWG
+#     Φ::AbstractVector
+#     σ::AbstractVector
+#     trend::AbstractVector
+#     period::AbstractVector
+#     date_vec::AbstractVector
+#     y₁::AbstractVector
+# end
+
+
 mutable struct MonthlyAR <: AR_SWG
     Φ::AbstractVector
     σ::AbstractVector
     trend::AbstractVector
     period::AbstractVector
+    σ_trend::AbstractVector
+    σ_period::AbstractVector
     date_vec::AbstractVector
     y₁::AbstractVector
 end
+
+
+mutable struct Multi_MonthlyAR <: AR_SWG
+    Φ::AbstractArray
+    σ::AbstractArray
+    trend::AbstractArray
+    period::AbstractArray
+    σ_trend::AbstractArray
+    σ_period::AbstractArray
+    date_vec::AbstractArray
+    y₁::AbstractArray
+end
+
+
 
 function fit_simpleAR(x, date_vec, p, periodicity_model::String, degree_period::Integer)
     if periodicity_model == "trigo"
@@ -63,19 +90,29 @@ end
 
 inverse_dayofyear_Leap(n) = Date(0) + Day(n - 1)
 
-function Base.rand(rng::Random.AbstractRNG, model::AR_SWG, date_vec::AbstractVector{Date}, n::Integer=1; y₁=model.y₁)
+ismatrix(M) = false
+ismatrix(M::AbstractMatrix) = true
+
+function Base.rand(rng::Random.AbstractRNG, model::AR_SWG, n::Integer=1, date_vec::AbstractVector{Date}=model.date_vec; y₁=model.y₁)
+    if ismatrix(model.period)
+        period = model.period[dayofyear_Leap.(model.date_vec), :]
+        σ_period = model.σ_period[dayofyear_Leap.(model.date_vec), :]
+    else
+        period = model.period[dayofyear_Leap.(model.date_vec)]
+        σ_period = model.σ_period[dayofyear_Leap.(model.date_vec)]
+    end
     if date_vec == model.date_vec
-        return n == 1 ? SimulateScenario(y₁, date_vec, model.Φ, model.σ, model.trend .+ model.period[dayofyear_Leap.(model.date_vec)], rng) : SimulateScenarios(y₁, date_vec, model.Φ, model.σ, model.trend .+ model.period[dayofyear_Leap.(model.date_vec)], rng, n=n)
+        SimulateScenarios(y₁, date_vec, model.Φ, model.σ, model.trend .+ period, model.σ_trend .* σ_period, rng, n=n)
     else
         index_nspart = findall(t -> t ∈ date_vec, model.date_vec)
-        return n == 1 ? SimulateScenario(y₁, date_vec, model.Φ, model.σ, model.trend .+ model.period[dayofyear_Leap.(model.date_vec)], rng, index_nspart=index_nspart) : SimulateScenarios(y₁, date_vec, model.Φ, model.σ, model.trend .+ model.period[dayofyear_Leap.(model.date_vec)], rng, n=n, index_nspart=index_nspart)
+        SimulateScenarios(y₁, date_vec, model.Φ, model.σ, model.trend .+ period, model.σ_trend .* σ_period, rng, n=n, index_nspart=index_nspart)
     end
 end
-function Base.rand(rng::Random.AbstractRNG, model::AR_SWG, n2t::AbstractVector{Integer}, n::Integer=1; y₁=model.y₁)
-    return rand(rng, model, inverse_dayofyear_Leap.(n2t), n, y₁=y₁)
+function Base.rand(rng::Random.AbstractRNG, model::AR_SWG, n::Integer, n2t::AbstractVector{Integer}; y₁=model.y₁)
+    return rand(rng, model, n, inverse_dayofyear_Leap.(n2t), y₁=y₁)
 end
-Base.rand(model::AR_SWG, date_vec::AbstractVector{Date}, n::Integer=1; y₁=model.y₁) = rand(Random.default_rng(), model, date_vec, n, y₁=y₁)
-Base.rand(model::AR_SWG, n2t::AbstractVector{Integer}, n::Integer=1; y₁=model.y₁) = rand(Random.default_rng(), model, inverse_dayofyear_Leap.(n2t), n, y₁=y₁)
+Base.rand(model::AR_SWG, n::Integer=1, date_vec::AbstractVector{Date}=model.date_vec; y₁=model.y₁) = rand(Random.default_rng(), model, n, date_vec, y₁=y₁)
+Base.rand(model::AR_SWG, n::Integer, n2t::AbstractVector{Integer}; y₁=model.y₁) = rand(Random.default_rng(), model, n, inverse_dayofyear_Leap.(n2t), y₁=y₁)
 
 
 
@@ -103,11 +140,23 @@ function fit_ARMonthlyParameters(y, date_vec, p, method_)
     end
 end
 
-defaultparam = Dict([("LOESS", 0.4), ("polynomial", 1), ("null", 1)])
-defaultorder = Dict([("trigo", 5), ("smooth", 9), ("autotrigo", 50)])
-function fit_MonthlyAR(x, date_vec; p::Integer=1, method_::String="monthlyLL", periodicity_model::String="trigo", degree_period::Integer=0, Trendtype="LOESS", trendparam=nothing)
+
+
+defaultparam = Dict([("LOESS", 0.08), ("polynomial", 1), ("null", 1)])
+defaultorder = Dict([("trigo", 5), ("smooth", 9), ("autotrigo", 50),("stepwise_trigo", 50)])
+function fit_AR(x, date_vec;
+    p::Integer=1,
+    method_::String="monthlyLL",
+    periodicity_model::String="autotrigo",
+    degree_period::Integer=0,
+    Trendtype="LOESS",
+    trendparam=nothing,
+    σ_periodicity_model::String="autotrigo",
+    σ_degree_period::Integer=0,
+    σ_Trendtype="LOESS",
+    σ_trendparam=nothing)
+
     isnothing(trendparam) ? trendparam = defaultparam[Trendtype] : nothing
-    degree_period == 0 ? degree_period = defaultorder[periodicity_model] : nothing
 
     if Trendtype == "LOESS"
         trend = LOESS(x, trendparam)
@@ -118,6 +167,9 @@ function fit_MonthlyAR(x, date_vec; p::Integer=1, method_::String="monthlyLL", p
     end
     y = x - trend
 
+
+    degree_period == 0 ? degree_period = defaultorder[periodicity_model] : nothing
+
     if periodicity_model == "trigo"
         trigo_function = fitted_periodicity_fonc(y, date_vec, OrderTrig=degree_period)
         periodicity, period = trigo_function.(date_vec), trigo_function.(Date(0):(Date(1)-Day(1)))
@@ -125,79 +177,145 @@ function fit_MonthlyAR(x, date_vec; p::Integer=1, method_::String="monthlyLL", p
         smooth_function = fitted_smooth_periodicity_fonc(y, date_vec, OrderDiff=degree_period)
         periodicity, period = smooth_function.(date_vec), smooth_function.(Date(0):(Date(1)-Day(1)))
     elseif periodicity_model == "autotrigo"
+        autotrigo_function = fitted_periodicity_fonc_auto(y, date_vec, MaxOrder=degree_period)
+        periodicity, period = autotrigo_function.(date_vec), autotrigo_function.(Date(0):(Date(1)-Day(1)))
+    elseif periodicity_model == "stepwise_trigo"
         autotrigo_function = fitted_periodicity_fonc_stepwise(y, date_vec, MaxOrder=degree_period)
         periodicity, period = autotrigo_function.(date_vec), autotrigo_function.(Date(0):(Date(1)-Day(1)))
     end
     z = y - periodicity
 
+
+    if σ_Trendtype != "null"
+        isnothing(σ_trendparam) ? σ_trendparam = defaultparam[σ_Trendtype] : nothing
+        if σ_Trendtype == "LOESS"
+            σ_trend_sq = LOESS(z .^ 2, σ_trendparam)
+        elseif σ_Trendtype == "polynomial"
+            σ_trend_sq = PolyTrendFunc(z^2, σ_trendparam).(eachindex(x))
+        end
+        σ_trend = σ_trend_sq .^ 0.5
+    else
+        σ_trend = ones(length(z))
+    end
+    z = z ./ σ_trend
+
+
+    σ_periodicity_model != "null" ? σ_degree_period == 0 ? σ_degree_period = defaultorder[σ_periodicity_model] : nothing : nothing
+
+    if σ_periodicity_model == "trigo"
+        trigo_function = fitted_periodicity_fonc(z .^ 2, date_vec, OrderTrig=σ_degree_period)
+        σ_periodicity, σ_period = trigo_function.(date_vec) .^ 0.5, trigo_function.(Date(0):(Date(1)-Day(1))) .^ 0.5
+    elseif σ_periodicity_model == "smooth"
+        smooth_function = fitted_smooth_periodicity_fonc(z .^ 2, date_vec, OrderDiff=σ_degree_period)
+        σ_periodicity, σ_period = smooth_function.(date_vec) .^ 0.5, smooth_function.(Date(0):(Date(1)-Day(1))) .^ 0.5
+    elseif σ_periodicity_model == "autotrigo"
+        autotrigo_function = fitted_periodicity_fonc_auto(z .^ 2, date_vec, MaxOrder=σ_degree_period)
+        σ_periodicity, σ_period = autotrigo_function.(date_vec) .^ 0.5, autotrigo_function.(Date(0):(Date(1)-Day(1))) .^ 0.5
+    elseif σ_periodicity_model == "stepwise_trigo"
+        autotrigo_function = fitted_periodicity_fonc_stepwise(z .^ 2, date_vec, MaxOrder=σ_degree_period)
+        σ_periodicity, σ_period = autotrigo_function.(date_vec) .^ 0.5, autotrigo_function.(Date(0):(Date(1)-Day(1))) .^ 0.5
+    else
+        σ_periodicity, σ_period = ones(length(z)), ones(366)
+    end
+    z = z ./ σ_periodicity
+
+
+
     Φ, σ = fit_ARMonthlyParameters(z, date_vec, p, method_)
 
-    return MonthlyAR(Φ, σ, trend, period, date_vec, z[1:p])
+    return MonthlyAR(Φ, σ, trend, period, σ_trend, σ_period, date_vec, z[1:p])
 end
 
-#If the degree period is not given, chooses the default degree period for each type of seasonality.
-# function fit_MonthlyAR(x, date_vec, p::Integer, method_::String="monthlyLL", periodicity_model::String="autotrigo")
-#     if periodicity_model == "trigo"
-#         return fit_MonthlyAR(x, date_vec, p, method_, periodicity_model, 5)
-#     elseif periodicity_model == "smooth"
-#         return fit_MonthlyAR(x, date_vec, p, method_, periodicity_model, 9)
-#     elseif periodicity_model == "autotrigo"
-#         return fit_MonthlyAR(x, date_vec, p, method_, periodicity_model, 50)
-#     # elseif periodicity_model == "mean"
-#     #     nspart = mean.(GatherYearScenario(x, date_vec))
-#     #     y = x - periodicity
-#     #     Φ, σ = fit_ARMonthlyParameters(y, date_vec, p, method_)
-#     #     return MonthlyAR(Φ, σ, nspart)
-#     end
-# end
-
-# #If the order of the AR is not given, chooses the defaut value as 1.
-# function fit_MonthlyAR(x, date_vec, method_::String="monthlyLL", periodicity_model::String="autotrigo")
-#     return fit_MonthlyAR(x, date_vec, 1, method_, periodicity_model)
-# end
-
-
-# x = rand(myAR, date_vec[1]:date_vec[end], 1, y₁=0.1)
-# date_vec2 = date_vec[1]:date_vec[end]
-# # fit_MonthlyAR(x, date_vec, p=2, degree_period::Integer=5) = fit_simpleAR(x, date_vec, p, "trigo", degree_period)
-
-# degree_period = 10
-# trigo_function = fitted_periodicity_fonc(x, date_vec[1]:date_vec[end], OrderTrig=degree_period)
-# periodicity = trigo_function.(date_vec2)
-# nspart = trigo_function.(Date(0):Date(1)-Day(1))
-
-# y = x - periodicity
-# Monthly_temp = MonthlySeparateX(y, date_vec2)
-# Monthly_Estimators = MonthlyEstimation(Monthly_temp, 2) #Monthly_Estimators[i][j][k][l] i-> month, j-> 1 if [Φ_1,Φ_2,...], 2 if σ,  k -> index of the parameter (Φⱼ) of year if Φ, l -> year 
-
-# Monthly_Estimators2 = [[[tuple_[1]; tuple_[2]] for tuple_ in Month] |> stack for Month in Monthly_Estimators]
-
-
-# meanparam = mulmean.(eachrow.(Monthly_Estimators2)) |> stack
-# Φ, σ = eachrow(meanparam[1:2, :]'), meanparam[3, :]
-
-# SimulateScenarios([0.1, 0.2], date_vec2, Φ, σ, nspart, n=100)
-
-# Monthly_Estimators[1][4]
-
-# cd((@__DIR__) * raw"\..")
-# include("../table_reader.jl")
-# include("../utils/Missing_values.jl")
-# series=extract_series("TX_STAID000031.txt",plot=false)
-# series=truncate_MV(series,"TX")
-# years=unique(Dates.year.(series.DATE))
 
 
 
 
-# LL_AR_Estimation_monthly(Monthly_temp, date_vec, p)
+function fit_Multi_AR(x, date_vec;
+    p::Integer=1,
+    method_::String="monthly",
+    periodicity_model::String="autotrigo",
+    degree_period::Integer=0,
+    Trendtype="LOESS",
+    trendparam=nothing,
+    σ_periodicity_model::String="autotrigo",
+    σ_degree_period::Integer=0,
+    σ_Trendtype="LOESS",
+    σ_trendparam=nothing)
+
+    isnothing(trendparam) ? trendparam = defaultparam[Trendtype] : nothing
+    degree_period == 0 ? degree_period = defaultorder[periodicity_model] : nothing
+    isnothing(σ_trendparam) ? σ_trendparam = defaultparam[σ_Trendtype] : nothing
+    σ_periodicity_model != "null" ? σ_degree_period == 0 ? σ_degree_period = defaultorder[σ_periodicity_model] : nothing : nothing
+
+    z, trend_mat, period_mat, σ_trend_mat, σ_period_mat = AbstractVector[], AbstractVector[], AbstractVector[], AbstractVector[], AbstractVector[]
+
+    for x_ in eachcol(x)
+        if Trendtype == "LOESS"
+            trend = LOESS(x_, trendparam)
+        elseif Trendtype == "polynomial"
+            trend = PolyTrendFunc(x_, trendparam).(eachindex(x))
+        else
+            trend = zero(x_)
+        end
+        y_ = x_ - trend
+        push!(trend_mat, trend)
+
+        if periodicity_model == "trigo"
+            trigo_function = fitted_periodicity_fonc(y_, date_vec, OrderTrig=degree_period)
+            periodicity, period = trigo_function.(date_vec), trigo_function.(Date(0):(Date(1)-Day(1)))
+        elseif periodicity_model == "smooth"
+            smooth_function = fitted_smooth_periodicity_fonc(y_, date_vec, OrderDiff=degree_period)
+            periodicity, period = smooth_function.(date_vec), smooth_function.(Date(0):(Date(1)-Day(1)))
+        elseif periodicity_model == "autotrigo"
+            autotrigo_function = fitted_periodicity_fonc_auto(y_, date_vec, MaxOrder=degree_period)
+            periodicity, period = autotrigo_function.(date_vec), autotrigo_function.(Date(0):(Date(1)-Day(1)))
+        end
+        z_ = y_ - periodicity
+        push!(period_mat, period)
 
 
-# function Base.rand(rng::Random.AbstractRNG, model::MonthlyAR, date_vec::AbstractVector{Date}, n::Integer=1; y₁=model.nspart[dayofyear_Leap.(date_vec[1:length(model.Φ[1])])])
-#     return n == 1 ? SimulateScenario(y₁, date_vec, model.Φ, model.σ, model.nspart, rng) : SimulateScenarios(y₁, date_vec, model.Φ, model.σ, model.nspart, rng, n=n)
-# end
-# function Base.rand(rng::Random.AbstractRNG, model::MonthlyAR, n2t::AbstractVector{Integer}, n::Integer=1; y₁=model.nspart[n2t[1:length(model.Φ[1])]])
-#     return rand(rng, model, inverse_dayofyear_Leap.(n2t), n, y₁=y₁)
-# end
-# Base.rand(model::MonthlyAR, date_vec::AbstractVector{Date}, n::Integer=1; y₁=model.nspart[dayofyear_Leap.(date_vec[1:length(model.Φ[1])])]) = rand(Random.default_rng(), model, date_vec, n, y₁=y₁)
-# Base.rand(model::MonthlyAR, n2t::AbstractVector{Integer}, n::Integer=1; y₁=model.nspart[n2t[1:length(model.Φ[1])]]) = rand(Random.default_rng(), model, inverse_dayofyear_Leap.(n2t), n, y₁=y₁)
+        if σ_Trendtype != "null"
+
+            if σ_Trendtype == "LOESS"
+                σ_trend_sq = LOESS(z_ .^ 2, σ_trendparam)
+            elseif σ_Trendtype == "polynomial"
+                σ_trend_sq = PolyTrendFunc(z_ .^ 2, σ_trendparam).(eachindex(x))
+            end
+            σ_trend = σ_trend_sq .^ 0.5
+        else
+            σ_trend = ones(length(z_))
+        end
+        z_ = z_ ./ σ_trend
+        push!(σ_trend_mat, σ_trend)
+
+
+        if σ_periodicity_model == "trigo"
+            trigo_function = fitted_periodicity_fonc(z_ .^ 2, date_vec, OrderTrig=σ_degree_period)
+            σ_periodicity, σ_period = trigo_function.(date_vec) .^ 0.5, trigo_function.(Date(0):(Date(1)-Day(1))) .^ 0.5
+        elseif σ_periodicity_model == "smooth"
+            smooth_function = fitted_smooth_periodicity_fonc(z_ .^ 2, date_vec, OrderDiff=σ_degree_period)
+            σ_periodicity, σ_period = smooth_function.(date_vec) .^ 0.5, smooth_function.(Date(0):(Date(1)-Day(1))) .^ 0.5
+        elseif σ_periodicity_model == "autotrigo"
+            autotrigo_function = fitted_periodicity_fonc_auto(z_ .^ 2, date_vec, MaxOrder=σ_degree_period)
+            σ_periodicity, σ_period = autotrigo_function.(date_vec) .^ 0.5, autotrigo_function.(Date(0):(Date(1)-Day(1))) .^ 0.5
+        else
+            σ_periodicity, σ_period = ones(length(z_)), ones(366)
+        end
+        z_ = z_ ./ σ_periodicity
+        push!(σ_period_mat, σ_period)
+        push!(z, z_)
+    end
+    z, trend_mat, period_mat, σ_trend_mat, σ_period_mat = stack.((z, trend_mat, period_mat, σ_trend_mat, σ_period_mat))
+
+    if method_ == "monthly"
+        Φ, Σ = ParseMonthlyParameter(LL_Multi_AR_Estimation_monthly(z, date_vec, p), size(x)[2])
+    else
+        nothing #Take Φ Σ daily (e.g 366-length list of matrix for Σ)
+    end
+
+    return Multi_MonthlyAR(Φ, Σ, trend_mat, period_mat, σ_trend_mat, σ_period_mat, date_vec, z[1:p, :])
+end
+#works
+
+save_model(model, title="model.JLD2") = save(title, "model", GetAllAttributes(model))
+load_model(file, struct_=Multi_MonthlyAR) = Multi_MonthlyAR(load(file)["model"]...)

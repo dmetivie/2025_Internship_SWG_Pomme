@@ -61,6 +61,8 @@ function MonthlyACF(Monthly_temp::AbstractVector, return_data::Bool=false)
     end
     return return_data ? (autocor_data, fig) : fig
 end
+MonthlyACF(x::AbstractVector{T}, sample_timeline::AbstractVector, return_data=false) = MonthlyACF(MonthlySeparateX(x, sample_timeline), return_data)
+
 
 """
     MonthlyPACF(Monthly_temp, return_data::Bool=false)
@@ -69,7 +71,7 @@ Return the graphs of the monthly average PACF of each series inside Monthly_temp
 Monthly_temp must be a 3 level-nested vector such as an output of MonthlySeparateX.
 If return_data = true, the function return a tuple with the PACF of each months inside Monthly_temp and the figure object.
 """
-function MonthlyPACF(Monthly_temp, return_data=false)
+function MonthlyPACF(Monthly_temp, return_data::Bool=false)
     fig = Figure(size=(800, 600))
     supertitle = Label(fig[1, 1:4], "Monthly average PACF", fontsize=20)
     ax_vec = Axis[]
@@ -96,7 +98,7 @@ function MonthlyPACF(Monthly_temp, return_data=false)
     end
     return return_data ? (pacf_data, fig) : fig
 end
-
+MonthlyPACF(x::AbstractVector{T}, sample_timeline::AbstractVector, return_data=false) = MonthlyPACF(MonthlySeparateX(x, sample_timeline), return_data)
 
 ###Monthly ACF samples###
 """
@@ -149,6 +151,7 @@ function Plot_Sample_MonthlyACF(samples::AbstractVector, sample_timeline::Abstra
         max_y = max(maximum(CompleteMonthlySample), max_y)
         min_y = min(minimum(CompleteMonthlySample), min_y)
     end
+    ##### Same part as inside the for loop but we keep plot1 and plot2 for legends.
     sample_acf = [matrix_[12, 1] for matrix_ in list_matrix]
     ax, plot1 = CairoMakie.boxplot(fig[((12-1)÷4)+2, (12-1)%4+1], fill(1, length(sample_acf)), sample_acf; color="blue")
     ax.title = Month_vec[12]
@@ -161,6 +164,7 @@ function Plot_Sample_MonthlyACF(samples::AbstractVector, sample_timeline::Abstra
     CompleteMonthlySample = [reduce(vcat, [matrix_[12, :] for matrix_ in list_matrix]); true_matrix[12, :]]
     max_y = max(maximum(CompleteMonthlySample), max_y)
     min_y = min(minimum(CompleteMonthlySample), min_y)
+    #####
     for ax in ax_vec
         ax.limits = (nothing, [min_y - 0.15, max_y + 0.15])
         ax.xgridvisible = false
@@ -169,7 +173,7 @@ function Plot_Sample_MonthlyACF(samples::AbstractVector, sample_timeline::Abstra
     Legend(fig[5, 1:4], [plot1, plot2], ["boxplot of means (on a simulation) autocorrelations of the simulated temperatures", "mean autocorrelation of the recorded temperatures"])
     return fig
 end
-
+Plot_Sample_MonthlyACF(samples::AbstractVector, sample_timeline::AbstractVector{Date}, x::AbstractVector{T}) where T<:AbstractFloat = Plot_Sample_MonthlyACF(samples, sample_timeline, MonthlySeparateX(x, sample_timeline))
 
 """
     Plot_Sample_MonthlyACF(samples::AbstractVector, sample_timeline::AbstractVector{Date}, Monthly_temp=nothing)
@@ -235,6 +239,7 @@ function Plot_Sample_MonthlyPACF(samples::AbstractVector, sample_timeline::Abstr
         max_y = max(maximum(CompleteMonthlySample), max_y)
         min_y = min(minimum(CompleteMonthlySample), min_y)
     end
+    ##### Same part as inside the for loop but we keep plot1 and plot2 for legends.
     sample_acf = [matrix_[12, 1] for matrix_ in list_matrix]
     ax, plot1 = CairoMakie.boxplot(fig[((12-1)÷4)+2, (12-1)%4+1], fill(1, length(sample_acf)), sample_acf; color="blue")
     ax.title = Month_vec[12]
@@ -247,6 +252,7 @@ function Plot_Sample_MonthlyPACF(samples::AbstractVector, sample_timeline::Abstr
     CompleteMonthlySample = [reduce(vcat, [matrix_[12, :] for matrix_ in list_matrix]); true_matrix[12, :]]
     max_y = max(maximum(CompleteMonthlySample), max_y)
     min_y = min(minimum(CompleteMonthlySample), min_y)
+    #####
     for ax in ax_vec
         ax.limits = (nothing, [min_y - 0.15, max_y + 0.15])
         ax.xgridvisible = false
@@ -255,6 +261,7 @@ function Plot_Sample_MonthlyPACF(samples::AbstractVector, sample_timeline::Abstr
     Legend(fig[5, 1:4], [plot1, plot2], ["boxplot of means (on a simulation) PACF of the simulated temperatures", "mean PACF of the recorded temperatures"])
     return fig
 end
+Plot_Sample_MonthlyPACF(samples::AbstractVector, sample_timeline::AbstractVector{Date}, x::AbstractVector{T}) where T<:AbstractFloat = Plot_Sample_MonthlyPACF(samples, sample_timeline, MonthlySeparateX(x, sample_timeline))
 
 
 """

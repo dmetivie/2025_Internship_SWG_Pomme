@@ -135,3 +135,23 @@ interleave2(args...) = collect(Iterators.flatten(zip(args...)))
 
 unzip(a) = map(x -> getfield.(a, x), fieldnames(eltype(a)))
 ## Source : https://stackoverflow.com/questions/36367482/unzip-an-array-of-tuples-in-julia
+
+GetAllAttributes(object) = map(field -> getfield(object, field), fieldnames(typeof(object)))
+## Source : https://discourse.julialang.org/t/get-the-name-and-the-value-of-every-field-for-an-object/87052/2
+
+
+function Common_indexes(series_vec::AbstractVector{DataFrame})
+    Date_vecs = [series.DATE for series in series_vec]
+    if all(y->y==Date_vecs[1],Date_vecs)
+        Temps_vecs = [series[:,2] for series in series_vec]
+        return Date_vecs[1], stack(Temps_vecs)
+    else #If the timelines are differents, we take the common timeline of the two series.
+        date_vec = maximum(Date_vec[1] for Date_vec in Date_vecs):minimum(Date_vec[end] for Date_vec in Date_vecs)
+        x = stack(series[:,2][findfirst(series.DATE .== date_vec[1]):findfirst(series.DATE .== date_vec[end])] for series in series_vec)
+        return date_vec, x
+    end
+end
+
+Common_indexes(files::String...) = Common_indexes(truncate_MV.(extract_series.(files)))
+Common_indexes(files::AbstractVector{String}) = Common_indexes(truncate_MV.(extract_series.(files)))
+

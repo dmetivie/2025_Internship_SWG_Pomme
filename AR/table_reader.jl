@@ -33,14 +33,14 @@ function extract_series(file::String; year=nothing, plot=false, type_data=nothin
     table = CSV.read(file, DataFrame, normalizenames=true, skipto=22, header=21, ignoreemptyrows=true)
     isnothing(type_data) ? type_data = file[end-17:end-16] : nothing
     # num_station = match(r"([1-9]\d*)", file).match
-    df = table[table[!, "Q_"*type_data].==0, ["DATE", type_data]]
+    df = table[table[!, 5].==0, [3, 4]]
     df.DATE = Date.(string.(df.DATE), dateformat"yyyymmdd")
-    df[!, type_data] /= 10
+    df[!, 2] /= 10
     type_map = Dict("TX" => "maximum", "TN" => "minimum", "TG" => "average")
     if year != nothing
         df = df[Date(year).<=df.DATE.<Date(year + 1), :]
         if plot
-            fig, ax = lines(df.DATE, df[!, type_data])
+            fig, ax = lines(df.DATE, df[!, 2])
             ax.title = "Daily $(type_map[type_data]) temperatures" #from the station n°$(num_station)"
             ax.xlabel = "Date"
             ax.ylabel = "Temperature (°C)"
@@ -50,8 +50,8 @@ function extract_series(file::String; year=nothing, plot=false, type_data=nothin
         end
     elseif plot
         fig = Figure()
-        ax, plot1 = lines(fig[1:2, 1:2], df.DATE, df[!, type_data])
-        plot2 = lines!(ax, df.DATE, ma_odd(df[!, type_data], 365))
+        ax, plot1 = lines(fig[1:2, 1:2], df.DATE, df[!, 2])
+        plot2 = lines!(ax, df.DATE, ma_odd(df[!, 2], 365))
         ax.title = "Daily $(type_map[type_data]) temperatures from the station n°$(num_station)"
         ax.xlabel = "Date"
         ax.ylabel = "Temperature (°C)"
