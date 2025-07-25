@@ -138,14 +138,29 @@ Opp_Log_Monthly_Likelihood_AR(Estimators::AbstractMatrix, tuple_::Tuple) = Opp_L
 
 Return the parameters of the AR(p) model on x with a set of parameter for each month. 
 """
-function LL_AR_Estimation_monthly(x::AbstractVector, date_vec::AbstractVector{Date}, p::Integer, Estimators::AbstractMatrix=stack([[[0.5 for _ in 1:p]; 1e-15] for _ in 1:12], dims=1), algo=LBFGS())
+function LL_AR_Estimation_monthly(x::AbstractVector, date_vec::AbstractVector{Date}, p::Integer, Estimators::AbstractMatrix=stack([[[0.5 for _ in 1:p]; 1e-15] for _ in 1:12], dims=1), algo=LBFGS(), Nb_try=10)
     lb = stack([[[-10 for _ in 1:p]; 1e-20] for _ in 1:12], dims=1)
     ub = stack([[[10 for _ in 1:p]; 1e2] for _ in 1:12], dims=1)
     p == size(Estimators)[2] - 1 ? nothing : error("p (=$(p)) is not equal to the number of Φ initial parameters (=$(length(Estimators)-1))")
     optf = OptimizationFunction(Opp_Log_Monthly_Likelihood_AR, AutoForwardDiff())
-    prob = OptimizationProblem(optf, Estimators, (x,date_vec), lb=lb, ub=ub)
+    prob = OptimizationProblem(optf, Estimators, (x, date_vec), lb=lb, ub=ub)
     Results = Optimization.solve(prob, algo, maxiters=10000) #maxiters should be modified if needed
-    return eachrow(Results[:,1:p]), Results[:,p+1] .^ (1/2)
+    if !SciMLBase.successful_retcode(Results.retcode)
+        @warn "Fail solve"
+    end
+    for i in 1:Nb_try
+        Estimators = rand(12, p + 1) #Reinitialize the parameters
+        prob = OptimizationProblem(optf, Estimators, (x, date_vec), lb=lb, ub=ub)
+        localResults = Optimization.solve(prob, algo, maxiters=10000) #maxiters should be modified if needed
+        if !SciMLBase.successful_retcode(Results.retcode)
+            @warn "Fail solve iteration $(i)"
+        end
+        if localResults.objective < Results.objective
+            Results = localResults
+            @info "New best result found with new initialization at iteration $(i)"
+        end
+    end
+    return eachrow(Results[:, 1:p]), Results[:, p+1] .^ (1 / 2)
 end
 
 
@@ -253,7 +268,7 @@ function AllEstimation(x::AbstractVector, p::Integer=1; Estimators::AbstractVect
     Φ_month_sumLL, σ_month_sumLL = MonthlyEstimationSumLL(Monthly_temp, p)
     append!(ParamOutput, [[invert(Φ_month_sumLL); [σ_month_sumLL]]])
 
-    if !isnothing(Date_vec) 
+    if !isnothing(Date_vec)
         Φ_month_MLL, σ_month_MLL = LL_AR_Estimation_monthly(x, Date_vec, p)
         append!(ParamOutput, [[invert(Φ_month_MLL); [σ_month_MLL]]])
     end
@@ -290,9 +305,9 @@ with Φ_vec like [[Φ_1_jan,Φ_2_jan,...Φ_p_jan], [Φ_1_feb,Φ_2_feb,...Φ_p_fe
 function TakeParameters(Parameters_vec::AbstractVector, method::String="mean")
     Parameters_vec = invert(Parameters_vec)
     if method == "mean"
-        raw = Parameters_vec[end - 1 - (method == "TrueParam")]
+        raw = Parameters_vec[end-1-(method=="TrueParam")]
     elseif method == "median"
-        raw = Parameters_vec[end - (method == "TrueParam")]
+        raw = Parameters_vec[end-(method=="TrueParam")]
     elseif method == "concat"
         raw = Parameters_vec[2]
     elseif method == "sumLL"
