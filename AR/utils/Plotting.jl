@@ -2,7 +2,7 @@ include("utils.jl")
 include("../presentation/presutils.jl")
 include("ACF_PACF.jl")
 
-@tryusing "CairoMakie"
+@tryusing "CairoMakie","OrderedCollections"
 
 ##### PLOTTING #####
 """
@@ -305,7 +305,7 @@ function Sample_diagnostic(sample_, date_vec, period, avg_day, max_day, df_month
 end
 
 
-function Sample_diagnostic(sample_,Caracteristics_Series,Model;format_="vertical", size=format_ == "vertical" ? (1200, 1900) : (1600, 900))
+function Sample_diagnostic(sample_,Caracteristics_Series,Model;format_="vertical", size=format_ == "vertical" ? (1200, 1900) : (1600, 900), folder=nothing,settings=nothing )
     fig1 = PlotMonthlyparams([invert(Model.Φ) ; [Model.σ]])
     fig2 = Sample_diagnostic(sample_, 
     Model.date_vec,
@@ -318,6 +318,25 @@ function Sample_diagnostic(sample_,Caracteristics_Series,Model;format_="vertical
     )
     fig3=Plot_Sample_MonthlyACF(sample_,Model.date_vec,Model.z)
     fig4=Plot_Sample_MonthlyPACF(sample_,Model.date_vec,Model.z)
+
+    if !isnothing(folder)
+        mkpath(folder)
+        save(folder * "/Params.pdf",fig1; px_per_unit=2.0)
+        save(folder * "/Sample_diagnostic.pdf",fig2; px_per_unit=2.0)
+        save(folder * "/MonthlyACF.pdf",fig3; px_per_unit=2.0)
+        save(folder * "/MonthlyPACF.pdf",fig4; px_per_unit=2.0)
+        open(folder * "/Figures.txt","a") do io
+            if !isnothing(settings)
+                println(io,"Settings :\n")
+                    for key in keys(settings)
+                        println(io,"$(key) : $(settings[key])")
+                    end
+                println(io,"\n\n")
+            end
+            println(io,"Results :\n")
+            println(io,"Additive periodicity order : $(Model.period_order)")
+            println(io,"Multiplicative periodicity order : $(Model.σ_period_order)")
+        end
+    end
     return (fig1,fig2,fig3,fig4)
 end
-

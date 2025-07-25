@@ -334,7 +334,7 @@ function fit_Multi_AR(x, date_vec;
 end
 #works
 
-save_model(model, title="model.JLD2") = save(title, "model", model)
+save_model(model, title="model.jld2") = save(title, "model", model)
 load_model(file, struct_=Multi_MonthlyAR) = load(file)["model"]
 
 mutable struct CaracteristicsSeries
