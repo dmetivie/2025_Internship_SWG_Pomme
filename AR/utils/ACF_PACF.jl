@@ -130,10 +130,10 @@ end
 
 Plot the boxplots of the mean monthly ACF of the scenarios in samples and if asked the mean monthly ACF of the series in Monthly_temp.
 """
-function Plot_Sample_MonthlyACF(samples::AbstractVector, sample_timeline::AbstractVector{Date}, true_matrix=nothing)
+function Plot_Sample_MonthlyACF(samples::AbstractVector, sample_timeline::AbstractVector{Date}, true_matrix=nothing, comment="")
     list_matrix = Sample_MonthlyACF(samples, sample_timeline)
     fig = Figure(size=(800, 800))
-    supertitle = Label(fig[1, 1:4], "Monthly average ACF", fontsize=20)
+    supertitle = Label(fig[1, 1:4], "Monthly average ACF " * comment, fontsize=20)
     ax_vec = Axis[]
     min_y, max_y = 0, 0
     for i in 1:11
@@ -163,11 +163,11 @@ function Plot_Sample_MonthlyACF(samples::AbstractVector, sample_timeline::Abstra
         ax.xgridvisible = false
         ax.xticks = 0:10
     end
-    Legend(fig[5, 1:4], [plot1, plot2, plot3], ["Range of means autocorrelations of the simulated temperatures","Median of means autocorrelations of the simulated temperatures", "mean autocorrelation of the recorded temperatures"])
+    Legend(fig[5, 1:4], [plot1, plot2, plot3], ["Range of means autocorrelations of the simulated temperatures", "Median of means autocorrelations of the simulated temperatures", "mean autocorrelation of the recorded temperatures"])
     return fig
 end
-Plot_Sample_MonthlyACF(samples::AbstractVector, sample_timeline::AbstractVector{Date}, Monthly_temp::AbstractVector{T}) where T<:AbstractVector = Plot_Sample_MonthlyACF(samples, sample_timeline, MatrixMonthlyACF(Monthly_temp))
-Plot_Sample_MonthlyACF(samples::AbstractVector, sample_timeline::AbstractVector{Date}, x::AbstractVector{T}) where T<:AbstractFloat = Plot_Sample_MonthlyACF(samples, sample_timeline, MonthlySeparateX(x, sample_timeline))
+Plot_Sample_MonthlyACF(samples::AbstractVector, sample_timeline::AbstractVector{Date}, Monthly_temp::AbstractVector{T}, comment="") where T<:AbstractVector = Plot_Sample_MonthlyACF(samples, sample_timeline, MatrixMonthlyACF(Monthly_temp), comment)
+Plot_Sample_MonthlyACF(samples::AbstractVector, sample_timeline::AbstractVector{Date}, x::AbstractVector{T}, comment="") where T<:AbstractFloat = Plot_Sample_MonthlyACF(samples, sample_timeline, MonthlySeparateX(x, sample_timeline), comment)
 
 """
     Plot_Sample_MonthlyACF(samples::AbstractVector, sample_timeline::AbstractVector{Date}, Monthly_temp=nothing)
@@ -212,10 +212,10 @@ end
 
 Plot the boxplots of the mean monthly PACF of the scenarios in samples and if asked the mean monthly PACF of the series in Monthly_temp.
 """
-function Plot_Sample_MonthlyPACF(samples::AbstractVector, sample_timeline::AbstractVector{Date}, true_matrix=nothing)
+function Plot_Sample_MonthlyPACF(samples::AbstractVector, sample_timeline::AbstractVector{Date}, true_matrix=nothing, comment="")
     list_matrix = Sample_MonthlyPACF(samples, sample_timeline)
     fig = Figure(size=(800, 800))
-    supertitle = Label(fig[1, 1:4], "Monthly average PACF", fontsize=20)
+    supertitle = Label(fig[1, 1:4], "Monthly average PACF " * comment, fontsize=20)
     ax_vec = Axis[]
     min_y, max_y = 0, 0
     for i in 1:11
@@ -245,11 +245,11 @@ function Plot_Sample_MonthlyPACF(samples::AbstractVector, sample_timeline::Abstr
         ax.xgridvisible = false
         ax.xticks = 0:10
     end
-    Legend(fig[5, 1:4], [plot1, plot2, plot3], ["Range of means PACF of the simulated temperatures","Median of means PACF of the simulated temperatures", "mean PACF of the recorded temperatures"])
+    Legend(fig[5, 1:4], [plot1, plot2, plot3], ["Range of means PACF of the simulated temperatures", "Median of means PACF of the simulated temperatures", "mean PACF of the recorded temperatures"])
     return fig
 end
-Plot_Sample_MonthlyPACF(samples::AbstractVector, sample_timeline::AbstractVector{Date}, Monthly_temp::AbstractVector{T}) where T<:AbstractVector = Plot_Sample_MonthlyPACF(samples, sample_timeline, MatrixMonthlyPACF(Monthly_temp))
-Plot_Sample_MonthlyPACF(samples::AbstractVector, sample_timeline::AbstractVector{Date}, x::AbstractVector{T}) where T<:AbstractFloat = Plot_Sample_MonthlyPACF(samples, sample_timeline, MonthlySeparateX(x, sample_timeline))
+Plot_Sample_MonthlyPACF(samples::AbstractVector, sample_timeline::AbstractVector{Date}, Monthly_temp::AbstractVector{T}, comment="") where T<:AbstractVector = Plot_Sample_MonthlyPACF(samples, sample_timeline, MatrixMonthlyPACF(Monthly_temp), comment)
+Plot_Sample_MonthlyPACF(samples::AbstractVector, sample_timeline::AbstractVector{Date}, x::AbstractVector{T}, comment="") where T<:AbstractFloat = Plot_Sample_MonthlyPACF(samples, sample_timeline, MonthlySeparateX(x, sample_timeline), comment)
 
 
 """

@@ -138,7 +138,7 @@ Opp_Log_Monthly_Likelihood_AR(Estimators::AbstractMatrix, tuple_::Tuple) = Opp_L
 
 Return the parameters of the AR(p) model on x with a set of parameter for each month. 
 """
-function LL_AR_Estimation_monthly(x::AbstractVector, date_vec::AbstractVector{Date}, p::Integer, Estimators::AbstractMatrix=stack([[[0.5 for _ in 1:p]; 1e-15] for _ in 1:12], dims=1), algo=LBFGS(), Nb_try=10)
+function LL_AR_Estimation_monthly(x::AbstractVector, date_vec::AbstractVector{Date}, p::Integer, Estimators::AbstractMatrix=stack([[[0.5 for _ in 1:p]; 1e-15] for _ in 1:12], dims=1), algo=LBFGS(), Nb_try=0)
     lb = stack([[[-10 for _ in 1:p]; 1e-20] for _ in 1:12], dims=1)
     ub = stack([[[10 for _ in 1:p]; 1e2] for _ in 1:12], dims=1)
     p == size(Estimators)[2] - 1 ? nothing : error("p (=$(p)) is not equal to the number of Φ initial parameters (=$(length(Estimators)-1))")
@@ -148,16 +148,18 @@ function LL_AR_Estimation_monthly(x::AbstractVector, date_vec::AbstractVector{Da
     if !SciMLBase.successful_retcode(Results.retcode)
         @warn "Fail solve"
     end
-    for i in 1:Nb_try
-        Estimators = rand(12, p + 1) #Reinitialize the parameters
-        prob = OptimizationProblem(optf, Estimators, (x, date_vec), lb=lb, ub=ub)
-        localResults = Optimization.solve(prob, algo, maxiters=10000) #maxiters should be modified if needed
-        if !SciMLBase.successful_retcode(Results.retcode)
-            @warn "Fail solve iteration $(i)"
-        end
-        if localResults.objective < Results.objective
-            Results = localResults
-            @info "New best result found with new initialization at iteration $(i)"
+    if Nb_try > 0 
+        for i in 1:Nb_try
+            Estimators = rand(12, p + 1) #Reinitialize the parameters
+            prob = OptimizationProblem(optf, Estimators, (x, date_vec), lb=lb, ub=ub)
+            localResults = Optimization.solve(prob, algo, maxiters=10000) #maxiters should be modified if needed
+            if !SciMLBase.successful_retcode(Results.retcode)
+                @warn "Fail solve iteration $(i)"
+            end
+            if localResults.objective < Results.objective
+                Results = localResults
+                @info "New best result found with new initialization at iteration $(i)"
+            end
         end
     end
     return eachrow(Results[:, 1:p]), Results[:, p+1] .^ (1 / 2)

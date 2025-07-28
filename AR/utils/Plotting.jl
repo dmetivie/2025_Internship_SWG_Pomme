@@ -2,7 +2,7 @@ include("utils.jl")
 include("../presentation/presutils.jl")
 include("ACF_PACF.jl")
 
-@tryusing "CairoMakie","OrderedCollections"
+@tryusing "CairoMakie", "OrderedCollections"
 
 ##### PLOTTING #####
 """
@@ -305,38 +305,107 @@ function Sample_diagnostic(sample_, date_vec, period, avg_day, max_day, df_month
 end
 
 
-function Sample_diagnostic(sample_,Caracteristics_Series,Model;format_="vertical", size=format_ == "vertical" ? (1200, 1900) : (1600, 900), folder=nothing,settings=nothing )
-    fig1 = PlotMonthlyparams([invert(Model.Φ) ; [Model.σ]])
-    fig2 = Sample_diagnostic(sample_, 
-    Model.date_vec,
-    Model.period .+ mean(Model.trend), 
-    Caracteristics_Series.avg_day,
-    Caracteristics_Series.max_day,
-    Caracteristics_Series.df_month,
-    format_=format_,
-    size=size
+function Sample_diagnostic(sample_, Caracteristics_Series, Model::MonthlyAR; format_="vertical", size=format_ == "vertical" ? (1200, 1900) : (1600, 900), folder=nothing, settings=nothing)
+    p, k = length(Model.y₁), Model.period_order
+    nspart_ = Model.trend .+ Model.period[dayofyear_Leap.(Model.date_vec)]
+    σ_nspart_ = Model.σ_trend .* Model.σ_period[dayofyear_Leap.(Model.date_vec)]
+    z_sample = map(sim -> (sim .- nspart_) ./ σ_nspart_, sample_)
+
+    fig1 = PlotMonthlyparams([invert(Model.Φ); [Model.σ]])
+    fig2 = Sample_diagnostic(sample_,
+        Model.date_vec,
+        Model.period .+ mean(Model.trend),
+        Caracteristics_Series.avg_day,
+        Caracteristics_Series.max_day,
+        Caracteristics_Series.df_month,
+        format_=format_,
+        size=size
     )
-    fig3=Plot_Sample_MonthlyACF(sample_,Model.date_vec,Model.z)
-    fig4=Plot_Sample_MonthlyPACF(sample_,Model.date_vec,Model.z)
+    fig3 = Plot_Sample_MonthlyACF(z_sample, Model.date_vec, Model.z, "p=$(p), k=$(k)")
+    fig4 = Plot_Sample_MonthlyPACF(z_sample, Model.date_vec, Model.z, "p=$(p), k=$(k)")
 
     if !isnothing(folder)
         mkpath(folder)
-        save(folder * "/Params.pdf",fig1; px_per_unit=2.0)
-        save(folder * "/Sample_diagnostic.pdf",fig2; px_per_unit=2.0)
-        save(folder * "/MonthlyACF.pdf",fig3; px_per_unit=2.0)
-        save(folder * "/MonthlyPACF.pdf",fig4; px_per_unit=2.0)
-        open(folder * "/Figures.txt","a") do io
+        save(folder * "/Params" * "_$(p)_$(k)" * ".pdf", fig1; px_per_unit=2.0)
+        save(folder * "/Sample_diagnostic" * "_$(p)_$(k)" * ".pdf", fig2; px_per_unit=2.0)
+        save(folder * "/MonthlyACF" * "_$(p)_$(k)" * ".pdf", fig3; px_per_unit=2.0)
+        save(folder * "/MonthlyPACF" * "_$(p)_$(k)" * ".pdf", fig4; px_per_unit=2.0)
+        open(folder * "/Figures" * "_$(p)_$(k)" * ".txt", "a") do io
             if !isnothing(settings)
-                println(io,"Settings :\n")
-                    for key in keys(settings)
-                        println(io,"$(key) : $(settings[key])")
-                    end
-                println(io,"\n\n")
+                println(io, "Settings :\n")
+                for key in keys(settings)
+                    println(io, "$(key) : $(settings[key])")
+                end
+                println(io, "\n\n")
             end
-            println(io,"Results :\n")
-            println(io,"Additive periodicity order : $(Model.period_order)")
-            println(io,"Multiplicative periodicity order : $(Model.σ_period_order)")
+            println(io, "Results :\n")
+            println(io, "Additive periodicity order : $(k)")
+            println(io, "Multiplicative periodicity order : $(Model.σ_period_order)")
         end
     end
-    return (fig1,fig2,fig3,fig4)
+    return (fig1, fig2, fig3, fig4)
+end
+
+
+
+function Sample_diagnostic(sample_, Caracteristics_Series, Model::Multi_MonthlyAR; format_="vertical", size=format_ == "vertical" ? (1200, 1900) : (1600, 900), folder=nothing, settings=nothing)
+    p, k = collectpdx0(Model.y₁)[1], Model.period_order
+
+    nspart_ = Model.trend .+ Model.period[dayofyear_Leap.(Model.date_vec), :]
+    σ_nspart_ = Model.σ_trend .* Model.σ_period[dayofyear_Leap.(Model.date_vec), :]
+    z_sample = map(sim -> (sim .- nspart_) ./ σ_nspart_, sample_)
+
+    sampleTN, z_sampleTN = [s[:, 1] for s in sample_], [s[:, 1] for s in z_sample]
+    sampleTX, z_sampleTX = [s[:, 2] for s in sample_], [s[:, 2] for s in z_sample]
+    # fig1 = PlotMonthlyparams([invert(Model.Φ); [Model.σ]])
+    fig2 = Sample_diagnostic(sampleTN,
+        Model.date_vec,
+        Model.period[:, 1] .+ mean(Model.trend[:, 1]),
+        Caracteristics_Series[1].avg_day,
+        Caracteristics_Series[1].max_day,
+        Caracteristics_Series[1].df_month,
+        format_=format_,
+        size=size
+    )
+    fig3 = Sample_diagnostic(sampleTX,
+        Model.date_vec,
+        Model.period[:, 2] .+ mean(Model.trend[:, 2]),
+        Caracteristics_Series[2].avg_day,
+        Caracteristics_Series[2].max_day,
+        Caracteristics_Series[2].df_month,
+        format_=format_,
+        size=size
+    )
+    fig4 = Plot_Sample_MonthlyACF(z_sampleTN, Model.date_vec, Model.z[:, 1], "TN, p=$(p), k=$(k)")
+    fig5 = Plot_Sample_MonthlyPACF(z_sampleTN, Model.date_vec, Model.z[:, 1], "TN, p=$(p), k=$(k)")
+    fig6 = Plot_Sample_MonthlyACF(z_sampleTX, Model.date_vec, Model.z[:, 2], "TX, p=$(p), k=$(k)")
+    fig7 = Plot_Sample_MonthlyPACF(z_sampleTX, Model.date_vec, Model.z[:, 2], "TX, p=$(p), k=$(k)")
+
+    if !isnothing(folder)
+        mkpath(folder)
+        # save(folder * "/Params" * "_$(p)_$(k)" * ".pdf", fig1; px_per_unit=2.0)
+        save(folder * "/Sample_diagnostic_TN" * "_$(p)_$(k)" * ".pdf", fig2; px_per_unit=2.0)
+        save(folder * "/Sample_diagnostic_TX" * "_$(p)_$(k)" * ".pdf", fig3; px_per_unit=2.0)
+        save(folder * "/MonthlyACF_TN" * "_$(p)_$(k)" * ".pdf", fig4; px_per_unit=2.0)
+        save(folder * "/MonthlyPACF_TN" * "_$(p)_$(k)" * ".pdf", fig5; px_per_unit=2.0)
+        save(folder * "/MonthlyACF_TX" * "_$(p)_$(k)" * ".pdf", fig6; px_per_unit=2.0)
+        save(folder * "/MonthlyPACF_TX" * "_$(p)_$(k)" * ".pdf", fig7; px_per_unit=2.0)
+        open(folder * "/Figures" * "_$(p)_$(k)" * ".txt", "a") do io
+            if !isnothing(settings)
+                println(io, "Settings :\n")
+                for key in keys(settings)
+                    println(io, "$(key) : $(settings[key])")
+                end
+                println(io, "\n\n")
+            end
+            println(io, "Results :\n")
+            println(io, "Number of scenarios with dates where TN > TX : $(sum(TN_Grt_TX.(sample_) .> 0))")
+            println(io, "Percentage of scenarios with dates where TN > TX : $(trunc(100 * sum(TN_Grt_TX.(sample_) .> 0)/length(sample_),digits=2)) %")
+            println(io, "Mean percentage of dates where TN > TX : $(trunc(100*mean(TN_Grt_TX.(sample_))/length(Model.date_vec),digits=2)) %")
+            println(io, "Median percentage of dates where TN > TX : $(trunc(100*median(TN_Grt_TX.(sample_))/length(Model.date_vec),digits=2)) %")
+            # println(io, "Additive periodicity order : $(k)")
+            # println(io, "Multiplicative periodicity order : $(Model.σ_period_order)")
+        end
+    end
+    return (fig2, fig3, fig4, fig5, fig6, fig7)
 end

@@ -6,9 +6,9 @@ cd((@__DIR__))
 
 folder_station = "../mystations"
 folder_results = "Results" #do not write "/" at the end
-max_p=1
+max_p=4
 min_k=1 #k = Order of the seasonality
-max_k=2
+max_k=8
 
 for file_ in readdir(folder_station)
     for p_ in (1:max_p)

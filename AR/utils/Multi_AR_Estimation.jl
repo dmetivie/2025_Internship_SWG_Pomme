@@ -126,6 +126,13 @@ TakeMonthlyParameter(MatVec::Vector{Vector{Matrix{T}}}, IndexTuple, p=1) where T
 TakeMonthlyParameter(MatVec::Vector{Matrix{T}}, IndexTuple) where T<:AbstractFloat = [MatVec[m][IndexTuple[1], IndexTuple[2]] for m in 1:12]
 
 
+
+
+
+
+
+
+
 #### Daily Parameters estimation ####
 
 Poly_Trigo(t, Θ, K, ω=2π / 365.2422) = Θ[1] .+ sum(Θ[2:2:2K] .* cos.(ω * t * (1:K))) .+ sum(Θ[3:2:(2K+1)] .* sin.(ω * t * (1:K)))
@@ -268,7 +275,7 @@ end
 
 
 function Opp_LL_Daily_Multi_AR3!(Estimators::AbstractVector, tuple_)
-    x, d, p, K, n2t, ΦEndIndex, MaxIndex, Indexes, d_sq, D_tri = tuple_
+    x, d, p, K, ΦEndIndex, Indexes, d_sq, D_tri, n2t = tuple_
 
     Φ_vec = [[reshape(Estimators[(d_sq*(2K+1+i)*j+d_sq*i+1):(d_sq*(2K+1)*j+d_sq*(i+1))], (d, d)) for i in 0:2K] for j in 0:(p-1)]
     Φ = [map(t -> Poly_Trigo(t, Θ, K), 1:366) for Θ in Φ_vec]
@@ -304,7 +311,7 @@ function LL_Multi_AR_Estimation_daily3(x::AbstractArray, date_vec::AbstractVecto
     Indexes = [0; cumsum(d:-1:1)]
     D_tri = Indexes[end]
 
-    tuple_ = x, d, p, K, n2t, ΦEndIndex, MaxIndex, Indexes, d_sq, D_tri, n
+    tuple_ = x, d, p, K, ΦEndIndex, Indexes, d_sq, D_tri, n2t, n
 
     InitΣ = reduce(vcat, [1e-5 * ones(d); 1e-15 * ones(d * (d - 1) ÷ 2)] for _ in 0:2K)
     isnothing(Estimators) ? Estimators = [[0.5 for _ in 1:ΦEndIndex]; InitΣ] : nothing
@@ -316,3 +323,19 @@ function LL_Multi_AR_Estimation_daily3(x::AbstractArray, date_vec::AbstractVecto
     Results = Optimization.solve(prob, algo) #maxiters should be modified if needed
     return Results
 end
+
+
+
+function ParseDailyParameter!(Param, d)
+    p = (2 * size(Param)[2] - d^2 - d) ÷ (2 * d^2)
+
+    Φ = [[stack(Param[m, (j*(d^2)+1+i*d):(j*(d^2)+(i+1)*d)] for i in 0:(d-1)) for j in 0:(p-1)] for m in 1:12] #12-element Vector{Vector{Matrix{Float64}}} ~16 min
+
+    Indexes = [0; cumsum(d:-1:1)]
+    Σ = [FillByDiags!(Param[m, (p*d^2+1):end], Indexes, d) for m in 1:12]
+
+    return Φ, Σ
+end
+
+
+TN_Grt_TX(x) = sum(x[:,1].>x[:,2])

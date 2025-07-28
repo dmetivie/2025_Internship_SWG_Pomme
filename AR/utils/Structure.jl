@@ -1,11 +1,3 @@
-include("Periodicity.jl")
-include("utils.jl")
-include("../table_reader.jl")
-include("Estimation.jl")
-include("Simulation.jl")
-include("Trend.jl")
-include("Multi_AR_Estimation.jl")
-
 @tryusing "FileIO", "JLD2"
 
 abstract type AR_SWG end
@@ -47,12 +39,23 @@ mutable struct Multi_MonthlyAR <: AR_SWG
     σ::AbstractArray
     trend::AbstractArray
     period::AbstractArray
+    period_order::Integer
     σ_trend::AbstractArray
     σ_period::AbstractArray
+    σ_period_order::Integer
     date_vec::AbstractArray
     y₁::AbstractArray
     z::AbstractArray
 end
+
+
+include("Periodicity.jl")
+include("utils.jl")
+include("../table_reader.jl")
+include("Estimation.jl")
+include("Simulation.jl")
+include("Trend.jl")
+include("Multi_AR_Estimation.jl")
 
 
 
@@ -99,7 +102,7 @@ inverse_dayofyear_Leap(n) = Date(0) + Day(n - 1)
 ismatrix(M) = false
 ismatrix(M::AbstractMatrix) = true
 
-function Base.rand(rng::Random.AbstractRNG, model::AR_SWG, n::Integer=1, date_vec::AbstractVector{Date}=model.date_vec; y₁=model.y₁)
+function Base.rand(rng::Random.AbstractRNG, model::AR_SWG, n::Integer=1, date_vec::AbstractVector{Date}=model.date_vec; y₁=model.y₁, correction="null")
     if ismatrix(model.period)
         period = model.period[dayofyear_Leap.(model.date_vec), :]
         σ_period = model.σ_period[dayofyear_Leap.(model.date_vec), :]
@@ -108,17 +111,17 @@ function Base.rand(rng::Random.AbstractRNG, model::AR_SWG, n::Integer=1, date_ve
         σ_period = model.σ_period[dayofyear_Leap.(model.date_vec)]
     end
     if date_vec == model.date_vec
-        SimulateScenarios(y₁, date_vec, model.Φ, model.σ, model.trend .+ period, model.σ_trend .* σ_period, rng, n=n)
+        SimulateScenarios(y₁, date_vec, model.Φ, model.σ, model.trend .+ period, model.σ_trend .* σ_period, rng, n=n, correction=correction)
     else
         index_nspart = findall(t -> t ∈ date_vec, model.date_vec)
-        SimulateScenarios(y₁, date_vec, model.Φ, model.σ, model.trend .+ period, model.σ_trend .* σ_period, rng, n=n, index_nspart=index_nspart)
+        SimulateScenarios(y₁, date_vec, model.Φ, model.σ, model.trend .+ period, model.σ_trend .* σ_period, rng, n=n, index_nspart=index_nspart, correction=correction)
     end
 end
-function Base.rand(rng::Random.AbstractRNG, model::AR_SWG, n::Integer, n2t::AbstractVector{Integer}; y₁=model.y₁)
+function Base.rand(rng::Random.AbstractRNG, model::AR_SWG, n::Integer, n2t::AbstractVector{Integer}; y₁=model.y₁, correction="null")
     return rand(rng, model, n, inverse_dayofyear_Leap.(n2t), y₁=y₁)
 end
-Base.rand(model::AR_SWG, n::Integer=1, date_vec::AbstractVector{Date}=model.date_vec; y₁=model.y₁) = rand(Random.default_rng(), model, n, date_vec, y₁=y₁)
-Base.rand(model::AR_SWG, n::Integer, n2t::AbstractVector{Integer}; y₁=model.y₁) = rand(Random.default_rng(), model, n, inverse_dayofyear_Leap.(n2t), y₁=y₁)
+Base.rand(model::AR_SWG, n::Integer=1, date_vec::AbstractVector{Date}=model.date_vec; y₁=model.y₁, correction="null") = rand(Random.default_rng(), model, n, date_vec, y₁=y₁, correction=correction)
+Base.rand(model::AR_SWG, n::Integer, n2t::AbstractVector{Integer}; y₁=model.y₁, correction="null") = rand(Random.default_rng(), model, n, inverse_dayofyear_Leap.(n2t), y₁=y₁, correction=correction)
 
 
 
@@ -230,7 +233,7 @@ function fit_AR(x, date_vec;
     elseif σ_periodicity_model == "stepwise_trigo"
         autotrigo_function, σ_period_order = fitted_periodicity_fonc_stepwise(z .^ 2, date_vec, MaxOrder=σ_degree_period)
         σ_periodicity, σ_period = autotrigo_function.(date_vec) .^ 0.5, autotrigo_function.(Date(0):(Date(1)-Day(1))) .^ 0.5
-        
+
     else
         σ_periodicity, σ_period = ones(length(z)), ones(366)
     end
@@ -330,7 +333,7 @@ function fit_Multi_AR(x, date_vec;
         nothing #Take Φ Σ daily (e.g 366-length list of matrix for Σ)
     end
 
-    return Multi_MonthlyAR(Φ, Σ, trend_mat, period_mat, σ_trend_mat, σ_period_mat, date_vec, z[1:p, :], z)
+    return Multi_MonthlyAR(Φ, Σ, trend_mat, period_mat, degree_period, σ_trend_mat, σ_period_mat, σ_degree_period, date_vec, z[1:p, :], z)
 end
 #works
 
