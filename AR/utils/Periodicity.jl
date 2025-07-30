@@ -1,6 +1,6 @@
 include("utils.jl")
 
-@tryusing "Dates", "LinearAlgebra", "DataInterpolations", "RegularizationTools", "GLM"
+using Dates, LinearAlgebra, DataInterpolations, RegularizationTools, GLM
 
 """
     fitted_periodicity_fonc(x::AbstractVector,return_parameters::Bool=false)

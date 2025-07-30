@@ -2,7 +2,7 @@ include("utils.jl")
 include("../presentation/presutils.jl")
 include("ACF_PACF.jl")
 
-@tryusing "CairoMakie", "OrderedCollections"
+using CairoMakie, OrderedCollections
 
 ##### PLOTTING #####
 """
@@ -231,9 +231,54 @@ function WrapPlotMonthlyStats(df_month::DataFrame, sample_::AbstractVector, samp
     PlotMonthlyStats(df_month.MONTHLY_MAX, max_ts, "maximum", comment)
 end
 
+
+function PlotMonthlyStatsAx(subfig, Stats_vec::AbstractVector, Stats::String; unit="", title="Monthly $(Stats) parameters", color="purple")
+    ax = Axis(subfig)
+    ax.title = title
+    ax.titlesize = 22
+    ax.xticks = (1:12, Month_vec2)
+    ax.ylabel = unit != "" ? Stats * " (" * unit * ")" : Stats
+    scatterlines!(ax, 1:12, Stats_vec, color=color)
+    return ax
+end
+
+function PlotMonthlyStatsAx(subfig, Stats_vec_mat::Matrix, Stats::String; unit="", title="Monthly $(Stats) parameters", colors=nothing)
+    ax = Axis(subfig)
+    ax.title = title
+    ax.titlesize = 22
+    ax.xticks = (1:12, Month_vec2)
+    ax.ylabel = unit != "" ? Stats * " (" * unit * ")" : Stats
+    if isnothing(colors)
+        for Stats_vec in eachcol(Stats_vec_mat)
+            plt = scatterlines!(ax, 1:12, Stats_vec)
+        end
+    else
+        for (Stats_vec, color) in zip(eachcol(Stats_vec_mat), colors)
+            plt = scatterlines!(ax, 1:12, Stats_vec, color=color)
+        end
+    end
+    return ax, plt
+end
+
+
+
+
 """
     Plot the monthly parameters in the vector MonthlyParams (MonthlyParams = [[Φ1Jan,Φ1Feb...],...[σJan,σFeb]])
 """
+function PlotMonthlyparams(MonthlyParams::AbstractVector{Matrix}, legend)
+    fig = Figure(size=(100 + 420 * length(MonthlyParams), 400))
+    for (i, MonthlyParam) in enumerate(MonthlyParams)
+        if i == length(MonthlyParams)
+            _, plt = PlotMonthlyStatsAx(fig[1, i], MonthlyParam, "σ", unit="C°")
+        else
+            PlotMonthlyStatsAx(fig[1, i], MonthlyParam, "Φ$(i)")
+        end
+    end
+    Legend(figvec[2, eachindex(MonthlyParams)], plt, legend)
+    return fig
+end
+
 function PlotMonthlyparams(MonthlyParams)
     fig = Figure(size=(100 + 420 * length(MonthlyParams), 400))
     for (i, MonthlyParam) in enumerate(MonthlyParams)
@@ -245,7 +290,6 @@ function PlotMonthlyparams(MonthlyParams)
     end
     return fig
 end
-
 
 
 function Sample_diagnostic(sample_, date_vec, period, avg_day, max_day, df_month; format_="vertical", size=format_ == "vertical" ? (1200, 1900) : (1600, 900))
@@ -305,13 +349,13 @@ function Sample_diagnostic(sample_, date_vec, period, avg_day, max_day, df_month
 end
 
 
-function Sample_diagnostic(sample_, Caracteristics_Series, Model::MonthlyAR; format_="vertical", size=format_ == "vertical" ? (1200, 1900) : (1600, 900), folder=nothing, settings=nothing)
+function Sample_diagnostic(sample_::Tuple, Caracteristics_Series, Model::MonthlyAR; format_="vertical", size=format_ == "vertical" ? (1200, 1900) : (1600, 900), folder=nothing, settings=nothing)
     p, k = length(Model.y₁), Model.period_order
-    nspart_ = Model.trend .+ Model.period[dayofyear_Leap.(Model.date_vec)]
-    σ_nspart_ = Model.σ_trend .* Model.σ_period[dayofyear_Leap.(Model.date_vec)]
-    z_sample = map(sim -> (sim .- nspart_) ./ σ_nspart_, sample_)
+    sample_, z_sample = sample_
+    # println(z_sample[1])
+    # println(sample_[1])
 
-    fig1 = PlotMonthlyparams([invert(Model.Φ); [Model.σ]])
+    fig1 = PlotMonthlyparams([eachcol(Model.Φ); [Model.σ]])
     fig2 = Sample_diagnostic(sample_,
         Model.date_vec,
         Model.period .+ mean(Model.trend),
@@ -345,15 +389,17 @@ function Sample_diagnostic(sample_, Caracteristics_Series, Model::MonthlyAR; for
     end
     return (fig1, fig2, fig3, fig4)
 end
-
-
-
-function Sample_diagnostic(sample_, Caracteristics_Series, Model::Multi_MonthlyAR; format_="vertical", size=format_ == "vertical" ? (1200, 1900) : (1600, 900), folder=nothing, settings=nothing)
-    p, k = collectpdx0(Model.y₁)[1], Model.period_order
-
-    nspart_ = Model.trend .+ Model.period[dayofyear_Leap.(Model.date_vec), :]
-    σ_nspart_ = Model.σ_trend .* Model.σ_period[dayofyear_Leap.(Model.date_vec), :]
+function Sample_diagnostic(sample_::AbstractVector{T}, Caracteristics_Series, Model::MonthlyAR; format_="vertical", size=format_ == "vertical" ? (1200, 1900) : (1600, 900), folder=nothing, settings=nothing) where T <: AbstractVector
+    nspart_ = Model.trend .+ Model.period[dayofyear_Leap.(Model.date_vec)]
+    σ_nspart_ = Model.σ_trend .* Model.σ_period[dayofyear_Leap.(Model.date_vec)]
     z_sample = map(sim -> (sim .- nspart_) ./ σ_nspart_, sample_)
+    return Sample_diagnostic((sample_,z_sample), Caracteristics_Series, Model; format_=format_, size=size, folder=folder, settings=settings)
+end
+
+
+function Sample_diagnostic(sample_::Tuple, Caracteristics_Series, Model::Multi_MonthlyAR; format_="vertical", size=format_ == "vertical" ? (1200, 1900) : (1600, 900), folder=nothing, settings=nothing)
+    p, k = collectpdx0(Model.y₁)[1], Model.period_order
+    sample_, z_sample = sample_
 
     sampleTN, z_sampleTN = [s[:, 1] for s in sample_], [s[:, 1] for s in z_sample]
     sampleTX, z_sampleTX = [s[:, 2] for s in sample_], [s[:, 2] for s in z_sample]
@@ -408,4 +454,10 @@ function Sample_diagnostic(sample_, Caracteristics_Series, Model::Multi_MonthlyA
         end
     end
     return (fig2, fig3, fig4, fig5, fig6, fig7)
+end
+function Sample_diagnostic(sample_::AbstractVector{T}, Caracteristics_Series, Model::Multi_MonthlyAR; format_="vertical", size=format_ == "vertical" ? (1200, 1900) : (1600, 900), folder=nothing, settings=nothing) where T <: AbstractMatrix
+    nspart_ = Model.trend .+ Model.period[dayofyear_Leap.(Model.date_vec),:]
+    σ_nspart_ = Model.σ_trend .* Model.σ_period[dayofyear_Leap.(Model.date_vec),:]
+    z_sample = map(sim -> (sim .- nspart_) ./ σ_nspart_, sample_)
+    return Sample_diagnostic((sample_,z_sample), Caracteristics_Series, Model; format_=format_, size=size, folder=folder, settings=settings)
 end

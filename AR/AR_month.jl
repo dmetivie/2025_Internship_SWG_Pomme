@@ -1,17 +1,16 @@
 include("table_reader.jl")
-include("utils/Missing_values.jl")
 include("utils/Structure.jl")
-include("utils/Plotting.jl")
 cd((@__DIR__))
 
 folder_station = "../mystations"
 folder_results = "Results" #do not write "/" at the end
+min_p=2
 max_p=4
-min_k=1 #k = Order of the seasonality
-max_k=8
+min_k=3 #k = Order of the seasonality
+max_k=3
 
 for file_ in readdir(folder_station)
-    for p_ in (1:max_p)
+    for p_ in (min_p:max_p)
         for k in (min_k:max_k)
             folder = folder_results* "/" * (file_[1:2]) * "/" * (file_[4:(end-4)]) * "/p=$(p_),k=$(k)"
 
@@ -31,7 +30,7 @@ for file_ in readdir(folder_station)
             σ_trendparam = nothing                # nothing => default value -> "LOESS" : 0.08, "polynomial" : 1
 
             ##Simulations
-            n = 3
+            n = 5
 
 
             settings = OrderedDict((("file", file),
@@ -67,7 +66,7 @@ for file_ in readdir(folder_station)
                 σ_Trendtype=σ_Trendtype,
                 σ_trendparam=σ_trendparam)
 
-            sample_ = rand(Model, n, series.DATE)
+            sample_ = rand(Model, n, series.DATE,return_res=true)
 
             Sample_diagnostic(sample_, Caracteristics_Series, Model, folder=folder, settings=settings)
             save_model(Model,folder * "/model.jld2")

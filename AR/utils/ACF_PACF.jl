@@ -1,6 +1,6 @@
 include("utils.jl")
 
-@tryusing "CairoMakie", "Statistics", "StatsBase"
+using CairoMakie, Statistics, StatsBase
 
 Month_vec = ["January", "February", "March", "April", "May", "Jun", "July", "August", "September", "October", "November", "December"]
 

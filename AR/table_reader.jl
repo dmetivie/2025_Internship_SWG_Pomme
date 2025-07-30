@@ -1,16 +1,7 @@
 #Packages
-try
-    using CSV, DataFrames, Dates, CairoMakie, Statistics, DataFramesMeta
-catch
-    import Pkg
-    Pkg.add("CSV")
-    Pkg.add("DataFrames")
-    Pkg.add("Dates")
-    Pkg.add("CairoMakie")
-    Pkg.add("Statistics")
-    Pkg.add("DataFramesMeta")
-    using CSV, DataFrames, Dates, CairoMakie, Statistics, DataFramesMeta
-end
+
+using CSV, DataFrames, Dates, CairoMakie, Statistics, DataFramesMeta
+
 cd(@__DIR__)
 
 

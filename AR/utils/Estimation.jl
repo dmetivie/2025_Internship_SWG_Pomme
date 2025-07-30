@@ -1,6 +1,6 @@
 include("utils.jl")
 
-@tryusing "Optimization", "Dates", "Statistics", "StatsBase", "DataFrames", "LinearAlgebra", "OptimizationOptimJL", "ForwardDiff" #,"Zygote"
+using Optimization, Dates, Statistics, StatsBase, DataFrames, LinearAlgebra, OptimizationOptimJL, ForwardDiff #,Zygote
 
 ##### ESTIMATION #####
 """
@@ -15,8 +15,7 @@ function Opp_Log_Likelihood_AR(Estimators::AbstractVector, x::AbstractVector)
     p = length(Estimators) - 1
     R = stack([x[(p+1-i):(end-i)] for i in 1:p]) #matrix where each row is like (Xₜ₋₁,Xₜ₋₂,...Xₜ₋ₚ)
     return ((length(x) - p) * (log(2π) + log(abs(Estimators[end]))) + transpose(x[p+1:end] - R * Estimators[1:(end-1)]) * (x[p+1:end] - R * Estimators[1:(end-1)]) / Estimators[end]) / 2
-end #modif signe
-
+end
 """
     LL_AR_Estimation(x::AbstractVector,p::Integer)
 
@@ -95,7 +94,7 @@ function MonthlyConcatanatedEstimation(Monthly_temp::AbstractVector, p::Integer=
         append!(Φ_month_concat, p == 1 ? Estimation[1] : [Estimation[1]])
         append!(σ_month_concat, Estimation[2])
     end
-    return (Φ_month_concat, σ_month_concat)
+    return (stack(Φ_month_concat), σ_month_concat)
 end
 
 """
@@ -113,10 +112,10 @@ function MonthlyEstimationSumLL(Monthly_temp::AbstractVector, p::Integer=1, Esti
         append!(Φ_month_sumLL, p == 1 ? Estimation[1] : [Estimation[1]])
         append!(σ_month_sumLL, Estimation[2])
     end
-    return (Φ_month_sumLL, σ_month_sumLL)
+    return (stack(Φ_month_sumLL,dims=1), σ_month_sumLL)
 end
 
-#A fourth method of estimation of monthly parameters
+#### THE MAIN METHOD USED ####
 """
     Opp_Log_Monthly_Likelihood_AR(Estimators::AbstractMatrix, x::AbstractVector, date_vec::AbstractVector{Date})
 
@@ -125,33 +124,32 @@ model with differents set of parameters for each month. For exemple, for the i�
 Φ₁,Φ₂...Φₚ=Estimators[i,1:end-1] and σ²=Estimators[i,end].  
 This function does not consider the likelihood of the initial conditiion x₁,x₂...xₚ
 """
-function Opp_Log_Monthly_Likelihood_AR(Estimators::AbstractMatrix, x::AbstractVector, date_vec::AbstractVector{Date})
-    p = size(Estimators)[2] - 1
-    EV(t) = dot(Estimators[month(date_vec[t]), 1:(end-1)], x[(t-1):-1:(t-p)]) #Xₜ = EV(t) + ε in our model
-    Opplogpdf(t) = (log(2π * abs(Estimators[month(date_vec[t]), end])) + ((x[t] - EV(t))^2) / Estimators[month(date_vec[t]), end]) / 2
-    return sum(Opplogpdf.((p+1):length(x)))
+function Opp_Log_Monthly_Likelihood_AR(Estimators::AbstractMatrix, x::AbstractVector, n2m, p, N)
+    EV = [sum(Estimators[n2m[t], i] * x[t-i] for i in 1:p) for t in p+1:N] #Xₜ = EV(t) + ε in our model
+    Opplogpdf(t) = (log(2π * abs(Estimators[n2m[t], end])) + ((x[t] - EV[t-p])^2) / Estimators[n2m[t], end]) / 2
+    return sum(Opplogpdf.((p+1):N))
 end
-Opp_Log_Monthly_Likelihood_AR(Estimators::AbstractMatrix, tuple_::Tuple) = Opp_Log_Monthly_Likelihood_AR(Estimators, tuple_[1], tuple_[2])
+Opp_Log_Monthly_Likelihood_AR(Estimators::AbstractMatrix, tuple_::Tuple) = Opp_Log_Monthly_Likelihood_AR(Estimators, tuple_[1], tuple_[2], tuple_[3], tuple_[4])
 
 """
     LL_AR_Estimation_monthly(x_vec::AbstractVector,p::Integer)
 
 Return the parameters of the AR(p) model on x with a set of parameter for each month. 
 """
-function LL_AR_Estimation_monthly(x::AbstractVector, date_vec::AbstractVector{Date}, p::Integer, Estimators::AbstractMatrix=stack([[[0.5 for _ in 1:p]; 1e-15] for _ in 1:12], dims=1), algo=LBFGS(), Nb_try=0)
+function LL_AR_Estimation_monthly(x::AbstractVector, date_vec::AbstractVector{Date}, p::Integer, Estimators::AbstractMatrix=stack([[[0.5 for _ in 1:p]; 1e-15] for _ in 1:12], dims=1), algo=LBFGS(); Nb_try=0)
     lb = stack([[[-10 for _ in 1:p]; 1e-20] for _ in 1:12], dims=1)
     ub = stack([[[10 for _ in 1:p]; 1e2] for _ in 1:12], dims=1)
     p == size(Estimators)[2] - 1 ? nothing : error("p (=$(p)) is not equal to the number of Φ initial parameters (=$(length(Estimators)-1))")
     optf = OptimizationFunction(Opp_Log_Monthly_Likelihood_AR, AutoForwardDiff())
-    prob = OptimizationProblem(optf, Estimators, (x, date_vec), lb=lb, ub=ub)
+    prob = OptimizationProblem(optf, Estimators, (x, month.(date_vec), p, length(x)), lb=lb, ub=ub)
     Results = Optimization.solve(prob, algo, maxiters=10000) #maxiters should be modified if needed
     if !SciMLBase.successful_retcode(Results.retcode)
         @warn "Fail solve"
     end
-    if Nb_try > 0 
+    # if Nb_try > 0
         for i in 1:Nb_try
             Estimators = rand(12, p + 1) #Reinitialize the parameters
-            prob = OptimizationProblem(optf, Estimators, (x, date_vec), lb=lb, ub=ub)
+            prob = OptimizationProblem(optf, Estimators, (x, month.(date_vec), p, length(x)), lb=lb, ub=ub)
             localResults = Optimization.solve(prob, algo, maxiters=10000) #maxiters should be modified if needed
             if !SciMLBase.successful_retcode(Results.retcode)
                 @warn "Fail solve iteration $(i)"
@@ -161,11 +159,12 @@ function LL_AR_Estimation_monthly(x::AbstractVector, date_vec::AbstractVector{Da
                 @info "New best result found with new initialization at iteration $(i)"
             end
         end
-    end
-    return eachrow(Results[:, 1:p]), Results[:, p+1] .^ (1 / 2)
+    # end
+    return Results[:, 1:p], Results[:, p+1] .^ (1 / 2)
 end
 
 
+############
 
 
 """
@@ -265,14 +264,14 @@ function AllEstimation(x::AbstractVector, p::Integer=1; Estimators::AbstractVect
     append!(ParamOutput, [Month_vecs])
 
     Φ_month_concat, σ_month_concat = MonthlyConcatanatedEstimation(Monthly_temp, p) #Φ_month_concat[i][j] : i-> month, j-> index of the parameter (Φⱼ) or (σ)
-    append!(ParamOutput, [[invert(Φ_month_concat); [σ_month_concat]]])
+    append!(ParamOutput, [[eachcol(Φ_month_concat); [σ_month_concat]]])
 
     Φ_month_sumLL, σ_month_sumLL = MonthlyEstimationSumLL(Monthly_temp, p)
-    append!(ParamOutput, [[invert(Φ_month_sumLL); [σ_month_sumLL]]])
+    append!(ParamOutput, [[eachcol(Φ_month_sumLL); [σ_month_sumLL]]])
 
     if !isnothing(Date_vec)
         Φ_month_MLL, σ_month_MLL = LL_AR_Estimation_monthly(x, Date_vec, p)
-        append!(ParamOutput, [[invert(Φ_month_MLL); [σ_month_MLL]]])
+        append!(ParamOutput, [[eachcol(Φ_month_MLL); [σ_month_MLL]]])
     end
 
     #ParamOutput[i][j] : i -> method, j -> index of the parameter (Φⱼ) or (σ)
@@ -335,7 +334,7 @@ function AutoTakeParameters(AE_output)
 end
 AutoTakeParameters(Parameters_vec, ErrorTable) = AutoTakeParameters([Parameters_vec, ErrorTable])
 
-# @tryusing "ForwardDiff"
+# using ForwardDiff
 # using Optimization, ForwardDiff, OptimizationOptimJL
 # rosenbrock(u, p) = (p[1] - u[1])^2 + p[2] * (u[2] - u[1]^2)^2
 # u0 = zeros(2)

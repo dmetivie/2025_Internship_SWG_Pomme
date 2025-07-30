@@ -1,27 +1,4 @@
-macro tryusing(package::String)
-    try
-        eval(:(using $(Meta.parse(package))))
-    catch
-        eval(:(
-            import Pkg;
-            Pkg.add($package);
-            using $(Meta.parse(package))))
-    end
-end
-macro tryusing(package::Expr)
-    for s in package.args
-        try
-            eval(:(using $(Meta.parse(s))))
-        catch
-            eval(:(
-                import Pkg;
-                Pkg.add($s);
-                using $(Meta.parse(s))))
-        end
-    end
-end
-
-@tryusing "Dates", "Polynomials", "DataFrames", "DataFramesMeta"
+using Dates, Polynomials, DataFrames, DataFramesMeta
 
 """
     Iyear(date::AbstractVector{Date},year::Integer)

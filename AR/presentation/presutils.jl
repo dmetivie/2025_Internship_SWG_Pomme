@@ -1,6 +1,6 @@
 include("../utils/utils.jl")
 
-@tryusing "CairoMakie"
+using CairoMakie
 
 # istickable(date_) = (month(date_) ∈ [1, 7]) && day(date_) == 1
 istickablemonth(date_) = day(date_) == 1
@@ -206,14 +206,4 @@ end
 PlotMonthlyRealStats(x::AbstractVector, date_vec::AbstractVector, Stats::String, color="#ff6600") = (
     PlotMonthlyRealStats(DataFrame(DATE=date_vec, TEMP=x), Stats, color))
 
-
-
-function PlotMonthlyStatsAx(subfig, Stats_vec::AbstractVector, Stats::String; unit="", title="Monthly $(Stats) parameters", color="purple")
-    ax = Axis(subfig)
-    ax.title = title
-    ax.titlesize = 22
-    ax.xticks = (1:12, Month_vec2)
-    ax.ylabel = unit != "" ? Stats * " (" * unit * ")" : Stats
-    scatterlines!(ax, 1:12, Stats_vec, color=color)
-    return ax
-end
+    

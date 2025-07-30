@@ -1,4 +1,4 @@
-@tryusing "FileIO", "JLD2"
+using FileIO, JLD2
 
 abstract type AR_SWG end
 
@@ -20,7 +20,7 @@ end
 
 
 mutable struct MonthlyAR <: AR_SWG
-    Φ::AbstractVector
+    Φ::AbstractArray
     σ::AbstractVector
     trend::AbstractVector
     period::AbstractVector
@@ -50,12 +50,12 @@ end
 
 
 include("Periodicity.jl")
-include("utils.jl")
 include("../table_reader.jl")
 include("Estimation.jl")
 include("Simulation.jl")
 include("Trend.jl")
 include("Multi_AR_Estimation.jl")
+include("Plotting.jl")
 
 
 
@@ -102,7 +102,7 @@ inverse_dayofyear_Leap(n) = Date(0) + Day(n - 1)
 ismatrix(M) = false
 ismatrix(M::AbstractMatrix) = true
 
-function Base.rand(rng::Random.AbstractRNG, model::AR_SWG, n::Integer=1, date_vec::AbstractVector{Date}=model.date_vec; y₁=model.y₁, correction="null")
+function Base.rand(rng::Random.AbstractRNG, model::AR_SWG, n::Integer=1, date_vec::AbstractVector{Date}=model.date_vec; y₁=model.y₁, correction="null", return_res=false)
     if ismatrix(model.period)
         period = model.period[dayofyear_Leap.(model.date_vec), :]
         σ_period = model.σ_period[dayofyear_Leap.(model.date_vec), :]
@@ -112,43 +112,43 @@ function Base.rand(rng::Random.AbstractRNG, model::AR_SWG, n::Integer=1, date_ve
     end
     if date_vec == model.date_vec
         nspart = model.trend .+ period
-        σ_nspart = model.σ_trend .+ σ_period
+        σ_nspart = model.σ_trend .* σ_period
     else
         index_nspart = findall(t -> t ∈ date_vec, model.date_vec)
         nspart = (model.trend .+ period)[index_nspart]
-        σ_nspart = (model.σ_trend .+ σ_period)[index_nspart] 
+        σ_nspart = (model.σ_trend .* σ_period)[index_nspart] 
     end
-    return SimulateScenarios(y₁, date_vec, model.Φ, model.σ, nspart_, σ_nspart_, rng, n=n, correction=correction)
+    return SimulateScenarios(y₁, date_vec, model.Φ, model.σ, nspart, σ_nspart, rng=rng, n=n, correction=correction, return_res=return_res)
 end
-function Base.rand(rng::Random.AbstractRNG, model::AR_SWG, n::Integer, n2t::AbstractVector{Integer}; y₁=model.y₁, correction="null")
-    return rand(rng, model, n, inverse_dayofyear_Leap.(n2t), y₁=y₁)
+function Base.rand(rng::Random.AbstractRNG, model::AR_SWG, n::Integer, n2t::AbstractVector{Integer}; y₁=model.y₁, correction="null",return_res=false)
+    return rand(rng, model, n, inverse_dayofyear_Leap.(n2t), y₁=y₁, return_res=return_res)
 end
-Base.rand(model::AR_SWG, n::Integer=1, date_vec::AbstractVector{Date}=model.date_vec; y₁=model.y₁, correction="null") = rand(Random.default_rng(), model, n, date_vec, y₁=y₁, correction=correction)
-Base.rand(model::AR_SWG, n::Integer, n2t::AbstractVector{Integer}; y₁=model.y₁, correction="null") = rand(Random.default_rng(), model, n, inverse_dayofyear_Leap.(n2t), y₁=y₁, correction=correction)
+Base.rand(model::AR_SWG, n::Integer=1, date_vec::AbstractVector{Date}=model.date_vec; y₁=model.y₁, correction="null",return_res=false) = rand(Random.default_rng(), model, n, date_vec, y₁=y₁, correction=correction, return_res=return_res)
+Base.rand(model::AR_SWG, n::Integer, n2t::AbstractVector{Integer}; y₁=model.y₁, correction="null",return_res=false) = rand(Random.default_rng(), model, n, inverse_dayofyear_Leap.(n2t), y₁=y₁, correction=correction, return_res=return_res)
 
 
 
 # rand(myAR, date_vec[1]:date_vec[end], 100, y₁=0.1)
 
 
-function fit_ARMonthlyParameters(y, date_vec, p, method_)
+function fit_ARMonthlyParameters(y, date_vec, p, method_,Nb_try=0)
     method_ == "monthlyLL" ? nothing : Monthly_temp = MonthlySeparateX(y, date_vec)
     if method_ == "mean"
         Monthly_Estimators = MonthlyEstimation(Monthly_temp, p) #Monthly_Estimators[i][j][k][l] i-> month, j-> year, k-> 1 for [Φ_1,Φ_2,...], 2 for σ, l -> index of the parameter (Φⱼ) of year if k=1 
         Monthly_Estimators2 = [[[year_[1]; year_[2]] for year_ in Month] |> stack for Month in Monthly_Estimators]
         meanparam = mulmean.(eachrow.(Monthly_Estimators2)) |> stack
-        return eachrow(meanparam[1:2, :]'), meanparam[3, :]
+        return meanparam[1:2, :]', meanparam[3, :]
     elseif method_ == "median"
         Monthly_Estimators = MonthlyEstimation(Monthly_temp, p) #Monthly_Estimators[i][j][k][l] i-> month, j-> year, k-> 1 for [Φ_1,Φ_2,...], 2 for σ, l -> index of the parameter (Φⱼ) of year if k=1 
         Monthly_Estimators2 = [[[year_[1]; year_[2]] for year_ in Month] |> stack for Month in Monthly_Estimators]
         medianparam = mulmedian.(eachrow.(Monthly_Estimators2)) |> stack
-        return eachrow(medianparam[1:2, :]'), medianparam[3, :]
+        return medianparam[1:2, :]', medianparam[3, :]
     elseif method_ == "concat"
         return MonthlyConcatanatedEstimation(Monthly_temp, p) #Φ[i][j] : i-> month, j-> index of the parameter (Φⱼ) or (σ)
     elseif method_ == "sumLL"
         return MonthlyEstimationSumLL(Monthly_temp, p)
     elseif method_ == "monthlyLL"
-        return LL_AR_Estimation_monthly(y, date_vec, p)
+        return LL_AR_Estimation_monthly(y, date_vec, p, Nb_try=Nb_try)
     end
 end
 
@@ -166,7 +166,8 @@ function fit_AR(x, date_vec;
     σ_periodicity_model::String="autotrigo",
     σ_degree_period::Integer=0,
     σ_Trendtype="LOESS",
-    σ_trendparam=nothing)
+    σ_trendparam=nothing,
+    Nb_try=0)
 
     isnothing(trendparam) ? trendparam = defaultparam[Trendtype] : nothing
 
@@ -243,8 +244,7 @@ function fit_AR(x, date_vec;
     z = z ./ σ_periodicity
 
 
-
-    Φ, σ = fit_ARMonthlyParameters(z, date_vec, p, method_)
+    Φ, σ = fit_ARMonthlyParameters(z, date_vec, p, method_, Nb_try)
 
     return MonthlyAR(Φ, σ, trend, period, period_order, σ_trend, σ_period, σ_period_order, date_vec, z[1:p], z)
 end
@@ -256,12 +256,12 @@ end
 function fit_Multi_AR(x, date_vec;
     p::Integer=1,
     method_::String="monthly",
-    periodicity_model::String="autotrigo",
-    degree_period::Integer=0,
+    periodicity_model::String="trigo",
+    degree_period::Integer=8,
     Trendtype="LOESS",
     trendparam=nothing,
-    σ_periodicity_model::String="autotrigo",
-    σ_degree_period::Integer=0,
+    σ_periodicity_model::String="trigo",
+    σ_degree_period::Integer=8,
     σ_Trendtype="LOESS",
     σ_trendparam=nothing)
 

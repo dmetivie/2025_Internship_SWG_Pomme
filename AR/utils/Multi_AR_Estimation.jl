@@ -1,6 +1,6 @@
 include("utils.jl")
 
-@tryusing "Optimization", "Dates", "Statistics", "StatsBase", "DataFrames", "LinearAlgebra", "OptimizationOptimJL", "ForwardDiff" #,"Zygote"
+using Optimization, Dates, Statistics, StatsBase, DataFrames, LinearAlgebra, OptimizationOptimJL, ForwardDiff #,Zygote
 
 
 function FillByDiags!(v, Indexes, d)
@@ -69,20 +69,19 @@ Return the opposite of the log-likelihood of the x matrix-series, under the hypo
 This function does not consider the likelihood of the initial conditiion x₁,x₂...xₚ)
 """
 function Opp_LL_Monthly_Multi_AR!(Estimators::AbstractMatrix, tuple_)
-    x, date_vec = tuple_
+    x, n2m = tuple_
     n, d = size(x)
     p = (2 * size(Estimators)[2] - d^2 - d) ÷ (2 * d^2)
-    Φ = [[stack(Estimators[m, (j*(d^2)+1+i*d):(j*(d^2)+(i+1)*d)] for i in 0:(d-1)) for j in 0:(p-1)] for m in 1:12]
+    @views Φ = [[stack(Estimators[m, (j*(d^2)+1+i*d):(j*(d^2)+(i+1)*d)] for i in 0:(d-1)) for j in 0:(p-1)] for m in 1:12]
     Indexes = [0; cumsum(d:-1:1)]
-    InvVarcov, cte = AbstractMatrix[], Number[]
-    for m in 1:12
-        Σ = FillByDiags!(Estimators[m, (p*d^2+1):end], Indexes, d)
-        Varcov = (Σ * transpose(Σ))
-        push!(InvVarcov, inv(Varcov))
-        push!(cte, d * log(2π) + log(abs(det(Varcov))))
-    end
-    EV(t) = sum(Φ[month(date_vec[t])][j] * x[t-j, :] for j in 1:p)
-    Opplogpdf(t) = (cte[month(date_vec[t])] + transpose(x[t, :] - EV(t)) * InvVarcov[month(date_vec[t])] * (x[t, :] - EV(t))) / 2
+
+    Σ = [FillByDiags!(Estimators[m, (p*d^2+1):end], Indexes, d) for m in 1:12]
+    Varcov = [Mat * transpose(Mat) for Mat in Σ]
+    InvVarcov = inv.(Varcov)
+    cte = d .* log(2π) .+ log.(abs.(det.(Varcov)))
+
+    EV = [sum(Φ[n2m[t]][j] * view(x,t-j, :) for j in 1:p) for t in (p+1):n]
+    Opplogpdf(t) = (cte[n2m[t]] + transpose(view(x,t, :) - EV[t-p]) * InvVarcov[n2m[t]] * (view(x,t, :) - EV[t-p])) / 2
     return Opplogpdf, p, n
 end
 
@@ -104,12 +103,14 @@ function LL_Multi_AR_Estimation_monthly(x::AbstractArray, date_vec::AbstractVect
     isnothing(Estimators) ? Estimators = stack([[0.5 for _ in 1:p*d^2]; InitΣ] for _ in 1:12; dims=1) : nothing
     # p == length(Estimators) - 1 ? nothing : error("p (=$(p)) is not equal to the number of Φ initial parameters (=$(length(Estimators)-1))")
     optf = OptimizationFunction(Opp_LL_Monthly_Multi_AR, AutoForwardDiff())
-    prob = OptimizationProblem(optf, Estimators, (x, date_vec),
+    prob = OptimizationProblem(optf, Estimators, (x, month.(date_vec)),
         lb=stack([[-10 for _ in 1:p*d^2]; [1e-20 for _ in 1:(d*(d+1)÷2)]] for _ in 1:12; dims=1),
         ub=stack([[10 for _ in 1:p*d^2]; [1e2 for _ in 1:(d*(d+1)÷2)]] for _ in 1:12; dims=1))
     Results = Optimization.solve(prob, algo) #maxiters should be modified if needed
     return Results
 end
+
+#######
 
 function ParseMonthlyParameter(Param, d)
     p = (2 * size(Param)[2] - d^2 - d) ÷ (2 * d^2)

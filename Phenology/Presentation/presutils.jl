@@ -2,7 +2,7 @@ include("../PhenoPred.jl")
 
 cd(@__DIR__)
 
-@tryusing "CairoMakie"
+using CairoMakie
 
 istickable(date_) = (month(date_) ∈ [1, 7]) && day(date_) == 1
 istickableday(date_) = day(date_) == 1
@@ -216,10 +216,10 @@ function PlotCurveApple(temp, date_vec;
     push!(pltvec, band!(ax2, (ind.(CPO_date)-1):ind.(DB), fill(0, length(sumchillingvec)), sumchillingvec, color=("blue", 0.7)))
     push!(pltvec, band!(ax2, (ind.(DB)-1):ind.(BB), fill(0, length(sumforcingvec)), sumforcingvec, color=("#ff6600", 0.7)))
 
-    labelvec = ["TG",
+    labelvec = ["TG (daily avg)",
         "Chilling period onset",
-        "Endodormancy break",
-        "Budburst",
+        "Predicted Endodormancy break",
+        "Predicted budburst",
         "Chilling units sum",
         "Forcing units sum"]
 
@@ -230,7 +230,7 @@ function PlotCurveApple(temp, date_vec;
 
     if !isnothing(TN_vec)
         push!(pltvec, pltTN)
-        push!(labelvec, "TN")
+        push!(labelvec, "TN (daily min)")
     end
 
     Legend(fig[1:4, 3], pltvec, labelvec)
