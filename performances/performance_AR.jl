@@ -37,7 +37,7 @@ println("="^70)
 
 
 # Test SimulateScenario (single scenario)
-n = 1000
+n = 10
 println("SimulateScenario (n=$n):")
 result1 = @btime SimulateScenarios($x0, $date_vec, $Φ_monthly, $σ_monthly, n=n)
 
@@ -47,9 +47,19 @@ result2 = @btime SimulateScenarios2($x0, $date_vec, $Φ_monthly, $σ_monthly, n=
 println("SimulateScenario3 (n=$n):")
 result3 = @btime SimulateScenarios3($x0, $date_vec, $Φ_monthly, $σ_monthly, n=n)
 
+println("SimulateScenario4 (n=$n):")
+result4 = @btime SimulateScenarios4($x0, $date_vec, $Φ_monthly, $σ_monthly, n=n)
+
 @profview SimulateScenarios(x0, date_vec, Φ_monthly, σ_monthly, n=1000)
 @profview SimulateScenarios2(x0, date_vec, Φ_monthly, σ_monthly, n=1000)
 
+#To check if the two function return the same result
+Random.seed!(1234)
+result1 = SimulateScenarios(x0, date_vec, Φ_monthly, σ_monthly,n=n)
+Random.seed!(1234)
+result2 = SimulateScenarios4(x0, date_vec, Φ_monthly, σ_monthly,n=n)
+
+all(result1 .== result2)
 
 
 ######

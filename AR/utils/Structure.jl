@@ -111,11 +111,14 @@ function Base.rand(rng::Random.AbstractRNG, model::AR_SWG, n::Integer=1, date_ve
         σ_period = model.σ_period[dayofyear_Leap.(model.date_vec)]
     end
     if date_vec == model.date_vec
-        SimulateScenarios(y₁, date_vec, model.Φ, model.σ, model.trend .+ period, model.σ_trend .* σ_period, rng, n=n, correction=correction)
+        nspart = model.trend .+ period
+        σ_nspart = model.σ_trend .+ σ_period
     else
         index_nspart = findall(t -> t ∈ date_vec, model.date_vec)
-        SimulateScenarios(y₁, date_vec, model.Φ, model.σ, model.trend .+ period, model.σ_trend .* σ_period, rng, n=n, index_nspart=index_nspart, correction=correction)
+        nspart = (model.trend .+ period)[index_nspart]
+        σ_nspart = (model.σ_trend .+ σ_period)[index_nspart] 
     end
+    return SimulateScenarios(y₁, date_vec, model.Φ, model.σ, nspart_, σ_nspart_, rng, n=n, correction=correction)
 end
 function Base.rand(rng::Random.AbstractRNG, model::AR_SWG, n::Integer, n2t::AbstractVector{Integer}; y₁=model.y₁, correction="null")
     return rand(rng, model, n, inverse_dayofyear_Leap.(n2t), y₁=y₁)

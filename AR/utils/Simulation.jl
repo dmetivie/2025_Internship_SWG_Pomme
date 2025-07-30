@@ -1,6 +1,7 @@
 include("utils.jl")
 
 @tryusing "Dates", "Distributions", "LinearAlgebra", "Random"
+using Random
 
 ##### SIMULATION #####
 """
@@ -146,7 +147,14 @@ function SimulateScenario3!(x, p, Date_vec, Φ, σ::AbstractVector, rng)
     return L
 end
 
-function SimulateScenario(x0::AbstractVector, Date_vec::AbstractVector, Φ, σ, nspart=0, σ_nspart=1, rng=Random.default_rng(); index_nspart=nothing)
+function SimulateScenario4!(L, p, n2t, Φ, σ::AbstractVector, rng)
+    for (i, m) in enumerate(n2t[p+1:end])
+        L[i+p] = sum(Φ[m][j] * L[i+p-j] for j in 1:p) + rand(rng,Normal(0,σ[m]))
+    end
+    return L
+end
+
+function SimulateScenario(x0::AbstractVector, Date_vec::AbstractVector, Φ, σ, nspart=0, σ_nspart=1; rng=Random.default_rng(), index_nspart=nothing)
     L = SimulateScenario!(copy(x0), length(x0), Date_vec, Φ, σ, rng)
     nspart_ = (length(nspart) == 366 ? nspart[dayofyear_Leap.(Date_vec)] : (isnothing(index_nspart) ? nspart : nspart[index_nspart]))
     σ_nspart_ = (length(σ_nspart) == 366 ? σ_nspart[dayofyear_Leap.(Date_vec)] : (isnothing(index_nspart) ? σ_nspart : σ_nspart[index_nspart]))
@@ -162,9 +170,9 @@ SimulateScenario(x0::AbstractFloat, Date_vec::AbstractVector, Φ, σ, nspart=0, 
 
 Simulate n temperature scenarios during the Date_vec timeline following an AR model with parameters Φ and σ and non stationnary part (trend + periodicity) nspart.
 """
-function SimulateScenarios(x0::AbstractArray, Date_vec::AbstractVector, Φ, σ::AbstractVector{T}, nspart=0, σ_nspart=1, rng=Random.default_rng(); n=1, index_nspart=nothing, correction="null") where T<:AbstractFloat
+function SimulateScenarios(x0::AbstractArray, Date_vec::AbstractVector, Φ, σ::AbstractVector{T}, nspart=0, σ_nspart=1; rng=Random.default_rng(), n=1, index_nspart=nothing, correction="null") where T<:AbstractFloat
     if n == 1
-        return SimulateScenario(x0, Date_vec, Φ, σ, nspart, σ_nspart, rng, index_nspart=index_nspart)
+        return SimulateScenario(x0, Date_vec, Φ, σ, nspart, σ_nspart, rng=rng, index_nspart=index_nspart)
     else
         L = [SimulateScenario!(copy(x0), length(x0), Date_vec, Φ, σ, rng) for _ in 1:n]
         nspart_ = (length(nspart) == 366 ? nspart[dayofyear_Leap.(Date_vec)] : (isnothing(index_nspart) ? nspart : nspart[index_nspart]))
@@ -179,7 +187,7 @@ SimulateScenarios(x0::AbstractFloat, Date_vec::AbstractVector, Φ, σ, nspart=0,
 
 Simulate n temperature scenarios during the Date_vec timeline following an AR model with parameters Φ and σ and non stationnary part (trend + periodicity) nspart.
 """
-function SimulateScenarios2(x0::AbstractArray, Date_vec::AbstractVector, Φ, σ::AbstractVector{T}, nspart=0, σ_nspart=1, rng=Random.default_rng(); n=1, index_nspart=nothing, correction="null") where T<:AbstractFloat
+function SimulateScenarios2(x0::AbstractArray, Date_vec::AbstractVector, Φ, σ::AbstractVector{T}, nspart=0, σ_nspart=1; rng=Random.default_rng(), n=1, index_nspart=nothing, correction="null") where T<:AbstractFloat
     L = [SimulateScenario2!(copy(x0), length(x0), Date_vec, Φ, σ, rng) for _ in 1:n]
     nspart_ = (length(nspart) == 366 ? nspart[dayofyear_Leap.(Date_vec)] : (isnothing(index_nspart) ? nspart : nspart[index_nspart]))
     σ_nspart_ = (length(σ_nspart) == 366 ? σ_nspart[dayofyear_Leap.(Date_vec)] : (isnothing(index_nspart) ? σ_nspart : σ_nspart[index_nspart]))
@@ -191,12 +199,25 @@ end
 
 Simulate n temperature scenarios during the Date_vec timeline following an AR model with parameters Φ and σ and non stationnary part (trend + periodicity) nspart.
 """
-function SimulateScenarios3(x0::AbstractArray, Date_vec::AbstractVector, Φ, σ::AbstractVector{T}, nspart=0, σ_nspart=1, rng=Random.default_rng(); n=1, index_nspart=nothing, correction="null") where T<:AbstractFloat
+function SimulateScenarios3(x0::AbstractArray, Date_vec::AbstractVector, Φ, σ::AbstractVector{T}, nspart=0, σ_nspart=1; rng=Random.default_rng(), n=1, index_nspart=nothing, correction="null") where T<:AbstractFloat
     L = [SimulateScenario3!(copy(x0), length(x0), Date_vec, Φ, σ, rng) for _ in 1:n]
     nspart_ = (length(nspart) == 366 ? nspart[dayofyear_Leap.(Date_vec)] : (isnothing(index_nspart) ? nspart : nspart[index_nspart]))
     σ_nspart_ = (length(σ_nspart) == 366 ? σ_nspart[dayofyear_Leap.(Date_vec)] : (isnothing(index_nspart) ? σ_nspart : σ_nspart[index_nspart]))
     return map(sim -> sim .* σ_nspart_ .+ nspart_, L)
 end
+
+
+function SimulateScenarios4(x0::AbstractArray, Date_vec::AbstractVector, Φ, σ::AbstractVector{T}, nspart=0, σ_nspart=1; rng=Random.default_rng(), n=1, index_nspart=nothing, correction="null", return_res=false) where T<:AbstractFloat
+    p = length(x0)
+    L0 = zeros(eltype(x0),length(Date_vec))
+    L0[1:p] = x0
+    n2t = month.(Date_vec)
+    L = [SimulateScenario4!(copy(L0), p, n2t, Φ, σ, rng) for _ in 1:n]
+    return return_res ? (map(sim -> sim .* σ_nspart .+ nspart, L), L) : map(sim -> sim .* σ_nspart .+ nspart, L)
+end
+# SimulateScenarios4(x0::AbstractFloat, Date_vec::AbstractVector, Φ, σ, nspart=0, σ_nspart=1; rng=Random.default_rng(), n=1, index_nspart=nothing, return_res=false) = SimulateScenarios([x0], Date_vec, Φ, σ, nspart, σ_nspart, rng, n=n, index_nspart=index_nspart, return_res=return_res)
+
+
 
 SimulateScenarios(x0::AbstractFloat, Date_vec::AbstractVector, Φ, σ, nspart=0, σ_nspart=1; rng=Random.default_rng(), n=1, index_nspart=nothing) = SimulateScenarios([x0], Date_vec, Φ, σ, nspart, σ_nspart, rng, n=n, index_nspart=index_nspart)
 
