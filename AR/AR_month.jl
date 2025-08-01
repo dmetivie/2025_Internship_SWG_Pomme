@@ -4,15 +4,18 @@ cd((@__DIR__))
 
 folder_station = "../mystations"
 folder_results = "Results" #do not write "/" at the end
-min_p=2
-max_p=4
-min_k=3 #k = Order of the seasonality
-max_k=3
+min_p = 1
+max_p = 8
+min_k = 1 #k = Order of the seasonality
+max_k = 12
 
+# for rand_init in (true, false)
+#     rand_init_file = rand_init ? "/rand_init" : ""
+# folder = folder_results * "/" * (file_[1:2]) * "/" * (file_[4:(end-4)]) * rand_init_file * "/p=$(p_),k=$(k)"
 for file_ in readdir(folder_station)
     for p_ in (min_p:max_p)
         for k in (min_k:max_k)
-            folder = folder_results* "/" * (file_[1:2]) * "/" * (file_[4:(end-4)]) * "/p=$(p_),k=$(k)"
+            folder = folder_results * "/" * (file_[1:2]) * "/" * (file_[4:(end-4)]) * "/p=$(p_),k=$(k)"
 
             ##Station
             file = folder_station * "/" * file_
@@ -28,9 +31,10 @@ for file_ in readdir(folder_station)
             σ_degree_period = k                   # 0 => default value -> "trigo" : 5, "smooth" : 9, "autotrigo" : 50, "stepwise_trigo" : 50
             σ_Trendtype = "LOESS"                 # "LOESS", "polynomial", "null" (for no multiplicative trend)
             σ_trendparam = nothing                # nothing => default value -> "LOESS" : 0.08, "polynomial" : 1
+            Nb_try = 20
 
             ##Simulations
-            n = 5
+            n = 2000
 
 
             settings = OrderedDict((("file", file),
@@ -44,6 +48,7 @@ for file_ in readdir(folder_station)
                 ("σ_degree_period", σ_degree_period),
                 ("σ_Trendtype", σ_Trendtype),
                 ("σ_trendparam", σ_trendparam),
+                ("Number of random initialization", Nb_try),
                 ("n", n)))
 
 
@@ -64,12 +69,14 @@ for file_ in readdir(folder_station)
                 σ_periodicity_model=σ_periodicity_model,
                 σ_degree_period=σ_degree_period,
                 σ_Trendtype=σ_Trendtype,
-                σ_trendparam=σ_trendparam)
+                σ_trendparam=σ_trendparam,
+                Nb_try=Nb_try)
 
-            sample_ = rand(Model, n, series.DATE,return_res=true)
+            sample_ = rand(Model, n, series.DATE, return_res=true)
 
             Sample_diagnostic(sample_, Caracteristics_Series, Model, folder=folder, settings=settings)
-            save_model(Model,folder * "/model.jld2")
+            save_model(Model, folder * "/model.jld2")
         end
     end
 end
+# end

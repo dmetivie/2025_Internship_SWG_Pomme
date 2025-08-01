@@ -341,7 +341,7 @@ end
 #works
 
 save_model(model, title="model.jld2") = save(title, "model", model)
-load_model(file, struct_=Multi_MonthlyAR) = load(file)["model"]
+load_model(file) = load(file)["model"]
 
 mutable struct CaracteristicsSeries
     avg_day::AbstractVector
