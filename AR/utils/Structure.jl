@@ -59,37 +59,41 @@ include("Plotting.jl")
 
 
 
-function fit_simpleAR(x, date_vec, p, periodicity_model::String, degree_period::Integer)
-    if periodicity_model == "trigo"
-        trigo_function = fitted_periodicity_fonc(x, date_vec, OrderTrig=degree_period)
-        periodicity = trigo_function.(date_vec)
-        nspart = trigo_function.(Date(0):Date(1)-Day(1))
-    elseif periodicity_model == "smooth"
-        smooth_function = fitted_smooth_periodicity_fonc(x, date_vec, OrderDiff=degree_period)
-        periodicity = smooth_function.(date_vec)
-        nspart = smooth_function.(Date(0):Date(1)-Day(1))
-    elseif periodicity_model == "autotrigo"
-        autotrigo_function = fitted_periodicity_fonc_stepwise(x, date_vec, MaxOrder=degree_period)
-        periodicity = autotrigo_function.(date_vec)
-        nspart = autotrigo_function.(Date(0):Date(1)-Day(1))
-    end
-    y = x - periodicity
-    Φ, σ = LL_AR_Estimation(y, p)
-    return SimpleAR(Φ, σ, nspart, y[1:p])
-end
+# function fit_simpleAR(x, date_vec, p, periodicity_model::String, degree_period::Integer)
+#     if periodicity_model == "trigo"
+#         trigo_function = fitted_periodicity_fonc(x, date_vec, OrderTrig=degree_period)
+#         periodicity = trigo_function.(date_vec)
+#         nspart = trigo_function.(Date(0):Date(1)-Day(1))
+#     elseif periodicity_model == "smooth"
+#         smooth_function = fitted_smooth_periodicity_fonc(x, date_vec, OrderDiff=degree_period)
+#         periodicity = smooth_function.(date_vec)
+#         nspart = smooth_function.(Date(0):Date(1)-Day(1))
+#     elseif periodicity_model == "autotrigo"
+#         autotrigo_function = fitted_periodicity_fonc_stepwise(x, date_vec, MaxOrder=degree_period)
+#         periodicity = autotrigo_function.(date_vec)
+#         nspart = autotrigo_function.(Date(0):Date(1)-Day(1))
+#     end
+#     y = x - periodicity
+#     Φ, σ = LL_AR_Estimation(y, p)
+#     return SimpleAR(Φ, σ, nspart, y[1:p])
+# end
 
-function fit_simpleAR(x, date_vec, p, periodicity_model::String="trigo")
-    if periodicity_model == "trigo"
-        return fit_simpleAR(x, date_vec, p, periodicity_model, 5)
-    elseif periodicity_model == "smooth"
-        return fit_simpleAR(x, date_vec, p, periodicity_model, 9)
-    elseif periodicity_model == "mean"
-        nspart = mean.(GatherYearScenario(x, date_vec))
-        y = x - nspart[dayofyear_Leap.(date_vec)]
-        Φ, σ = LL_AR_Estimation(y, p)
-        return SimpleAR(Φ, σ, nspart, y[1:p])
-    end
-end
+# function fit_simpleAR(x, date_vec, p, periodicity_model::String="trigo")
+#     if periodicity_model == "trigo"
+#         return fit_simpleAR(x, date_vec, p, periodicity_model, 5)
+#     elseif periodicity_model == "smooth"
+#         return fit_simpleAR(x, date_vec, p, periodicity_model, 9)
+#     elseif periodicity_model == "mean"
+#         nspart = mean.(GatherYearScenario(x, date_vec))
+#         y = x - nspart[dayofyear_Leap.(date_vec)]
+#         Φ, σ = LL_AR_Estimation(y, p)
+#         return SimpleAR(Φ, σ, nspart, y[1:p])
+#     end
+# end
+
+
+
+
 
 # fit_simpleAR(x, date_vec, p=2, degree_period::Integer=5) = fit_simpleAR(x, date_vec, p, "trigo", degree_period)
 
@@ -159,11 +163,11 @@ defaultorder = Dict([("trigo", 5), ("smooth", 9), ("autotrigo", 50), ("stepwise_
 function fit_AR(x, date_vec;
     p::Integer=1,
     method_::String="monthlyLL",
-    periodicity_model::String="autotrigo",
+    periodicity_model::String="trigo",
     degree_period::Integer=0,
     Trendtype="LOESS",
     trendparam=nothing,
-    σ_periodicity_model::String="autotrigo",
+    σ_periodicity_model::String="trigo",
     σ_degree_period::Integer=0,
     σ_Trendtype="LOESS",
     σ_trendparam=nothing,
@@ -243,10 +247,13 @@ function fit_AR(x, date_vec;
     end
     z = z ./ σ_periodicity
 
-
-    Φ, σ = fit_ARMonthlyParameters(z, date_vec, p, method_, Nb_try)
-
-    return MonthlyAR(Φ, σ, trend, period, period_order, σ_trend, σ_period, σ_period_order, date_vec, z[1:p], z)
+    if method_ == "constant_params"
+        Φ, σ = LL_AR_Estimation(z, p)
+        return MonthlyAR(Φ, σ, trend, period, period_order, σ_trend, σ_period, σ_period_order, date_vec, z[1:p], z)
+    else
+        Φ, σ = fit_ARMonthlyParameters(z, date_vec, p, method_, Nb_try)
+        return MonthlyAR(Φ, σ, trend, period, period_order, σ_trend, σ_period, σ_period_order, date_vec, z[1:p], z)
+    end
 end
 
 

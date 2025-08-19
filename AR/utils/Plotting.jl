@@ -382,9 +382,12 @@ function Sample_diagnostic(sample_::Tuple, Caracteristics_Series, Model::Monthly
                 end
                 println(io, "\n\n")
             end
-            println(io, "Results :\n")
-            println(io, "Additive periodicity order : $(k)")
-            println(io, "Multiplicative periodicity order : $(Model.σ_period_order)")
+            # println(io, "Results :\n")
+            # println(io, "Additive periodicity order : $(k)")
+            # println(io, "Multiplicative periodicity order : $(Model.σ_period_order)")
+
+            println(io, "Number of simulations for the last diagnostic : $(length(sample_)) \n \n")
+
         end
     end
     return (fig1, fig2, fig3, fig4)

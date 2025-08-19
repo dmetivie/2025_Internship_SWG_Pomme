@@ -96,7 +96,7 @@ SimulateYears(x0::Number, day_one::Date, Φ_month::AbstractVector, σ_month::Abs
 
 function SimulateScenario!(L, p, n2t, Φ, σ::AbstractVector, rng)
     for (i, m) in enumerate(n2t[p+1:end])
-        L[i+p] = sum(Φ[m,j] * L[i+p-j] for j in 1:p) + rand(rng,Normal(0,σ[m]))
+        L[i+p] = sum(Φ[m, j] * L[i+p-j] for j in 1:p) + rand(rng, Normal(0, σ[m]))
     end
     return L
 end
@@ -108,7 +108,7 @@ Simulate n temperature scenarios during the Date_vec timeline following an AR mo
 """
 function SimulateScenarios(x0::AbstractArray, Date_vec::AbstractVector, Φ, σ::AbstractVector{T}, nspart=0, σ_nspart=1; rng=Random.default_rng(), n=1, correction="null", return_res=false) where T<:AbstractFloat
     p = length(x0)
-    L0 = zeros(eltype(x0),length(Date_vec))
+    L0 = zeros(eltype(x0), length(Date_vec))
     L0[1:p] = x0
     n2t = month.(Date_vec)
     L = [SimulateScenario!(copy(L0), p, n2t, Φ, σ, rng) for _ in 1:n]
@@ -156,15 +156,15 @@ function SimulateScenarios0(x0::AbstractArray, Date_vec::AbstractVector, Φ, Σ:
     nspart_ = (length(nspart) == 366 ? nspart[dayofyear_Leap.(Date_vec), :] : (isnothing(index_nspart) ? nspart : nspart[index_nspart, :]))
     σ_nspart_ = (length(σ_nspart) == 366 ? σ_nspart[dayofyear_Leap.(Date_vec), :] : (isnothing(index_nspart) ? σ_nspart : σ_nspart[index_nspart, :]))
     if correction == "null"
-        return return_res ? (map(sim -> sim .* σ_nspart_ .+ nspart_, L),L) : map(sim -> sim .* σ_nspart_ .+ nspart_, L)
+        return return_res ? (map(sim -> sim .* σ_nspart_ .+ nspart_, L), L) : map(sim -> sim .* σ_nspart_ .+ nspart_, L)
     elseif correction == "clip"
-        return return_res ? (clip_.(map(sim -> sim .* σ_nspart_ .+ nspart_, L)),L) : clip_.(map(sim -> sim .* σ_nspart_ .+ nspart_, L))
+        return return_res ? (clip_.(map(sim -> sim .* σ_nspart_ .+ nspart_, L)), L) : clip_.(map(sim -> sim .* σ_nspart_ .+ nspart_, L))
     elseif correction == "conditional"
         Output = ones(length)
         id_σTX = σ_nspart_[:, 1] <= σ_nspart_[:, 2]
         id_σTN = σ_nspart_[:, 1] > σ_nspart_[:, 2]
         if return_res
-            return map(x -> TransformTN_TX(x, σ_nspart_, nspart_, id_σTX, id_σTN, Output), L),L
+            return map(x -> TransformTN_TX(x, σ_nspart_, nspart_, id_σTX, id_σTN, Output), L), L
         else
             return map(x -> TransformTN_TX(x, σ_nspart_, nspart_, id_σTX, id_σTN, Output), L)
         end
@@ -184,7 +184,7 @@ end
 
 function SimulatePairedScenario!(L, p, n2t, Φ, Σ, d, rng)
     for (i, m) in enumerate(n2t[p+1:end])
-        L[i+p,:] = sum(Φ[m][j] * L[i+p-j,:] for j in 1:p) .+ Σ[m] * randn(rng, d)
+        L[i+p, :] = sum(Φ[m][j] * L[i+p-j, :] for j in 1:p) .+ Σ[m] * randn(rng, d)
     end
     return L
 end
@@ -193,22 +193,22 @@ function SimulateScenarios(x0::AbstractArray, Date_vec::AbstractVector, Φ, Σ::
     p, d = collectpdx0(x0)
     M0 = copy(x0)
     p == 1 ? M0 = reshape(M0, (1, d)) : nothing
-    L0 = zeros(eltype(x0),(length(Date_vec),d))
-    L0[1:p,:] = M0
+    L0 = zeros(eltype(x0), (length(Date_vec), d))
+    L0[1:p, :] = M0
     n2t = month.(Date_vec)
     L = [SimulatePairedScenario!(copy(L0), p, n2t, Φ, Σ, d, rng) for _ in 1:n]
     nspart_ = (length(nspart) == 366 ? nspart[dayofyear_Leap.(Date_vec), :] : (isnothing(index_nspart) ? nspart : nspart[index_nspart, :]))
     σ_nspart_ = (length(σ_nspart) == 366 ? σ_nspart[dayofyear_Leap.(Date_vec), :] : (isnothing(index_nspart) ? σ_nspart : σ_nspart[index_nspart, :]))
     if correction == "null"
-        return return_res ? (map(sim -> sim .* σ_nspart_ .+ nspart_, L),L) : map(sim -> sim .* σ_nspart_ .+ nspart_, L)
+        return return_res ? (map(sim -> sim .* σ_nspart_ .+ nspart_, L), L) : map(sim -> sim .* σ_nspart_ .+ nspart_, L)
     elseif correction == "clip"
-        return return_res ? (clip_.(map(sim -> sim .* σ_nspart_ .+ nspart_, L)),L) : clip_.(map(sim -> sim .* σ_nspart_ .+ nspart_, L))
+        return return_res ? (clip_.(map(sim -> sim .* σ_nspart_ .+ nspart_, L)), L) : clip_.(map(sim -> sim .* σ_nspart_ .+ nspart_, L))
     elseif correction == "conditional"
         Output = ones(length)
         id_σTX = σ_nspart_[:, 1] <= σ_nspart_[:, 2]
         id_σTN = σ_nspart_[:, 1] > σ_nspart_[:, 2]
         if return_res
-            return map(x -> TransformTN_TX(x, σ_nspart_, nspart_, id_σTX, id_σTN, Output), L),L
+            return map(x -> TransformTN_TX(x, σ_nspart_, nspart_, id_σTX, id_σTN, Output), L), L
         else
             return map(x -> TransformTN_TX(x, σ_nspart_, nspart_, id_σTX, id_σTN, Output), L)
         end
@@ -223,6 +223,7 @@ end
 """
     concat2by2(L)
 
+(DEPRECATED)
 Return the vector of the index-wise concatanations of the nested sub-sub-vectors in L.
 The sub-vectors (not necessarily sub-sub-vectors) in L must have the same size. 
 For example : 
@@ -236,5 +237,6 @@ For example :
 concat2by2(L1::AbstractVector, L2::AbstractVector) = [[u; v] for (u, v) in zip(L1, L2)]
 concat2by2(L::AbstractVector) = reduce(concat2by2, L)
 
+#Except this one
 concat2by2mat(L1::AbstractVector, L2::AbstractVector) = [[u v] for (u, v) in zip(L1, L2)]
 concat2by2mat(L::AbstractVector) = reduce(concat2by2mat, L)

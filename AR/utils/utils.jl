@@ -57,13 +57,9 @@ Create a vector where each sub-vector corresponds to a day of the year.
 Each temperature of the scenario is put in his corresponding sub-vector according to his day of the year.
 For example, Output[1] = [temperature of the 1st january of the first year, temperature of the 1st january of the second year, etc...]
 """
-function GatherYearScenario(Scenario::AbstractVector, Date_vec::AbstractVector)
-    Days_list = [AbstractFloat[] for _ in 1:366]
-    for (i, temp) in enumerate(Scenario)
-        push!(Days_list[dayofyear_Leap(Date_vec[i])], temp)
-    end
-    return Days_list
-end
+GatherYearScenario(Scenario::AbstractVector, n2t::AbstractVector{T}) where T <: Integer = [Scenario[n2t .== i] for i in 1:366]
+GatherYearScenario(Scenario::AbstractVector, Date_vec::AbstractVector{Date}) = GatherYearScenario(Scenario, dayofyear_Leap.(Date_vec))
+
 
 """
     GatherYearScenarios(Scenarios::AbstractVector,Date_vec::AbstractVector)
@@ -75,7 +71,7 @@ temperature of the 1st january of the second year of the first scenario,
 ...,
 temperature of the 1st january of the last year of the last scenario]
 """
-GatherYearScenarios(Scenarios, Date_vec) = concat2by2(GatherYearScenario.(Scenarios, repeat([Date_vec], length(Scenarios))))
+GatherYearScenarios(Scenarios, Date_vec) = GatherYearScenario(vcat(Scenarios...), repeat(Date_vec, length(Scenarios)))
 
 """
 Deprecated for now
