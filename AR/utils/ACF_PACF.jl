@@ -196,7 +196,7 @@ function MatrixMonthlyPACF(Monthly_temp)
     end
     return stack(acf_vec, dims=1)
 end
-
+#À optimiser...
 """
     Sample_MonthlyPACF(samples::AbstractVector, sample_timeline::AbstractVector{Date})
 
@@ -263,3 +263,59 @@ function Error_MonthlyPACF(samples::AbstractVector, sample_timeline::AbstractVec
     Error_matrix(matrix) = abs.(matrix - true_matrix)
     return mean(Error_matrix.(list_matrix))
 end
+
+
+#####CrossCorrelation#####
+CrossCorrelation(X,Y,k=4) = @views [cor(X[max(1-i,1):min(end-i,end)],Y[max(i+1,1):min(end+i,end)]) for i in -k:k]
+
+MatrixMonthlyCC(Monthly_tempX, Monthly_tempY) = stack(
+    [mean([CrossCorrelation(Monthly_tempX[i][j], Monthly_tempY[i][j]) for j in eachindex(Monthly_tempX[i])]) for i in 1:12],
+    dims=1
+)
+
+function Sample_MonthlyCC(samplesTN::AbstractVector,samplesTX::AbstractVector, sample_timeline::AbstractVector{Date})
+    return [MatrixMonthlyCC(MonthlySeparateX(sampleTN, sample_timeline),MonthlySeparateX(sampleTX, sample_timeline)) for (sampleTN,sampleTX) in zip(samplesTN,samplesTX)]
+end
+
+
+function Plot_Sample_MonthlyCC(samplesTN::AbstractVector,samplesTX::AbstractVector, sample_timeline::AbstractVector{Date}, true_matrix=nothing, comment="")
+    list_matrix = Sample_MonthlyCC(samplesTN, samplesTX, sample_timeline)
+    fig = Figure(size=(800, 800))
+    supertitle = Label(fig[1, 1:4], "Monthly average correlation between the residuals of TNₜ and TXₜ₊ₛ\n" * comment, fontsize=20)
+    ax_vec = Axis[]
+    min_y, max_y = 0, 0
+    for i in 1:11
+        sample_cc = invert([matrix_[i, :] for matrix_ in list_matrix])
+        ax, _ = CairoMakie.barplot(fig[((i-1)÷4)+2, (i-1)%4+1], -4:4, maximum.(sample_cc); fillto=minimum.(sample_cc), color=("#009bff", 0.5))
+        scatter!(ax, -4:4, median.(sample_cc), color=("#009bff", 0.8), marker=:hline, markersize=15)
+        ax.title = Month_vec[i]
+        i > 8 ? ax.xlabel = "s" : nothing
+        isnothing(true_matrix) ? nothing : scatter!(ax, -4:4, true_matrix[i, :], color="#e57420", marker=:hline, markersize=15)
+        push!(ax_vec, ax)
+        CompleteMonthlySample = [reduce(vcat, [matrix_[i, :] for matrix_ in list_matrix]); true_matrix[i, :]] #All the pacf in the i-th month.
+        max_y = max(maximum(CompleteMonthlySample), max_y)
+        min_y = min(minimum(CompleteMonthlySample), min_y)
+    end
+    ##### Same part as inside the for loop but we keep plot1 and plot2 for legends.
+    sample_cc = invert([matrix_[12, :] for matrix_ in list_matrix])
+    ax, plot1 = CairoMakie.barplot(fig[((12-1)÷4)+2, (12-1)%4+1], -4:4, maximum.(sample_cc); fillto=minimum.(sample_cc), color=("#009bff", 0.5))
+    plot2 = scatter!(ax, -4:4, median.(sample_cc), color=("#009bff", 0.8), marker=:hline, markersize=15)
+    ax.title = Month_vec[12]
+    ax.xlabel = "s"
+    isnothing(true_matrix) ? nothing : plot3 = scatter!(ax, -4:4, true_matrix[12, :], color="#e57420", marker=:hline, markersize=15)
+    push!(ax_vec, ax)
+    CompleteMonthlySample = [reduce(vcat, [matrix_[12, :] for matrix_ in list_matrix]); true_matrix[12, :]]
+    max_y = max(maximum(CompleteMonthlySample), max_y)
+    min_y = min(minimum(CompleteMonthlySample), min_y)
+    #####
+    for ax in ax_vec
+        ax.limits = (nothing, [min_y - 0.15, max_y + 0.15])
+        ax.xgridvisible = false
+        ax.xticks = -4:4
+        ax.xticklabelsize = 11
+    end
+    Legend(fig[5, 1:4], [plot1, plot2, plot3], ["Range of means CC of the simulated temperatures", "Median of means CC of the simulated temperatures", "mean CC of the recorded temperatures"])
+    return fig
+end
+Plot_Sample_MonthlyCC(samplesTN::AbstractVector,samplesTX::AbstractVector, sample_timeline::AbstractVector{Date}, Monthly_tempX::AbstractVector{T},Monthly_tempY::AbstractVector{T}, comment="") where T<:AbstractVector = Plot_Sample_MonthlyCC(samplesTN,samplesTX, sample_timeline, MatrixMonthlyCC(Monthly_tempX,Monthly_tempY), comment)
+Plot_Sample_MonthlyCC(samplesTN::AbstractVector,samplesTX::AbstractVector, sample_timeline::AbstractVector{Date}, x::AbstractVector{T}, y::AbstractVector{T}, comment="") where T<:AbstractFloat = Plot_Sample_MonthlyCC(samplesTN,samplesTX, sample_timeline, MonthlySeparateX(x, sample_timeline), MonthlySeparateX(y, sample_timeline), comment)

@@ -382,18 +382,21 @@ function Sample_diagnostic(sample_::Tuple, Caracteristics_Series, Model::Monthly
                 end
                 println(io, "\n\n")
             end
-            println(io, "Results :\n")
-            println(io, "Additive periodicity order : $(k)")
-            println(io, "Multiplicative periodicity order : $(Model.σ_period_order)")
+            # println(io, "Results :\n")
+            # println(io, "Additive periodicity order : $(k)")
+            # println(io, "Multiplicative periodicity order : $(Model.σ_period_order)")
+
+            println(io, "Number of simulations for the last diagnostic : $(length(sample_)) \n \n")
+
         end
     end
     return (fig1, fig2, fig3, fig4)
 end
-function Sample_diagnostic(sample_::AbstractVector{T}, Caracteristics_Series, Model::MonthlyAR; format_="vertical", size=format_ == "vertical" ? (1200, 1900) : (1600, 900), folder=nothing, settings=nothing) where T <: AbstractVector
+function Sample_diagnostic(sample_::AbstractVector{T}, Caracteristics_Series, Model::MonthlyAR; format_="vertical", size=format_ == "vertical" ? (1200, 1900) : (1600, 900), folder=nothing, settings=nothing) where T<:AbstractVector
     nspart_ = Model.trend .+ Model.period[dayofyear_Leap.(Model.date_vec)]
     σ_nspart_ = Model.σ_trend .* Model.σ_period[dayofyear_Leap.(Model.date_vec)]
     z_sample = map(sim -> (sim .- nspart_) ./ σ_nspart_, sample_)
-    return Sample_diagnostic((sample_,z_sample), Caracteristics_Series, Model; format_=format_, size=size, folder=folder, settings=settings)
+    return Sample_diagnostic((sample_, z_sample), Caracteristics_Series, Model; format_=format_, size=size, folder=folder, settings=settings)
 end
 
 
@@ -426,6 +429,7 @@ function Sample_diagnostic(sample_::Tuple, Caracteristics_Series, Model::Multi_M
     fig5 = Plot_Sample_MonthlyPACF(z_sampleTN, Model.date_vec, Model.z[:, 1], "TN, p=$(p), k=$(k)")
     fig6 = Plot_Sample_MonthlyACF(z_sampleTX, Model.date_vec, Model.z[:, 2], "TX, p=$(p), k=$(k)")
     fig7 = Plot_Sample_MonthlyPACF(z_sampleTX, Model.date_vec, Model.z[:, 2], "TX, p=$(p), k=$(k)")
+    fig8 = Plot_Sample_MonthlyCC(z_sampleTN, z_sampleTX, Model.date_vec, Model.z[:, 1], Model.z[:, 2], "p=$(p), k=$(k)")
 
     if !isnothing(folder)
         mkpath(folder)
@@ -436,6 +440,7 @@ function Sample_diagnostic(sample_::Tuple, Caracteristics_Series, Model::Multi_M
         save(folder * "/MonthlyPACF_TN" * "_$(p)_$(k)" * ".pdf", fig5; px_per_unit=2.0)
         save(folder * "/MonthlyACF_TX" * "_$(p)_$(k)" * ".pdf", fig6; px_per_unit=2.0)
         save(folder * "/MonthlyPACF_TX" * "_$(p)_$(k)" * ".pdf", fig7; px_per_unit=2.0)
+        save(folder * "/MonthlyCC" * "_$(p)_$(k)" * ".pdf", fig8; px_per_unit=2.0)
         open(folder * "/Figures" * "_$(p)_$(k)" * ".txt", "a") do io
             if !isnothing(settings)
                 println(io, "Settings :\n")
@@ -453,11 +458,11 @@ function Sample_diagnostic(sample_::Tuple, Caracteristics_Series, Model::Multi_M
             # println(io, "Multiplicative periodicity order : $(Model.σ_period_order)")
         end
     end
-    return (fig2, fig3, fig4, fig5, fig6, fig7)
+    return (fig2, fig3, fig4, fig5, fig6, fig7, fig8)
 end
-function Sample_diagnostic(sample_::AbstractVector{T}, Caracteristics_Series, Model::Multi_MonthlyAR; format_="vertical", size=format_ == "vertical" ? (1200, 1900) : (1600, 900), folder=nothing, settings=nothing) where T <: AbstractMatrix
-    nspart_ = Model.trend .+ Model.period[dayofyear_Leap.(Model.date_vec),:]
-    σ_nspart_ = Model.σ_trend .* Model.σ_period[dayofyear_Leap.(Model.date_vec),:]
+function Sample_diagnostic(sample_::AbstractVector{T}, Caracteristics_Series, Model::Multi_MonthlyAR; format_="vertical", size=format_ == "vertical" ? (1200, 1900) : (1600, 900), folder=nothing, settings=nothing) where T<:AbstractMatrix
+    nspart_ = Model.trend .+ Model.period[dayofyear_Leap.(Model.date_vec), :]
+    σ_nspart_ = Model.σ_trend .* Model.σ_period[dayofyear_Leap.(Model.date_vec), :]
     z_sample = map(sim -> (sim .- nspart_) ./ σ_nspart_, sample_)
-    return Sample_diagnostic((sample_,z_sample), Caracteristics_Series, Model; format_=format_, size=size, folder=folder, settings=settings)
+    return Sample_diagnostic((sample_, z_sample), Caracteristics_Series, Model; format_=format_, size=size, folder=folder, settings=settings)
 end

@@ -1,18 +1,25 @@
 include("table_reader.jl")
 include("utils/Structure.jl")
-cd((@__DIR__))
+cd(@__DIR__)
 
+Diagnostic = false
 folder_station = "../mystations"
 folder_results = "Results" #do not write "/" at the end
-min_p=2
-max_p=4
-min_k=3 #k = Order of the seasonality
-max_k=3
+min_p = 2
+max_p = 2
+min_k = 1 #k = Order of the seasonality
+max_k = 10
+
+# for rand_init in (true, false)
+#     rand_init_file = rand_init ? "/rand_init" : ""
+# folder = folder_results * "/" * (file_[1:2]) * "/" * (file_[4:(end-4)]) * rand_init_file * "/p=$(p_),k=$(k)"
+T0 = time()
+
 
 for file_ in readdir(folder_station)
     for p_ in (min_p:max_p)
         for k in (min_k:max_k)
-            folder = folder_results* "/" * (file_[1:2]) * "/" * (file_[4:(end-4)]) * "/p=$(p_),k=$(k)"
+            folder = folder_results * "/" * (file_[1:2]) * "/" * (file_[4:(end-4)]) * "/p=$(p_),k=$(k)"
 
             ##Station
             file = folder_station * "/" * file_
@@ -28,9 +35,10 @@ for file_ in readdir(folder_station)
             σ_degree_period = k                   # 0 => default value -> "trigo" : 5, "smooth" : 9, "autotrigo" : 50, "stepwise_trigo" : 50
             σ_Trendtype = "LOESS"                 # "LOESS", "polynomial", "null" (for no multiplicative trend)
             σ_trendparam = nothing                # nothing => default value -> "LOESS" : 0.08, "polynomial" : 1
+            Nb_try = 20
 
             ##Simulations
-            n = 5
+            n = 1200 #useless if Diagnostic == false
 
 
             settings = OrderedDict((("file", file),
@@ -44,7 +52,7 @@ for file_ in readdir(folder_station)
                 ("σ_degree_period", σ_degree_period),
                 ("σ_Trendtype", σ_Trendtype),
                 ("σ_trendparam", σ_trendparam),
-                ("n", n)))
+                ("Number of random initialization", Nb_try)))
 
 
             series = extract_series(file, plot=false)
@@ -52,7 +60,6 @@ for file_ in readdir(folder_station)
             years = unique(Dates.year.(series.DATE))
 
             Caracteristics_Series = init_CaracteristicsSeries(series)
-
 
             Model = fit_AR(series[:, 2], series.DATE,
                 p=p,
@@ -64,12 +71,31 @@ for file_ in readdir(folder_station)
                 σ_periodicity_model=σ_periodicity_model,
                 σ_degree_period=σ_degree_period,
                 σ_Trendtype=σ_Trendtype,
-                σ_trendparam=σ_trendparam)
+                σ_trendparam=σ_trendparam,
+                Nb_try=Nb_try)
 
-            sample_ = rand(Model, n, series.DATE,return_res=true)
+            save_model(Model, folder * "/model.jld2")
+            save(folder * "/Caracteristics_Series_Settings.jld2", "cs", Caracteristics_Series) #useful if we want to re-sample
 
-            Sample_diagnostic(sample_, Caracteristics_Series, Model, folder=folder, settings=settings)
-            save_model(Model,folder * "/model.jld2")
+            if Diagnostic
+                sample_ = rand(Model, n, series.DATE, return_res=true)
+                Sample_diagnostic(sample_, Caracteristics_Series, Model, folder=folder, settings=settings)
+            else
+                open(folder * "/Figures" * "_$(p_)_$(k)" * ".txt", "a") do io
+                    println(io, "Settings :\n")
+                    for key in keys(settings)
+                        println(io, "$(key) : $(settings[key])")
+                    end
+                end
+            end
+
+            dt = time() - T0
+            min_, scds = Int(floor(dt ÷ 60)), Int(floor(dt % 60))
+
+            println("Model done : " * (file_[1:2]) * "/" * (file_[4:(end-4)]) * "/p=$(p_),k=$(k) in $(min_) min, $(scds) s")
         end
     end
 end
+
+# end
+println("Finished !")

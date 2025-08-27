@@ -112,7 +112,7 @@ function MonthlyEstimationSumLL(Monthly_temp::AbstractVector, p::Integer=1, Esti
         append!(Φ_month_sumLL, p == 1 ? Estimation[1] : [Estimation[1]])
         append!(σ_month_sumLL, Estimation[2])
     end
-    return (stack(Φ_month_sumLL,dims=1), σ_month_sumLL)
+    return (stack(Φ_month_sumLL, dims=1), σ_month_sumLL)
 end
 
 #### THE MAIN METHOD USED ####
@@ -147,18 +147,18 @@ function LL_AR_Estimation_monthly(x::AbstractVector, date_vec::AbstractVector{Da
         @warn "Fail solve"
     end
     # if Nb_try > 0
-        for i in 1:Nb_try
-            Estimators = rand(12, p + 1) #Reinitialize the parameters
-            prob = OptimizationProblem(optf, Estimators, (x, month.(date_vec), p, length(x)), lb=lb, ub=ub)
-            localResults = Optimization.solve(prob, algo, maxiters=10000) #maxiters should be modified if needed
-            if !SciMLBase.successful_retcode(Results.retcode)
-                @warn "Fail solve iteration $(i)"
-            end
-            if localResults.objective < Results.objective
-                Results = localResults
-                @info "New best result found with new initialization at iteration $(i)"
-            end
+    for i in 1:Nb_try
+        Estimators = rand(12, p + 1) #Reinitialize the parameters
+        prob = OptimizationProblem(optf, Estimators, (x, month.(date_vec), p, length(x)), lb=lb, ub=ub)
+        localResults = Optimization.solve(prob, algo, maxiters=10000) #maxiters should be modified if needed
+        if !SciMLBase.successful_retcode(Results.retcode)
+            @warn "Fail solve iteration $(i)"
         end
+        if localResults.objective < Results.objective
+            Results = localResults
+            @info "New best result found with new initialization at iteration $(i)"
+        end
+    end
     # end
     return Results[:, 1:p], Results[:, p+1] .^ (1 / 2)
 end
@@ -334,15 +334,16 @@ function AutoTakeParameters(AE_output)
 end
 AutoTakeParameters(Parameters_vec, ErrorTable) = AutoTakeParameters([Parameters_vec, ErrorTable])
 
-# using ForwardDiff
-# using Optimization, ForwardDiff, OptimizationOptimJL
-# rosenbrock(u, p) = (p[1] - u[1])^2 + p[2] * (u[2] - u[1]^2)^2
-# u0 = zeros(2)
-# p = [1.0, 100.0]
 
-# optf = OptimizationFunction(rosenbrock, Optimization.AutoForwardDiff())
-# prob = OptimizationProblem(optf, u0, p)
-
-# sol = solve(prob,  Optim.BFGS())
+Opp_Log_Monthly_Likelihood_AR(Model::MonthlyAR, z, n2m, p, N) = Opp_Log_Monthly_Likelihood_AR(hcat(Model.Φ, Model.σ .^ 2), z, n2m, p, N)
 
 
+function Opp_Log_Monthly_Likelihood_AR_nspart(model::MonthlyAR, z, n2m, p, N)
+    nspart = model.trend .+ model.period[dayofyear_Leap.(model.date_vec)]
+    σ_nspart = model.σ_trend .* model.σ_period[dayofyear_Leap.(model.date_vec)]
+    x = @views (nspart+σ_nspart.*z)[(p+1):N]
+    Var = @views ((σ_nspart.*model.σ[n2m]) .^ 2)[(p+1):N]
+    EV = [(nspart[t] + σ_nspart[t] * sum(model.Φ[n2m[t], i] * z[t-i] for i in 1:p)) for t in p+1:N] #Xₜ = EV(t) + ε in our model
+    Opplogpdf = (log.(2π .* Var) + ((x .- EV).^2) ./ Var) / 2
+    return sum(Opplogpdf)
+end
