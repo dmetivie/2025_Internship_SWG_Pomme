@@ -38,6 +38,7 @@ function Apple_Phenology_Pred(TG_vec::AbstractVector, #tip : put all arguments i
             end
         end
     end
+    forcing == true ? pop!(DB_vec) : nothing #forcing == true at the end means that it added a DB date in DB_vec which won't have it corresponding BB date in BB_vec
     return DB_vec, BB_vec
 end
 
@@ -126,6 +127,7 @@ function Vine_Phenology_Pred(Tn_vec::AbstractVector, #tip : put all arguments in
             end
         end
     end
+    forcing == true ? pop!(DB_vec) : nothing #forcing == true at the end means that it added a DB date in DB_vec which won't have it corresponding BB date in BB_vec
     return DB_vec, BB_vec
 end
 
@@ -139,8 +141,8 @@ function Vine_Phenology_Pred(
     TMBc::AbstractFloat=25.,
     Ghc::AbstractFloat=13236.)
 
-    TNdf = truncate_MV(extract_series(file_TN, type_data="TN"))
-    TXdf = truncate_MV(extract_series(file_TX, type_data="TX"))
+    TNdf = truncate_MV(extract_series(file_TN))#, type_data="TN"))
+    TXdf = truncate_MV(extract_series(file_TX))#, type_data="TX"))
     if TNdf.DATE != TXdf.DATE #If the timelines are differents, we take the common timeline of the two series.
         date_vec = max(TNdf.DATE[1], TXdf.DATE[1]):min(TNdf.DATE[end], TXdf.DATE[end])
         TN_vec = TNdf.TN[findfirst(TNdf.DATE .== date_vec[1]):findfirst(TNdf.DATE .== date_vec[end])]
@@ -187,31 +189,55 @@ function Vine_Phenology_Pred(M::VinePhenoModel)
             end
         end
     end
+    forcing == true ? pop!(DB_vec) : nothing #forcing == true at the end means that it added a DB date in DB_vec which won't have it corresponding BB date in BB_vec
     return DB_vec, BB_vec
+end
+
+
+function Vine_Phenology_Pred(x::AbstractMatrix,
+    date_vec::AbstractVector{Date};
+    CPO::Tuple{<:Integer,<:Integer}=(8, 1),
+    Q10::AbstractFloat=2.17,
+    Cc::AbstractFloat=119.0,
+    T0Bc::AbstractFloat=8.19,
+    TMBc::AbstractFloat=25.,
+    Ghc::AbstractFloat=13236.)
+    return Vine_Phenology_Pred(x[:, 1], x[:, 2], date_vec, CPO=CPO, Q10=Q10, Cc=Cc, T0Bc=T0Bc, TMBc=TMBc, Ghc=Ghc)
 end
 
 # ======= Freezing risk ====== #   
 
-function FreezingRisk(TN_vec::AbstractVector, Date_vec::AbstractVector{Date}, BB::Date; threshold=-2., PeriodOfInterest=Month(3), CPO=(8, 1))
-    if BB ∉ Date_vec || min(BB + Month(3), Date(year(BB), CPO[1], CPO[2])) ∉ Date_vec
-        return -1        
+"""For a given budburst date (BB) return the number of days with T<threshold after this date"""
+function FreezingRisk(TN_vec::AbstractVector, Date_vec::AbstractVector{Date}, BB::Date; threshold=-2., PeriodOfInterest=Month(3), CPO=(10, 30))
+    if BB ∉ Date_vec || min(BB + PeriodOfInterest, Date(year(BB), CPO[1], CPO[2])) ∉ Date_vec
+        return -1
     end
-    I = findall(BB .<= Date_vec .<= min(BB + Month(3), Date(year(BB), CPO[1], CPO[2])))
-    Cold_Day_Streak, Max_Cold_Day_Streak, TN_vec2 = 0, 0, TN_vec[I]
-    for TN in TN_vec2
-        if TN <= threshold
-            Cold_Day_Streak += 1
-            Max_Cold_Day_Streak = max(Max_Cold_Day_Streak, Cold_Day_Streak)
-        else
-            Cold_Day_Streak = 0
-        end
-    end
-    return Max_Cold_Day_Streak
+    I = findall(BB .<= Date_vec .<= min(BB + PeriodOfInterest, Date(year(BB), CPO[1], CPO[2])))
+    return sum(TN_vec[I] .<= threshold)
 end
 
 function FreezingRisk(temp::TN, BB; threshold=-2., PeriodOfInterest=Month(3), CPO=(8, 1))
     return FreezingRisk(temp.df.TN, temp.df.DATE, BB, threshold=threshold, PeriodOfInterest=PeriodOfInterest, CPO=CPO)
 end
 
+"""For a given budburst date vector (BB) return the number of days with T<threshold for each year in a N x 2 matrix"""
+function FreezingRiskMatrix(TN_vec, Date_vec, date_vecBB::AbstractVector{Date}; threshold=-2., PeriodOfInterest=Month(3), CPO=(10, 30))
+    FreezingRiskBB(BB) = FreezingRisk(TN_vec, Date_vec, BB, threshold=threshold, PeriodOfInterest=PeriodOfInterest, CPO=CPO)
+    return [year.(date_vecBB) FreezingRiskBB.(date_vecBB)]
+end
 
 
+"""For a sample of TN series and their respectives Budburst Dates return a matrix with the number of scenarios which have n days <2° for n in row and the year in column"""
+function FreezingRiskMatrix(TN_vecs, Date_vec, date_vecsBB; threshold=-2., PeriodOfInterest=Month(3), CPO=(10, 30))
+    Mat_vec = [FreezingRiskMatrix(Tn_vec, Date_vec, date_vecBB, threshold=threshold, PeriodOfInterest=PeriodOfInterest, CPO=CPO) for (Tn_vec, date_vecBB) in zip(TN_vecs, date_vecsBB)]
+    Conc_Mat_vec = vcat(Mat_vec...)
+    Conc_Mat_vec2 = [(Conc_Mat_vec[:, 1] .- minimum(Conc_Mat_vec[:, 1]) .+ 1) (Conc_Mat_vec[:, 2] .- minimum(Conc_Mat_vec[:, 2]) .+ 1)]
+    I, J = maximum(Conc_Mat_vec2[:, 2]), maximum(Conc_Mat_vec2[:, 1])
+    Result_Mat = zeros(I, J)
+    for i in 1:I
+        for j in 1:J
+            Result_Mat[i, j] = sum(Conc_Mat_vec2[:, 1] .== j .&& Conc_Mat_vec2[:, 2] .== i)
+        end
+    end
+    return Result_Mat, sort(unique(Conc_Mat_vec[:, 1])), sort(unique(Conc_Mat_vec[:, 2]))
+end

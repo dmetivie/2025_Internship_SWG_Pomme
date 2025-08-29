@@ -1,8 +1,8 @@
+include("../table_reader.jl")
 include("../Prev2.jl")
 include("../PhenoPred.jl")
 include("presutils.jl")
 include("../../AR/utils/Structure.jl")
-include("../table_reader.jl")
 cd(@__DIR__)
 
 # series = extract_series("../TG_STAID000737.txt", plot=false)
@@ -11,7 +11,7 @@ cd(@__DIR__)
 
 # x, date_vec = series[:, :TG], series[:, :DATE]
 
-# model = fit_MonthlyAR(x, date_vec)
+# model = fit_AR(x, date_vec)
 
 
 ##Principle
@@ -29,10 +29,12 @@ commonpath = "../../mystations"
 TG_temp = initTG(commonpath * "/TG_Bonn.txt")
 TN_temp = initTN(commonpath * "/TN_Bonn.txt")
 
-date_range_TN = findfirst(TN_temp.df.DATE .== Date(2023, 9, 1)):findfirst(TN_temp.df.DATE .== Date(2024, 7, 1))
+year_ = 1981
+
+date_range_TN = findfirst(TN_temp.df.DATE .== Date(year_-1, 9, 1)):findfirst(TN_temp.df.DATE .== Date(year_, 7, 1))
 x_TN, date_vec = TN_temp.df.TN[date_range_TN], TN_temp.df.DATE[date_range_TN]
 
-x_TG = TG_temp.df.TG[findfirst(TG_temp.df.DATE .== Date(2023, 9, 1)):findfirst(TG_temp.df.DATE .== Date(2024, 7, 1))]
+x_TG = TG_temp.df.TG[findfirst(TG_temp.df.DATE .== Date(year_-1, 9, 1)):findfirst(TG_temp.df.DATE .== Date(year_, 7, 1))]
 
 include("presutils.jl")
 
@@ -69,7 +71,7 @@ ax = Axis(fig[1, 1],
     xlabel = "Year",
     yticks=1:7,
     ylabel = "Days",
-    title = "Frequency of max number of consecutives days with TN ≤ -2°C after budburst, \n for simulated temperatures",
+    title = "Annual frequency of max number of consecutives days with TN ≤ -2°C\nafter budburst, for simulated temperatures",
     titlesize=15
     )
 

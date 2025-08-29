@@ -199,16 +199,16 @@ function Plot_Pheno_Dates_DB_BB(date_vecDB::Vector{Date}, date_vecBB::Vector{Dat
 
     pltvec = Plot[]
 
-    inyear(date_, year_) = year(date_ + min(Month(2),Year(1) - Month(CPO[1]) - Day(CPO[2]))) == year_
+    inyear(date_, year_) = year(date_ + min(Month(2), Year(1) - Month(CPO[1]) - Day(CPO[2]))) == year_
     #For exemple is the EB happens the 15/12/2010, I consider that it belongs to the year 2011, so I had the time to reach 2011.
     #If the CPO is very early (eg the 1st of august 2010) and the BB is very late (e.g the 15th of august 2010), I don't want to consider this BB
     #to belong to year 2011 so I consider EB to belongs to 2011 at least two months before 2011 not before.
 
     for (sample_, colors, SD_func) in zip([sample_DB, sample_BB], [[("#e5ca20", 0.2), ("#e5ca20", 0.5)], [("#009bff", 0.2), ("#009bff", 0.5)]], [ScaleDateDB, ScaleDateBB])
-        if !isnothing(sample_) 
+        if !isnothing(sample_)
             Conc_sets = reduce(vcat, sample_)
 
-            years_ = unique(year.(Conc_sets + min(Month(2),Year(1) - Month(CPO[1]) - Day(CPO[2]))))
+            years_ = unique(year.(Conc_sets + min(Month(2), Year(1) - Month(CPO[1]) - Day(CPO[2]))))
 
             DictYearsVec = [SD_func.(Conc_sets[inyear.(Conc_sets, year_)]) for year_ in years_]
 
@@ -218,7 +218,7 @@ function Plot_Pheno_Dates_DB_BB(date_vecDB::Vector{Date}, date_vecBB::Vector{Dat
     end
 
     #NDSCPO plots
-    push!(pltvec, lines!(ax, year.(date_vecDB), NDSCPO_DB, color="#ff6600"))
+    push!(pltvec, lines!(ax, year.(date_vecDB + min(Month(2), Year(1) - Month(CPO[1]) - Day(CPO[2]))), NDSCPO_DB, color="#ff6600"))
     push!(pltvec, lines!(ax, year.(date_vecBB), NDSCPO_BB, color="green"))
 
     #Cut
@@ -319,36 +319,36 @@ function Plot_Freeze_Risk(TN_vecs, dates_vecs_TN, date_vecsBB;
     size=(800, 400),
     threshold=-2)
 
-    Streak_vecs, date_vecsBB2 = Vector[], Vector[]
+    Counter_vecs, date_vecsBB2 = Vector[], Vector[]
 
     for (TN_vec, dates_vec_TN, date_vecBB) in zip(TN_vecs, dates_vecs_TN, date_vecsBB)
         FreezingRiskBB(BB) = FreezingRisk(TN_vec, dates_vec_TN, BB, CPO=CPO, threshold=threshold)
-        Streak_vec = FreezingRiskBB.(date_vecBB)
-        Streak_vec, date_vecBB2 = Streak_vec[Streak_vec.>0], date_vecBB[Streak_vec.>0]
-        push!(Streak_vecs, Streak_vec)
+        Counter_vec = FreezingRiskBB.(date_vecBB)
+        Counter_vec, date_vecBB2 = Counter_vec[Counter_vec.>0], date_vecBB[Counter_vec.>0]
+        push!(Counter_vecs, Counter_vec)
         push!(date_vecsBB2, date_vecBB2)
     end
 
-    Ω = sort(unique(reduce(vcat, Streak_vecs)))
+    Ω = sort(unique(reduce(vcat, Counter_vecs)))
 
     fig = Figure(size=size)
 
     ax = Axis(fig[1:2, 1:2], yticks=Ω)
     ax.xlabel = "Year"
     ax.ylabel = "Days"
-    ax.title = "Max number of consecutives days with TN ≤ -2°C after budburst"
+    ax.title = "Number of days with TN ≤ -2°C after budburst"
 
     pltvec = Plot[]
-    K = length(Streak_vecs)
+    K = length(Counter_vecs)
     L = 0.05 * K
 
     if isnothing(colors)
-        for (date_vecBB, Streak_vec, k) in zip(date_vecsBB2, Streak_vecs, eachindex(Streak_vecs))
-            push!(pltvec, scatter!(ax, year.(date_vecBB), Streak_vec - L / 2 + (k - 1) * L / (K - 1)))
+        for (date_vecBB, Counter_vec, k) in zip(date_vecsBB2, Counter_vecs, eachindex(Counter_vecs))
+            push!(pltvec, scatter!(ax, year.(date_vecBB), Counter_vec - L / 2 + (k - 1) * L / (K - 1)))
         end
     else
-        for (date_vecBB, Streak_vec, color_, k) in zip(date_vecsBB2, Streak_vecs, colors, eachindex(Streak_vecs))
-            push!(pltvec, scatter!(ax, year.(date_vecBB), Streak_vec .- L / 2 .+ (k - 1) * L / (K - 1), color=color_))
+        for (date_vecBB, Counter_vec, color_, k) in zip(date_vecsBB2, Counter_vecs, colors, eachindex(Counter_vecs))
+            push!(pltvec, scatter!(ax, year.(date_vecBB), Counter_vec .- L / 2 .+ (k - 1) * L / (K - 1), color=color_))
         end
     end
 
@@ -366,10 +366,10 @@ function Plot_Freeze_Risk_Bar(TN_vec, dates_vec_TN, date_vecBB;
     threshold=-2)
 
     FreezingRiskBB(BB) = FreezingRisk(TN_vec, dates_vec_TN, BB, CPO=CPO, threshold=threshold)
-    Streak_vec = FreezingRiskBB.(date_vecBB)
-    Streak_vec, date_vecBB2 = Streak_vec[Streak_vec.>0], date_vecBB[Streak_vec.>0]
+    Counter_vec = FreezingRiskBB.(date_vecBB)
+    Counter_vec, date_vecBB2 = Counter_vec[Counter_vec.>0], date_vecBB[Counter_vec.>0]
 
-    Ω = 0:maximum(Streak_vec)
+    Ω = 0:maximum(Counter_vec)
 
     fig = Figure(size=size)
 
@@ -378,15 +378,15 @@ function Plot_Freeze_Risk_Bar(TN_vec, dates_vec_TN, date_vecBB;
     ax.xticklabelrotation = 65 * (2π) / 360
     ax.xlabel = "Year"
     ax.ylabel = "Days"
-    ax.title = "Max number of consecutives days with TN ≤ -2°C after budburst"
+    ax.title = "Number of days with TN ≤ -2°C after budburst"
     ax.titlesize = 17
 
-    println(Streak_vec)
+    println(Counter_vec)
 
     if isnothing(colors)
-        plt = barplot!(ax, year.(date_vecBB2), Streak_vec)
+        plt = barplot!(ax, year.(date_vecBB2), Counter_vec)
     else
-        plt = barplot!(ax, year.(date_vecBB2), Streak_vec, color=color)
+        plt = barplot!(ax, year.(date_vecBB2), Counter_vec, color=color)
     end
 
     isnothing(label) ? nothing : Legend(fig[1:2, 3], [plt], [label])
@@ -406,6 +406,76 @@ function Plot_Freeze_Risk_Bar(temp::TN, date_vecBB;
         label=label,
         size=size,
         threshold=threshold))
+end
+
+
+function Plot_Freeze_Risk_heatmap(TN_vecs, Date_vec, date_vecsBB; threshold=-2., PeriodOfInterest=Month(3), CPO=(10, 30))
+    Mat2, year_vec, days_vec = FreezingRiskMatrix(TN_vecs, Date_vec, date_vecsBB; threshold=threshold, PeriodOfInterest=PeriodOfInterest, CPO=CPO)
+
+    stepped_year = minimum(year_vec):10:maximum(year_vec)
+    interesting_year = year_vec[[any(Mat2[days_vec.>0, year-minimum(year_vec)+1] .>= 0.015) for year in year_vec]]
+    interesting_days = days_vec[days_vec.>0]
+
+    fig = Figure(size=(700, 350))
+    ax = Axis(fig[1, 1],
+        xticks=([stepped_year; interesting_year]),
+        xticklabelrotation=65 * 2π / 360,
+        xlabel="Year",
+        yticks=interesting_days,
+        ylabel="Days",
+        title="Annual frequency of number of days with TN ≤ -2°C\nafter budburst, for simulated temperatures",
+        titlesize=15
+    )
+
+    heatplt = heatmap!(ax, year_vec, interesting_days, transpose(Mat2[days_vec.>0, :]))
+    Colorbar(fig[:, end+1], heatplt)
+
+    return fig
+end
+
+
+function Plot_Freeze_Risk_sample(TN_vecs, Date_vec, date_vecsBB; threshold=-2., PeriodOfInterest=Month(3), CPO=(10, 30))
+    Mat, year_vec, days_vec = FreezingRiskMatrix(TN_vecs, Date_vec, date_vecsBB; threshold=threshold, PeriodOfInterest=PeriodOfInterest, CPO=CPO)
+    Mat_freq = Mat / length(TN_vecs)
+
+    Dist = [DiscreteNonParametric(0:(size(Mat_freq)[1]-1), Mat_freq[:, j]) for j in 1:size(Mat_freq)[2]]
+
+    fig = Figure(size=(1300,400))
+    ax1,plt = lines(fig[1, 1], year_vec, mean.(Dist))
+    ax1.xlabel = "Year"
+    ax1.ylabel = "Number of days"
+    ax1.title = "Annual mean"
+
+    ax2,plt = lines(fig[1, 2], year_vec, std.(Dist))
+    ax2.xlabel = "Year"
+    ax2.title = "Annual variance"
+
+    ax3,plt = lines(fig[1, 3], year_vec, findlast.(x -> x > 0, eachcol(Mat)) .- 1)
+    ax3.xlabel = "Year"
+    ax3.title = "Annual Max"
+
+    return fig
+end
+
+function Plot_Freeze_Risk_distribution(TN_vecs, Date_vec, date_vecsBB, years; threshold=-2., PeriodOfInterest=Month(3), CPO=(10, 30))
+    Mat, year_vec, days_vec = FreezingRiskMatrix(TN_vecs, Date_vec, date_vecsBB; threshold=threshold, PeriodOfInterest=PeriodOfInterest, CPO=CPO)
+    Mat_freq = Mat / length(TN_vecs)
+
+    Dist = [DiscreteNonParametric(0:(size(Mat_freq)[1]-1), Mat_freq[:, j]) for j in 1:size(Mat_freq)[2]]
+
+    fig = Figure()
+    ax = Axis(fig[1, 1])
+    ylims!(ax, [1e-5, 1])
+    ax.yscale = log10
+    ax.ylabel = "p"
+    ax.xlabel = "Days"
+
+    pltvec = Plot[]
+    for year_ in years
+        push!(pltvec,lines!(ax, days_vec, (pdf(Dist[findfirst(x -> x == year_, year_vec)], days_vec))))
+    end
+    Legend(fig[1,2],pltvec,string.(years))
+    return fig
 end
 
 

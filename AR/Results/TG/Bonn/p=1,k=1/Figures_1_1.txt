@@ -1,0 +1,102 @@
+Settings :
+
+file : ../mystations/TG_Bonn.txt
+p : 1
+method_ : monthlyLL
+periodicity_model : trigo
+degree_period : 1
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 1
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+Number of random initialization : 20
+n : 2000
+
+
+
+Results :
+
+Additive periodicity order : 1
+Multiplicative periodicity order : 1
+AIC_BIC :
+ 
+
+AIC of model : 33175.53629478318
+BIC of model : 33362.221440014706
+
+AIC of AR model on residuals : 33175.53629478318
+BIC of AR model on residuals : 33362.221440014706
+
+AIC of regression to estimate additive seasonality : 95959.77786849288
+BIC of regression to estimate additive seasonality : 95983.11368160405
+
+AIC of regression to estimate mutliplicative seasonality : 61810.61110057038
+BIC of regression to estimate mutliplicative seasonality : 61833.946913681546
+Settings :
+
+file : ../mystations/TG_Bonn.txt
+p : 1
+method_ : monthlyLL
+periodicity_model : trigo
+degree_period : 1
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 1
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+Number of random initialization : 0
+n : 1000
+
+
+
+Results :
+
+Additive periodicity order : 1
+Multiplicative periodicity order : 1
+Settings :
+
+file : ../mystations/TG_Bonn.txt
+p : 1
+method_ : monthlyLL
+periodicity_model : trigo
+degree_period : 1
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 1
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+Number of random initialization : 0
+n : 1000
+
+
+
+Results :
+
+Additive periodicity order : 1
+Multiplicative periodicity order : 1
+Settings :
+
+file : ../mystations/TG_Bonn.txt
+p : 1
+method_ : monthlyLL
+periodicity_model : trigo
+degree_period : 1
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 1
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+Number of random initialization : 0
+n : 1000
+
+
+
+Results :
+
+Additive periodicity order : 1
+Multiplicative periodicity order : 1

@@ -1,0 +1,36 @@
+Settings :
+
+file : ../mystations/TG_Bonn.txt
+p : 2
+method_ : monthlyLL
+periodicity_model : trigo
+degree_period : 3
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 3
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+Number of random initialization : 0
+n : 1000
+
+
+
+Results :
+
+Additive periodicity order : 3
+Multiplicative periodicity order : 3
+Settings :
+
+file : ../mystations/TG_Bonn.txt
+p : 2
+method_ : monthlyLL
+periodicity_model : trigo
+degree_period : 3
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 3
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+Number of random initialization : 20

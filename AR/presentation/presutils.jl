@@ -8,7 +8,19 @@ istickableyear(date_) = month(date_) == 1 && day(date_) == 1
 istickable10year(date_) = month(date_) == 1 && day(date_) == 1 && (year(date_) % 10 == 0)
 
 
-function PlotCurves(curvesvec, date_vec; bands=nothing, labelvec=nothing, colors=nothing, ylimits=nothing, size_=nothing, noylabel=false, xtlfreq="", rotate_xtl=false, dashindexes=Integer[], title=nothing, wide=false, diapomode=true)
+function PlotCurves(curvesvec, date_vec;
+    bands=nothing,
+    labelvec=nothing,
+    colors=nothing,
+    ylimits=nothing,
+    size_=nothing,
+    noylabel=false,
+    xtlfreq="",
+    rotate_xtl=false,
+    dashindexes=Integer[],
+    title=nothing,
+    wide=false,
+    diapomode=true)
     length(curvesvec[1]) == 1 ? curvesvec = [curvesvec] : nothing
     isnothing(size_) ? size_ = isnothing(labelvec) ? (750, 400) : (950, 400) : nothing
 
@@ -39,9 +51,9 @@ function PlotCurves(curvesvec, date_vec; bands=nothing, labelvec=nothing, colors
             yticklabelsvisible=false,
             xgridvisible=false,
             xticksvisible=false,
-            xticklabelspace=24.0,
-            xticklabelsize=18)
-
+            xticklabelspace=24.0)
+        # xticklabelsize=18)
+        diapomode ? ax12.xticklabelsize = 25 : nothing
         rotate_xtl ? ax12.xticklabelrotation = 45 : nothing
 
         isnothing(ylimits) ? nothing : ax12.limits = (xlimits, ylimits)
@@ -119,13 +131,14 @@ function PlotCurves(curvesvec, date_vec; bands=nothing, labelvec=nothing, colors
     end
 
     #legend
-    isnothing(labelvec) ? nothing : Legend(fig[1:2, 3], pltvec, labelvec)
+    isnothing(labelvec) ? nothing : Legend(fig[1:2, 3], pltvec, labelvec, labelsize=19)
+
 
     return fig
 end
 
 
-function PlotCards(curvesvec, date_vec)
+function PlotCards(curvesvec, date_vec; ylimits=nothing)
     length(curvesvec[1]) == 1 ? curvesvec = [curvesvec] : nothing
     iend = length(curvesvec)
     n_days = length(date_vec)
@@ -164,7 +177,7 @@ function PlotCards(curvesvec, date_vec)
     axend.xticklabelsvisible = false
     axend.ylabelpadding = 0
 
-    axend.limits = ([-10, length(curvesvec[end]) + 10], [-10, 40])
+    axend.limits = ([-10, length(curvesvec[end]) + 10], ylimits)
     ######
 
     CairoMakie.linkxaxes!(axs..., axend)
@@ -172,6 +185,7 @@ function PlotCards(curvesvec, date_vec)
 
     #temp series plots
     for (i, ax) in enumerate(axs)
+        isnothing(ylimits) ? nothing : ylims!(ax, ylimits)
         CairoMakie.lines!(ax, 1:n_days, curvesvec[i]; linewidth=2, color=colors[i])
         # CairoMakie.hidexdecorations!(ax)
         CairoMakie.translate!(ax.blockscene, 0, 0, 200 - 200 * (iend - i))
@@ -206,4 +220,3 @@ end
 PlotMonthlyRealStats(x::AbstractVector, date_vec::AbstractVector, Stats::String, color="#ff6600") = (
     PlotMonthlyRealStats(DataFrame(DATE=date_vec, TEMP=x), Stats, color))
 
-    

@@ -79,19 +79,18 @@ end
 save("AIC_BIC_Table.jld2", "DF", DF)
 # end
 
-# DF = load("AIC_BIC_Table.jld2", "DF")
+DF = load("AIC_BIC_Table.jld2", "DF")
 
 # println(DF)
 
 Station = "Montpellier"
-TypeData = "TX"
-p = 4
-k = 5
+TypeData = "TN"
+# p = 4
+# k = 5
 
 Sub_df = @chain DF begin
     @rsubset :Station == Station
     @rsubset :TypeData == TypeData
-    # @rsubset :p == p
 end
 
 # println(Sub_df)
@@ -119,10 +118,21 @@ display(Sub_df_AIC_Seas)
 println("BIC_Seas")
 Sub_df_BIC_Seas = sort(Sub_df, :BIC_Seas)
 display(Sub_df_BIC_Seas)
-    
+
 println("AIC_σSeas")
 Sub_df_AIC_σSeas = sort(Sub_df, :AIC_σSeas)
 display(Sub_df_AIC_σSeas)
 
 println("BIC_σSeas")
 Sub_df_BIC_σSeas = sort(Sub_df, :BIC_σSeas)
+
+for station in ["Montpellier", "Nantes", "Bonn"]
+    for type_data in ["TN", "TG", "TX"]
+        Sub_df = @chain DF begin
+            @rsubset :Station == station
+            @rsubset :TypeData == type_data
+        end
+        println("\n\n$(station)|$(type_data)\n")
+        println(first(sort(Sub_df, :AIC_complete), 5))
+    end
+end

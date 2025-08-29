@@ -1,0 +1,36 @@
+Settings :
+
+file : ../mystations/TX_Montpellier.txt
+p : 1
+method_ : monthlyLL
+periodicity_model : trigo
+degree_period : 2
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 2
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+Number of random initialization : 20
+n : 1000
+
+
+
+Results :
+
+Additive periodicity order : 2
+Multiplicative periodicity order : 2
+AIC_BIC :
+ 
+
+AIC of model : 67820.36880197187
+BIC of model : 68018.89792037063
+
+AIC of AR model on residuals : 67820.36880197187
+BIC of AR model on residuals : 68018.89792037063
+
+AIC of regression to estimate additive seasonality : 147003.01644999863
+BIC of regression to estimate additive seasonality : 147044.37685592796
+
+AIC of regression to estimate mutliplicative seasonality : 108781.38643784678
+BIC of regression to estimate mutliplicative seasonality : 108822.74684377613

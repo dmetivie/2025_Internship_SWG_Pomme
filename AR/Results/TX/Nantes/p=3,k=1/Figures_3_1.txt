@@ -1,0 +1,28 @@
+Settings :
+
+file : ../mystations/TX_Nantes.txt
+p : 3
+method_ : monthlyLL
+periodicity_model : trigo
+degree_period : 1
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 1
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+Number of random initialization : 20
+Settings :
+
+file : ../mystations/TX_Nantes.txt
+p : 3
+method_ : monthlyLL
+periodicity_model : trigo
+degree_period : 1
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 1
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+Number of random initialization : 20

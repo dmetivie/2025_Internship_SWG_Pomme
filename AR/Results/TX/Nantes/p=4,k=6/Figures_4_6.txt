@@ -64,3 +64,73 @@ BIC of regression to estimate additive seasonality : 87208.43760905987
 
 AIC of regression to estimate mutliplicative seasonality : 57897.77262954388
 BIC of regression to estimate mutliplicative seasonality : 57997.74484685039
+AIC_BIC :
+ 
+
+AIC of model : 33775.413705619925
+BIC of model : 34236.80908418006
+
+AIC of AR model on residuals : 33775.413705619925
+BIC of AR model on residuals : 34236.80908418006
+
+AIC of regression to estimate additive seasonality : 87108.46539175336
+BIC of regression to estimate additive seasonality : 87208.43760905987
+
+AIC of regression to estimate mutliplicative seasonality : 57897.77262954388
+BIC of regression to estimate mutliplicative seasonality : 57997.74484685039
+AIC_BIC :
+ 
+
+AIC of model : 33775.413705619925
+BIC of model : 34236.80908418006
+
+AIC of AR model on residuals : 33775.413705619925
+BIC of AR model on residuals : 34236.80908418006
+
+AIC of regression to estimate additive seasonality : 87108.46539175336
+BIC of regression to estimate additive seasonality : 87208.43760905987
+
+AIC of regression to estimate mutliplicative seasonality : 57897.77262954388
+BIC of regression to estimate mutliplicative seasonality : 57997.74484685039
+AIC_BIC :
+ 
+
+AIC of model : 33775.413705619925
+BIC of model : 34236.80908418006
+
+AIC of AR model on residuals : 33775.413705619925
+BIC of AR model on residuals : 34236.80908418006
+
+AIC of regression to estimate additive seasonality : 87108.46539175336
+BIC of regression to estimate additive seasonality : 87208.43760905987
+
+AIC of regression to estimate mutliplicative seasonality : 57897.77262954388
+BIC of regression to estimate mutliplicative seasonality : 57997.74484685039
+AIC_BIC :
+ 
+
+AIC of model : 33775.413705619925
+BIC of model : 34236.80908418006
+
+AIC of AR model on residuals : 33775.413705619925
+BIC of AR model on residuals : 34236.80908418006
+
+AIC of regression to estimate additive seasonality : 87108.46539175336
+BIC of regression to estimate additive seasonality : 87208.43760905987
+
+AIC of regression to estimate mutliplicative seasonality : 57897.77262954388
+BIC of regression to estimate mutliplicative seasonality : 57997.74484685039
+Settings :
+
+file : ../mystations/TX_Nantes.txt
+p : 4
+method_ : monthlyLL
+periodicity_model : trigo
+degree_period : 6
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 6
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+Number of random initialization : 20

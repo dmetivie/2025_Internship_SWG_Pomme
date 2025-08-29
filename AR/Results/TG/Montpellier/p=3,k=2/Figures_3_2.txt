@@ -1,0 +1,14 @@
+Settings :
+
+file : ../mystations/TG_Montpellier.txt
+p : 3
+method_ : monthlyLL
+periodicity_model : trigo
+degree_period : 2
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 2
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+Number of random initialization : 20

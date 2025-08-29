@@ -1,0 +1,161 @@
+Settings :
+
+file : ["../mystations/TN_Montpellier.txt", "../mystations/TX_Montpellier.txt"]
+p : 1
+method_ : monthly
+periodicity_model : trigo
+degree_period : 8
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 8
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+n : 10
+
+
+
+Results :
+
+Number of scenarios with dates where TN > TX : 10
+Percentage of scenarios with dates where TN > TX : 100.0 %
+Mean percentage of dates where TN > TX : 0.37 %
+Median percentage of dates where TN > TX : 0.36 %
+Settings :
+
+file : ["../mystations/TN_Montpellier.txt", "../mystations/TX_Montpellier.txt"]
+p : 1
+method_ : monthly
+periodicity_model : trigo
+degree_period : 8
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 8
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+n : 10
+
+
+
+Results :
+
+Number of scenarios with dates where TN > TX : 10
+Percentage of scenarios with dates where TN > TX : 100.0 %
+Mean percentage of dates where TN > TX : 0.37 %
+Median percentage of dates where TN > TX : 0.36 %
+Settings :
+
+file : ["../mystations/TN_Montpellier.txt", "../mystations/TX_Montpellier.txt"]
+p : 1
+method_ : monthly
+periodicity_model : trigo
+degree_period : 8
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 8
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+n : 10
+
+
+
+Results :
+
+Number of scenarios with dates where TN > TX : 10
+Percentage of scenarios with dates where TN > TX : 100.0 %
+Mean percentage of dates where TN > TX : 0.37 %
+Median percentage of dates where TN > TX : 0.36 %
+Settings :
+
+file : ["../mystations/TN_Montpellier.txt", "../mystations/TX_Montpellier.txt"]
+p : 1
+method_ : monthly
+periodicity_model : trigo
+degree_period : 8
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 8
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+n : 10
+
+
+
+Results :
+
+Number of scenarios with dates where TN > TX : 10
+Percentage of scenarios with dates where TN > TX : 100.0 %
+Mean percentage of dates where TN > TX : 0.37 %
+Median percentage of dates where TN > TX : 0.36 %
+Settings :
+
+file : ["../mystations/TN_Montpellier.txt", "../mystations/TX_Montpellier.txt"]
+p : 1
+method_ : monthly
+periodicity_model : trigo
+degree_period : 8
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 8
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+n : 10
+
+
+
+Results :
+
+Number of scenarios with dates where TN > TX : 10
+Percentage of scenarios with dates where TN > TX : 100.0 %
+Mean percentage of dates where TN > TX : 0.37 %
+Median percentage of dates where TN > TX : 0.36 %
+Settings :
+
+file : ["../mystations/TN_Montpellier.txt", "../mystations/TX_Montpellier.txt"]
+p : 1
+method_ : monthly
+periodicity_model : trigo
+degree_period : 8
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 8
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+n : 10
+
+
+
+Results :
+
+Number of scenarios with dates where TN > TX : 10
+Percentage of scenarios with dates where TN > TX : 100.0 %
+Mean percentage of dates where TN > TX : 0.37 %
+Median percentage of dates where TN > TX : 0.36 %
+Settings :
+
+file : ["../mystations/TN_Montpellier.txt", "../mystations/TX_Montpellier.txt"]
+p : 1
+method_ : monthly
+periodicity_model : trigo
+degree_period : 8
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 8
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+n : 10
+
+
+
+Results :
+
+Number of scenarios with dates where TN > TX : 10
+Percentage of scenarios with dates where TN > TX : 100.0 %
+Mean percentage of dates where TN > TX : 0.37 %
+Median percentage of dates where TN > TX : 0.36 %

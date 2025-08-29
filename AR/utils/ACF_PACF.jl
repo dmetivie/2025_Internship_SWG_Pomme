@@ -266,22 +266,22 @@ end
 
 
 #####CrossCorrelation#####
-CrossCorrelation(X,Y,k=4) = @views [cor(X[max(1-i,1):min(end-i,end)],Y[max(i+1,1):min(end+i,end)]) for i in -k:k]
+CrossCorrelation(X, Y, k=4) = @views [cor(X[max(1 - i, 1):min(end - i, end)], Y[max(i + 1, 1):min(end + i, end)]) for i in -k:k]
 
 MatrixMonthlyCC(Monthly_tempX, Monthly_tempY) = stack(
     [mean([CrossCorrelation(Monthly_tempX[i][j], Monthly_tempY[i][j]) for j in eachindex(Monthly_tempX[i])]) for i in 1:12],
     dims=1
 )
 
-function Sample_MonthlyCC(samplesTN::AbstractVector,samplesTX::AbstractVector, sample_timeline::AbstractVector{Date})
-    return [MatrixMonthlyCC(MonthlySeparateX(sampleTN, sample_timeline),MonthlySeparateX(sampleTX, sample_timeline)) for (sampleTN,sampleTX) in zip(samplesTN,samplesTX)]
+function Sample_MonthlyCC(samplesTN::AbstractVector, samplesTX::AbstractVector, sample_timeline::AbstractVector{Date})
+    return [MatrixMonthlyCC(MonthlySeparateX(sampleTN, sample_timeline), MonthlySeparateX(sampleTX, sample_timeline)) for (sampleTN, sampleTX) in zip(samplesTN, samplesTX)]
 end
 
 
-function Plot_Sample_MonthlyCC(samplesTN::AbstractVector,samplesTX::AbstractVector, sample_timeline::AbstractVector{Date}, true_matrix=nothing, comment="")
+function Plot_Sample_MonthlyCC(samplesTN::AbstractVector, samplesTX::AbstractVector, sample_timeline::AbstractVector{Date}, true_matrix=nothing, comment="", typedata2="TX")
     list_matrix = Sample_MonthlyCC(samplesTN, samplesTX, sample_timeline)
     fig = Figure(size=(800, 800))
-    supertitle = Label(fig[1, 1:4], "Monthly average correlation between the residuals of TNₜ and TXₜ₊ₛ\n" * comment, fontsize=20)
+    supertitle = Label(fig[1, 1:4], "Monthly average correlation between the residuals of TNₜ and $(typedata2)ₜ₊ₛ\n" * comment, fontsize=20)
     ax_vec = Axis[]
     min_y, max_y = 0, 0
     for i in 1:11
@@ -317,5 +317,5 @@ function Plot_Sample_MonthlyCC(samplesTN::AbstractVector,samplesTX::AbstractVect
     Legend(fig[5, 1:4], [plot1, plot2, plot3], ["Range of means CC of the simulated temperatures", "Median of means CC of the simulated temperatures", "mean CC of the recorded temperatures"])
     return fig
 end
-Plot_Sample_MonthlyCC(samplesTN::AbstractVector,samplesTX::AbstractVector, sample_timeline::AbstractVector{Date}, Monthly_tempX::AbstractVector{T},Monthly_tempY::AbstractVector{T}, comment="") where T<:AbstractVector = Plot_Sample_MonthlyCC(samplesTN,samplesTX, sample_timeline, MatrixMonthlyCC(Monthly_tempX,Monthly_tempY), comment)
-Plot_Sample_MonthlyCC(samplesTN::AbstractVector,samplesTX::AbstractVector, sample_timeline::AbstractVector{Date}, x::AbstractVector{T}, y::AbstractVector{T}, comment="") where T<:AbstractFloat = Plot_Sample_MonthlyCC(samplesTN,samplesTX, sample_timeline, MonthlySeparateX(x, sample_timeline), MonthlySeparateX(y, sample_timeline), comment)
+Plot_Sample_MonthlyCC(samplesTN::AbstractVector, samplesTX::AbstractVector, sample_timeline::AbstractVector{Date}, Monthly_tempX::AbstractVector{T}, Monthly_tempY::AbstractVector{T}, comment="", typedata2="TX") where T<:AbstractVector = Plot_Sample_MonthlyCC(samplesTN, samplesTX, sample_timeline, MatrixMonthlyCC(Monthly_tempX, Monthly_tempY), comment, typedata2)
+Plot_Sample_MonthlyCC(samplesTN::AbstractVector, samplesTX::AbstractVector, sample_timeline::AbstractVector{Date}, x::AbstractVector{T}, y::AbstractVector{T}, comment="", typedata2="TX") where T<:AbstractFloat = Plot_Sample_MonthlyCC(samplesTN, samplesTX, sample_timeline, MonthlySeparateX(x, sample_timeline), MonthlySeparateX(y, sample_timeline), comment, typedata2)

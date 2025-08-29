@@ -1,0 +1,64 @@
+Settings :
+
+file : ../mystations/TX_Nantes.txt
+p : 1
+method_ : monthlyLL
+periodicity_model : trigo
+degree_period : 10
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 10
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+Number of random initialization : 20
+n : 1000
+
+
+
+Results :
+
+Additive periodicity order : 10
+Multiplicative periodicity order : 10
+AIC_BIC :
+ 
+
+AIC of model : 33878.40383769446
+BIC of model : 34062.966445805105
+
+AIC of AR model on residuals : 33878.40383769446
+BIC of AR model on residuals : 34062.966445805105
+
+AIC of regression to estimate additive seasonality : 87084.28542401745
+BIC of regression to estimate additive seasonality : 87245.77900582028
+
+AIC of regression to estimate mutliplicative seasonality : 57899.25313233976
+BIC of regression to estimate mutliplicative seasonality : 58060.746714142595
+AIC_BIC :
+ 
+
+AIC of model : 33878.40383769446
+BIC of model : 34062.966445805105
+
+AIC of AR model on residuals : 33878.40383769446
+BIC of AR model on residuals : 34062.966445805105
+
+AIC of regression to estimate additive seasonality : 87084.28542401745
+BIC of regression to estimate additive seasonality : 87245.77900582028
+
+AIC of regression to estimate mutliplicative seasonality : 57899.25313233976
+BIC of regression to estimate mutliplicative seasonality : 58060.746714142595
+AIC_BIC :
+ 
+
+AIC of model : 33878.40383769446
+BIC of model : 34062.966445805105
+
+AIC of AR model on residuals : 33878.40383769446
+BIC of AR model on residuals : 34062.966445805105
+
+AIC of regression to estimate additive seasonality : 87084.28542401745
+BIC of regression to estimate additive seasonality : 87245.77900582028
+
+AIC of regression to estimate mutliplicative seasonality : 57899.25313233976
+BIC of regression to estimate mutliplicative seasonality : 58060.746714142595

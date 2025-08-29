@@ -21,7 +21,7 @@ end
 
 mutable struct MonthlyAR <: AR_SWG
     Φ::AbstractArray
-    σ::AbstractVector
+    σ
     trend::AbstractVector
     period::AbstractVector
     period_order::Integer
@@ -106,7 +106,7 @@ inverse_dayofyear_Leap(n) = Date(0) + Day(n - 1)
 ismatrix(M) = false
 ismatrix(M::AbstractMatrix) = true
 
-function Base.rand(rng::Random.AbstractRNG, model::AR_SWG, n::Integer=1, date_vec::AbstractVector{Date}=model.date_vec; y₁=model.y₁, correction="null", return_res=false)
+function Base.rand(rng::Random.AbstractRNG, model::AR_SWG, n::Integer=1, date_vec::AbstractVector{Date}=model.date_vec; y₁=model.y₁, correction="resample", return_res=false)
     if ismatrix(model.period)
         period = model.period[dayofyear_Leap.(model.date_vec), :]
         σ_period = model.σ_period[dayofyear_Leap.(model.date_vec), :]
@@ -124,11 +124,11 @@ function Base.rand(rng::Random.AbstractRNG, model::AR_SWG, n::Integer=1, date_ve
     end
     return SimulateScenarios(y₁, date_vec, model.Φ, model.σ, nspart, σ_nspart, rng=rng, n=n, correction=correction, return_res=return_res)
 end
-function Base.rand(rng::Random.AbstractRNG, model::AR_SWG, n::Integer, n2t::AbstractVector{Integer}; y₁=model.y₁, correction="null",return_res=false)
+function Base.rand(rng::Random.AbstractRNG, model::AR_SWG, n::Integer, n2t::AbstractVector{Integer}; y₁=model.y₁, correction="resample",return_res=false)
     return rand(rng, model, n, inverse_dayofyear_Leap.(n2t), y₁=y₁, return_res=return_res)
 end
-Base.rand(model::AR_SWG, n::Integer=1, date_vec::AbstractVector{Date}=model.date_vec; y₁=model.y₁, correction="null",return_res=false) = rand(Random.default_rng(), model, n, date_vec, y₁=y₁, correction=correction, return_res=return_res)
-Base.rand(model::AR_SWG, n::Integer, n2t::AbstractVector{Integer}; y₁=model.y₁, correction="null",return_res=false) = rand(Random.default_rng(), model, n, inverse_dayofyear_Leap.(n2t), y₁=y₁, correction=correction, return_res=return_res)
+Base.rand(model::AR_SWG, n::Integer=1, date_vec::AbstractVector{Date}=model.date_vec; y₁=model.y₁, correction="resample",return_res=false) = rand(Random.default_rng(), model, n, date_vec, y₁=y₁, correction=correction, return_res=return_res)
+Base.rand(model::AR_SWG, n::Integer, n2t::AbstractVector{Integer}; y₁=model.y₁, correction="resample",return_res=false) = rand(Random.default_rng(), model, n, inverse_dayofyear_Leap.(n2t), y₁=y₁, correction=correction, return_res=return_res)
 
 
 

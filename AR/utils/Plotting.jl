@@ -291,6 +291,112 @@ function PlotMonthlyparams(MonthlyParams)
     return fig
 end
 
+istickable10year(date_) = month(date_) == 1 && day(date_) == 1 && (year(date_) % 10 == 0)
+strfunc(date_) = "$(year(date_))"
+
+function PlotTrend(Model::MonthlyAR)
+    n_days = length(Model.date_vec)
+    # xlimits = [-Int(floor(0.02*n_days)), n_days + Int(floor(0.05*n_days))]
+    ticksindexes = findall(istickable10year, Model.date_vec)
+    xticklabel = strfunc.(Model.date_vec[ticksindexes])
+
+    fig = Figure(size=(1200, 400))
+
+    ax1, plt = lines(fig[1, 1], Model.trend .- minimum(Model.trend), color="green")
+    lines!(ax1, zeros(length(Model.trend)), color="black")
+    ax1.limits = ([1, n_days], nothing)
+    ax1.xticks = (ticksindexes, xticklabel)
+    ax1.ylabel = "Temperature (°C)"
+    ax1.ylabelsize = 25
+    ax1.yticklabelsize = 20
+    ax1.xticklabelsize = 20
+    ax1.title = "Additive Trend"
+    ax1.titlesize = 26
+
+    ax2, plt = lines(fig[1, 2], Model.σ_trend, color="green")
+    ax2.limits = ([1, n_days], nothing)
+    ax2.xticks = (ticksindexes, xticklabel)
+    ax2.yticklabelsize = 20
+    ax2.xticklabelsize = 20
+    ax2.title = "Multiplicative Trend"
+    ax2.titlesize = 26
+    return fig
+
+end
+
+
+function PlotTrend(Model::Multi_MonthlyAR, typedata2="TX")
+    n_days = length(Model.date_vec)
+    # xlimits = [-Int(floor(0.02*n_days)), n_days + Int(floor(0.05*n_days))]
+    ticksindexes = findall(istickable10year, Model.date_vec)
+    xticklabel = strfunc.(Model.date_vec[ticksindexes])
+
+    fig = Figure(size=(1200, 1000))
+
+    ax1, plt = lines(fig[1, 1], Model.trend[:, 1] .- minimum(Model.trend[:, 1]), color="green")
+    lines!(ax1, zeros(length(Model.trend)), color="black")
+    ax1.limits = ([1, n_days], nothing)
+    ax1.xticks = (ticksindexes, xticklabel)
+    ax1.ylabel = "Temperature (°C)"
+    ax1.ylabelsize = 25
+    ax1.yticklabelsize = 20
+    ax1.xticklabelsize = 20
+    ax1.title = "Additive Trend of TN"
+    ax1.titlesize = 26
+
+    ax2, plt = lines(fig[1, 2], Model.σ_trend[:, 1], color="green")
+    ax2.limits = ([1, n_days], nothing)
+    ax2.xticks = (ticksindexes, xticklabel)
+    ax2.yticklabelsize = 20
+    ax2.xticklabelsize = 20
+    ax2.title = "Multiplicative Trend of TN"
+    ax2.titlesize = 26
+
+    ax3, plt = lines(fig[2, 1], Model.trend[:, 2] .- minimum(Model.trend[:, 2]), color="green")
+    lines!(ax3, zeros(length(Model.trend)), color="black")
+    ax3.limits = ([1, n_days], nothing)
+    ax3.xticks = (ticksindexes, xticklabel)
+    ax3.ylabel = "Temperature (°C)"
+    ax3.ylabelsize = 25
+    ax3.yticklabelsize = 20
+    ax3.xticklabelsize = 20
+    ax3.title = "Additive Trend of $(typedata2)"
+    ax3.titlesize = 26
+
+    ax4, plt = lines(fig[2, 2], Model.σ_trend[:, 2], color="green")
+    ax4.limits = ([1, n_days], nothing)
+    ax4.xticks = (ticksindexes, xticklabel)
+    ax4.yticklabelsize = 20
+    ax4.xticklabelsize = 20
+    ax4.title = "Multiplicative Trend of $(typedata2)"
+    ax4.titlesize = 26
+
+    return fig
+end
+
+
+function PlotSeasonnality(Model::MonthlyAR)
+    fig = Figure(size=(1200, 400))
+
+    PlotYearCurvesAxes!(fig[1, 1], [Model.period], "Additive seasonality", colors=["orange"])
+    PlotYearCurvesAxes!(fig[1, 2], [Model.σ_period], "Multiplicative seasonality", colors=["orange"])
+
+    return fig
+
+end
+
+function PlotSeasonnality(Model::Multi_MonthlyAR, typedata2="TX")
+    fig = Figure(size=(1200, 400))
+
+    PlotYearCurvesAxes!(fig[1, 1], [Model.period[:, 1]], "Additive seasonality of TN", colors=["orange"])
+    PlotYearCurvesAxes!(fig[1, 2], [Model.σ_period[:, 1]], "Multiplicative seasonality of TN", colors=["orange"])
+    PlotYearCurvesAxes!(fig[2, 1], [Model.period[:, 2]], "Additive seasonality of $(typedata2)", colors=["orange"])
+    PlotYearCurvesAxes!(fig[2, 2], [Model.σ_period[:, 2]], "Multiplicative seasonality of $(typedata2)", colors=["orange"])
+
+    return fig
+
+end
+
 
 function Sample_diagnostic(sample_, date_vec, period, avg_day, max_day, df_month; format_="vertical", size=format_ == "vertical" ? (1200, 1900) : (1600, 900))
     year_sample = GatherYearScenarios(sample_, date_vec)
@@ -348,17 +454,36 @@ function Sample_diagnostic(sample_, date_vec, period, avg_day, max_day, df_month
     return fig
 end
 
+function PrintParams(Φ_vec, σ)
+    println("Parameters : \n")
+    for (i, Φ) in enumerate(Φ_vec)
+        println("Φ$(i) = $(Φ)")
+    end
+    println("σ = $(σ) C° \n")
+end
+
+
+function PrintParams(Φ_vec, σ, io)
+    println(io, "Parameters : \n")
+    for (i, Φ) in enumerate(Φ_vec)
+        println(io, "Φ$(i) = $(Φ)")
+    end
+    println(io, "σ = $(σ) C° \n")
+end
+
 
 function Sample_diagnostic(sample_::Tuple, Caracteristics_Series, Model::MonthlyAR; format_="vertical", size=format_ == "vertical" ? (1200, 1900) : (1600, 900), folder=nothing, settings=nothing)
     p, k = length(Model.y₁), Model.period_order
     sample_, z_sample = sample_
     # println(z_sample[1])
     # println(sample_[1])
+    fig0 = PlotTrend(Model)
 
-    fig1 = PlotMonthlyparams([eachcol(Model.Φ); [Model.σ]])
+    cteParam = length(Model.σ) == 1
+    cteParam ? PrintParams(Model.Φ, Model.σ) : fig1 = PlotMonthlyparams([eachcol(Model.Φ); [Model.σ]])
     fig2 = Sample_diagnostic(sample_,
         Model.date_vec,
-        Model.period .+ mean(Model.trend),
+        Model.period .+ mean.(GatherYearScenario(Model.trend, Model.date_vec)),
         Caracteristics_Series.avg_day,
         Caracteristics_Series.max_day,
         Caracteristics_Series.df_month,
@@ -370,11 +495,13 @@ function Sample_diagnostic(sample_::Tuple, Caracteristics_Series, Model::Monthly
 
     if !isnothing(folder)
         mkpath(folder)
-        save(folder * "/Params" * "_$(p)_$(k)" * ".pdf", fig1; px_per_unit=2.0)
+        save(folder * "/Trend_k=$(k)" * ".pdf", fig0; px_per_unit=2.0)
+        cteParam ? nothing : save(folder * "/Params" * "_$(p)_$(k)" * ".pdf", fig1; px_per_unit=2.0)
         save(folder * "/Sample_diagnostic" * "_$(p)_$(k)" * ".pdf", fig2; px_per_unit=2.0)
         save(folder * "/MonthlyACF" * "_$(p)_$(k)" * ".pdf", fig3; px_per_unit=2.0)
         save(folder * "/MonthlyPACF" * "_$(p)_$(k)" * ".pdf", fig4; px_per_unit=2.0)
-        open(folder * "/Figures" * "_$(p)_$(k)" * ".txt", "a") do io
+        open(folder * "/Params_Results" * "_$(p)_$(k)" * ".txt", "a") do io
+            cteParam ? PrintParams(Model.Φ, Model.σ, io) : nothing
             if !isnothing(settings)
                 println(io, "Settings :\n")
                 for key in keys(settings)
@@ -390,7 +517,7 @@ function Sample_diagnostic(sample_::Tuple, Caracteristics_Series, Model::Monthly
 
         end
     end
-    return (fig1, fig2, fig3, fig4)
+    return cteParam ? (fig0, fig2, fig3, fig4) : (fig0, fig1, fig2, fig3, fig4)
 end
 function Sample_diagnostic(sample_::AbstractVector{T}, Caracteristics_Series, Model::MonthlyAR; format_="vertical", size=format_ == "vertical" ? (1200, 1900) : (1600, 900), folder=nothing, settings=nothing) where T<:AbstractVector
     nspart_ = Model.trend .+ Model.period[dayofyear_Leap.(Model.date_vec)]
@@ -400,16 +527,20 @@ function Sample_diagnostic(sample_::AbstractVector{T}, Caracteristics_Series, Mo
 end
 
 
-function Sample_diagnostic(sample_::Tuple, Caracteristics_Series, Model::Multi_MonthlyAR; format_="vertical", size=format_ == "vertical" ? (1200, 1900) : (1600, 900), folder=nothing, settings=nothing)
+function Sample_diagnostic(sample_::Tuple, Caracteristics_Series, Model::Multi_MonthlyAR; format_="vertical", size=format_ == "vertical" ? (1200, 1900) : (1600, 900), folder=nothing, settings=nothing, TG_bool=false)
     p, k = collectpdx0(Model.y₁)[1], Model.period_order
     sample_, z_sample = sample_
 
+    typedata2 = TG_bool ? "TG" : "TX"
+
     sampleTN, z_sampleTN = [s[:, 1] for s in sample_], [s[:, 1] for s in z_sample]
     sampleTX, z_sampleTX = [s[:, 2] for s in sample_], [s[:, 2] for s in z_sample]
+
+    fig0 = PlotTrend(Model, typedata2)
     # fig1 = PlotMonthlyparams([invert(Model.Φ); [Model.σ]])
     fig2 = Sample_diagnostic(sampleTN,
         Model.date_vec,
-        Model.period[:, 1] .+ mean(Model.trend[:, 1]),
+        Model.period[:, 1] .+ mean.(GatherYearScenario(Model.trend[:, 1], Model.date_vec)),
         Caracteristics_Series[1].avg_day,
         Caracteristics_Series[1].max_day,
         Caracteristics_Series[1].df_month,
@@ -418,7 +549,7 @@ function Sample_diagnostic(sample_::Tuple, Caracteristics_Series, Model::Multi_M
     )
     fig3 = Sample_diagnostic(sampleTX,
         Model.date_vec,
-        Model.period[:, 2] .+ mean(Model.trend[:, 2]),
+        Model.period[:, 2] .+ mean.(GatherYearScenario(Model.trend[:, 2], Model.date_vec)),
         Caracteristics_Series[2].avg_day,
         Caracteristics_Series[2].max_day,
         Caracteristics_Series[2].df_month,
@@ -427,21 +558,21 @@ function Sample_diagnostic(sample_::Tuple, Caracteristics_Series, Model::Multi_M
     )
     fig4 = Plot_Sample_MonthlyACF(z_sampleTN, Model.date_vec, Model.z[:, 1], "TN, p=$(p), k=$(k)")
     fig5 = Plot_Sample_MonthlyPACF(z_sampleTN, Model.date_vec, Model.z[:, 1], "TN, p=$(p), k=$(k)")
-    fig6 = Plot_Sample_MonthlyACF(z_sampleTX, Model.date_vec, Model.z[:, 2], "TX, p=$(p), k=$(k)")
-    fig7 = Plot_Sample_MonthlyPACF(z_sampleTX, Model.date_vec, Model.z[:, 2], "TX, p=$(p), k=$(k)")
-    fig8 = Plot_Sample_MonthlyCC(z_sampleTN, z_sampleTX, Model.date_vec, Model.z[:, 1], Model.z[:, 2], "p=$(p), k=$(k)")
+    fig6 = Plot_Sample_MonthlyACF(z_sampleTX, Model.date_vec, Model.z[:, 2], "$(typedata2), p=$(p), k=$(k)")
+    fig7 = Plot_Sample_MonthlyPACF(z_sampleTX, Model.date_vec, Model.z[:, 2], "$(typedata2), p=$(p), k=$(k)")
+    fig8 = Plot_Sample_MonthlyCC(z_sampleTN, z_sampleTX, Model.date_vec, Model.z[:, 1], Model.z[:, 2], "p=$(p), k=$(k)", typedata2)
 
     if !isnothing(folder)
         mkpath(folder)
         # save(folder * "/Params" * "_$(p)_$(k)" * ".pdf", fig1; px_per_unit=2.0)
         save(folder * "/Sample_diagnostic_TN" * "_$(p)_$(k)" * ".pdf", fig2; px_per_unit=2.0)
-        save(folder * "/Sample_diagnostic_TX" * "_$(p)_$(k)" * ".pdf", fig3; px_per_unit=2.0)
+        save(folder * "/Sample_diagnostic_$(typedata2)" * "_$(p)_$(k)" * ".pdf", fig3; px_per_unit=2.0)
         save(folder * "/MonthlyACF_TN" * "_$(p)_$(k)" * ".pdf", fig4; px_per_unit=2.0)
         save(folder * "/MonthlyPACF_TN" * "_$(p)_$(k)" * ".pdf", fig5; px_per_unit=2.0)
-        save(folder * "/MonthlyACF_TX" * "_$(p)_$(k)" * ".pdf", fig6; px_per_unit=2.0)
-        save(folder * "/MonthlyPACF_TX" * "_$(p)_$(k)" * ".pdf", fig7; px_per_unit=2.0)
+        save(folder * "/MonthlyACF_$(typedata2)" * "_$(p)_$(k)" * ".pdf", fig6; px_per_unit=2.0)
+        save(folder * "/MonthlyPACF_$(typedata2)" * "_$(p)_$(k)" * ".pdf", fig7; px_per_unit=2.0)
         save(folder * "/MonthlyCC" * "_$(p)_$(k)" * ".pdf", fig8; px_per_unit=2.0)
-        open(folder * "/Figures" * "_$(p)_$(k)" * ".txt", "a") do io
+        open(folder * "/Params_Results" * "_$(p)_$(k)" * ".txt", "a") do io
             if !isnothing(settings)
                 println(io, "Settings :\n")
                 for key in keys(settings)
@@ -450,19 +581,19 @@ function Sample_diagnostic(sample_::Tuple, Caracteristics_Series, Model::Multi_M
                 println(io, "\n\n")
             end
             println(io, "Results :\n")
-            println(io, "Number of scenarios with dates where TN > TX : $(sum(TN_Grt_TX.(sample_) .> 0))")
-            println(io, "Percentage of scenarios with dates where TN > TX : $(trunc(100 * sum(TN_Grt_TX.(sample_) .> 0)/length(sample_),digits=2)) %")
-            println(io, "Mean percentage of dates where TN > TX : $(trunc(100*mean(TN_Grt_TX.(sample_))/length(Model.date_vec),digits=2)) %")
-            println(io, "Median percentage of dates where TN > TX : $(trunc(100*median(TN_Grt_TX.(sample_))/length(Model.date_vec),digits=2)) %")
+            println(io, "Number of scenarios with dates where TN > $(typedata2) : $(sum(TN_Grt_TX.(sample_) .> 0))")
+            println(io, "Percentage of scenarios with dates where TN > $(typedata2) : $(trunc(100 * sum(TN_Grt_TX.(sample_) .> 0)/length(sample_),digits=2)) %")
+            println(io, "Mean percentage of dates where TN > $(typedata2) : $(trunc(100*mean(TN_Grt_TX.(sample_))/length(Model.date_vec),digits=2)) %")
+            println(io, "Median percentage of dates where TN > $(typedata2) : $(trunc(100*median(TN_Grt_TX.(sample_))/length(Model.date_vec),digits=2)) %")
             # println(io, "Additive periodicity order : $(k)")
             # println(io, "Multiplicative periodicity order : $(Model.σ_period_order)")
         end
     end
-    return (fig2, fig3, fig4, fig5, fig6, fig7, fig8)
+    return (fig0, fig2, fig3, fig4, fig5, fig6, fig7, fig8)
 end
-function Sample_diagnostic(sample_::AbstractVector{T}, Caracteristics_Series, Model::Multi_MonthlyAR; format_="vertical", size=format_ == "vertical" ? (1200, 1900) : (1600, 900), folder=nothing, settings=nothing) where T<:AbstractMatrix
+function Sample_diagnostic(sample_::AbstractVector{T}, Caracteristics_Series, Model::Multi_MonthlyAR; format_="vertical", size=format_ == "vertical" ? (1200, 1900) : (1600, 900), folder=nothing, settings=nothing, TG_bool=false) where T<:AbstractMatrix
     nspart_ = Model.trend .+ Model.period[dayofyear_Leap.(Model.date_vec), :]
     σ_nspart_ = Model.σ_trend .* Model.σ_period[dayofyear_Leap.(Model.date_vec), :]
     z_sample = map(sim -> (sim .- nspart_) ./ σ_nspart_, sample_)
-    return Sample_diagnostic((sample_, z_sample), Caracteristics_Series, Model; format_=format_, size=size, folder=folder, settings=settings)
+    return Sample_diagnostic((sample_, z_sample), Caracteristics_Series, Model; format_=format_, size=size, folder=folder, settings=settings, TG_bool=TG_bool)
 end

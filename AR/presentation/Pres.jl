@@ -29,7 +29,7 @@ save("ts.pdf", fig; px_per_unit=2.0)
 #3 gen
 include("presutils.jl")
 sample_ = rand(model, 3, date_vec_p)
-fig = PlotCards(sample_, date_vec_p)
+fig = PlotCards(sample_, date_vec_p, ylimits=[-13., 45.])
 save("3gen.pdf", fig; px_per_unit=2.0)
 
 
@@ -42,8 +42,9 @@ bands = [(minimum.(SamplePerDate), maximum.(SamplePerDate)), (quantile.(SamplePe
 curvesvec = [x_p]
 
 colors = [("#009bff", 0.2), ("#009bff", 0.5), "black"]
-labelvec = ["Min-Max interval\nof generated series", "[0.25 ; 0.75] quantile\ninterval of generated series", "Recorded temperatures"]
+labelvec = ["Min-Max interval\nof generated series", "[0.25 ; 0.75] quantile\ninterval of generated\nseries", "Recorded temperatures"]
 
+include("presutils.jl")
 fig = PlotCurves(curvesvec, date_vec_p; bands=bands, labelvec=labelvec, colors=colors, ylimits=[-13., 45.], xtlfreq="month")
 save("5000gens.pdf", fig; px_per_unit=2.0)
 

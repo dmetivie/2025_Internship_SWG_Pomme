@@ -1,0 +1,78 @@
+Settings :
+
+file : ../mystations/TG_Montpellier.txt
+p : 2
+method_ : monthlyLL
+periodicity_model : trigo
+degree_period : 1
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 1
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+Number of random initialization : 0
+Results :
+
+Additive periodicity order : 1
+Multiplicative periodicity order : 1
+Number of simulations for the last diagnostic : 1000
+Number of simulations for the last diagnostic : 1000
+Settings :
+
+file : ../mystations/TG_Montpellier.txt
+p : 2
+method_ : monthlyLL
+periodicity_model : trigo
+degree_period : 1
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 1
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+Number of random initialization : 20
+
+
+
+Results :
+
+Additive periodicity order : 1
+Multiplicative periodicity order : 1
+Number of simulations for the last diagnostic : 1200
+Settings :
+
+file : ../mystations/TG_Montpellier.txt
+p : 2
+method_ : monthlyLL
+periodicity_model : trigo
+degree_period : 1
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 1
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+Number of random initialization : 20
+
+
+
+Results :
+
+Additive periodicity order : 1
+Multiplicative periodicity order : 1
+Number of simulations for the last diagnostic : 1200
+Settings :
+
+file : ../mystations/TG_Montpellier.txt
+p : 2
+method_ : monthlyLL
+periodicity_model : trigo
+degree_period : 1
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 1
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+Number of random initialization : 20

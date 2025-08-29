@@ -1,0 +1,31 @@
+Parameters : 
+
+Φ1 = 0.5799769917558999
+Φ2 = 0.028498454410648827
+Φ3 = 0.020247652441307298
+Φ4 = 0.01983191394499549
+Φ5 = -0.0030256891236089926
+Φ6 = 0.019130920852127566
+Φ7 = 0.01245764706851316
+σ = 0.785267685302668 C° 
+
+Settings :
+
+file : ../mystations/TX_Montpellier.txt
+p : 7
+method_ : constant_params
+periodicity_model : trigo
+degree_period : 4
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 4
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+n : 1000
+
+
+
+Number of simulations for the last diagnostic : 1000 
+ 
+

@@ -1,0 +1,100 @@
+Settings :
+
+file : TX_STAID000737.txt
+p : 2
+method_ : monthlyLL
+periodicity_model : trigo
+degree_period : 0
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 0
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+n : 20
+
+
+
+Number of simulations for the last diagnostic : 20 
+ 
+
+Settings :
+
+file : TX_STAID000737.txt
+p : 2
+method_ : monthlyLL
+periodicity_model : trigo
+degree_period : 0
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 0
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+n : 2000
+
+
+
+Number of simulations for the last diagnostic : 2000 
+ 
+
+Settings :
+
+file : TX_STAID000737.txt
+p : 2
+method_ : monthlyLL
+periodicity_model : trigo
+degree_period : 0
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 0
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+n : 2000
+
+
+
+Number of simulations for the last diagnostic : 2000 
+ 
+
+Settings :
+
+file : TX_STAID000737.txt
+p : 2
+method_ : monthlyLL
+periodicity_model : trigo
+degree_period : 0
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 0
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+n : 2000
+
+
+
+Number of simulations for the last diagnostic : 2000 
+ 
+
+Settings :
+
+file : TX_STAID000737.txt
+p : 2
+method_ : monthlyLL
+periodicity_model : trigo
+degree_period : 0
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 0
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+n : 2000
+
+
+
+Number of simulations for the last diagnostic : 2000 
+ 
+

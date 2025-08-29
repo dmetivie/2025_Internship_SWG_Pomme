@@ -1,0 +1,36 @@
+Settings :
+
+file : ../mystations/TN_Bonn.txt
+p : 1
+method_ : monthlyLL
+periodicity_model : trigo
+degree_period : 7
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 7
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+Number of random initialization : 20
+n : 2000
+
+
+
+Results :
+
+Additive periodicity order : 7
+Multiplicative periodicity order : 7
+AIC_BIC :
+ 
+
+AIC of model : 39514.86452373686
+BIC of model : 39701.549668968386
+
+AIC of AR model on residuals : 39514.86452373686
+BIC of AR model on residuals : 39701.549668968386
+
+AIC of regression to estimate additive seasonality : 98192.17665725465
+BIC of regression to estimate additive seasonality : 98308.85572281049
+
+AIC of regression to estimate mutliplicative seasonality : 65153.58514366901
+BIC of regression to estimate mutliplicative seasonality : 65270.26420922486

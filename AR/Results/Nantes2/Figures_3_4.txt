@@ -1,0 +1,115 @@
+Settings :
+
+file : ["../mystations/TN_Nantes.txt", "../mystations/TG_Nantes.txt"]
+p : 3
+method_ : monthly
+periodicity_model : trigo
+degree_period : 4
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 4
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+n : 200
+
+
+
+Results :
+
+Number of scenarios with dates where TN > TX : 200
+Percentage of scenarios with dates where TN > TX : 100.0 %
+Mean percentage of dates where TN > TX : 2.26 %
+Median percentage of dates where TN > TX : 2.27 %
+Settings :
+
+file : ["../mystations/TN_Nantes.txt", "../mystations/TG_Nantes.txt"]
+p : 3
+method_ : monthly
+periodicity_model : trigo
+degree_period : 4
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 4
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+n : 200
+
+
+
+Results :
+
+Number of scenarios with dates where TN > TX : 0
+Percentage of scenarios with dates where TN > TX : 0.0 %
+Mean percentage of dates where TN > TX : 0.0 %
+Median percentage of dates where TN > TX : 0.0 %
+Settings :
+
+file : ["../mystations/TN_Nantes.txt", "../mystations/TG_Nantes.txt"]
+p : 3
+method_ : monthly
+periodicity_model : trigo
+degree_period : 4
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 4
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+n : 200
+
+
+
+Results :
+
+Number of scenarios with dates where TN > TX : 1500
+Percentage of scenarios with dates where TN > TX : 100.0 %
+Mean percentage of dates where TN > TX : 2.27 %
+Median percentage of dates where TN > TX : 2.27 %
+Settings :
+
+file : ["../mystations/TN_Nantes.txt", "../mystations/TG_Nantes.txt"]
+p : 3
+method_ : monthly
+periodicity_model : trigo
+degree_period : 4
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 4
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+n : 200
+
+
+
+Results :
+
+Number of scenarios with dates where TN > TX : 200
+Percentage of scenarios with dates where TN > TX : 100.0 %
+Mean percentage of dates where TN > TX : 47.9 %
+Median percentage of dates where TN > TX : 47.87 %
+Settings :
+
+file : ["../mystations/TN_Nantes.txt", "../mystations/TG_Nantes.txt"]
+p : 3
+method_ : monthly
+periodicity_model : trigo
+degree_period : 4
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 4
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+n : 200
+
+
+
+Results :
+
+Number of scenarios with dates where TN > TX : 200
+Percentage of scenarios with dates where TN > TX : 100.0 %
+Mean percentage of dates where TN > TX : 49.94 %
+Median percentage of dates where TN > TX : 49.95 %

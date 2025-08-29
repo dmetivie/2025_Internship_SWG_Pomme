@@ -86,3 +86,15 @@ function truncate_MV(df_full, temperature_type)
     return df
 end
 truncate_MV(df_full) = truncate_MV(df_full, nothing) #To avoid error 
+
+
+function extract_series_DRIAS(file::String)
+    table = CSV.read(file, DataFrame, normalizenames=true, skipto=49, header=48, ignoreemptyrows=true)
+    df = @chain table begin 
+        @rsubset :TN != -999.99
+        @rsubset :TG != -999.99
+        @rsubset :TX != -999.99
+        end
+    df.DATE = Date.(string.(df.DATE), dateformat"yyyymmdd")
+    return truncate_MV(df)
+end

@@ -1,0 +1,120 @@
+Parameters : 
+
+Φ1 = 0.7848122769517791
+Φ2 = -0.11143864722148747
+Φ3 = 0.05225099425776786
+Φ4 = 0.009867334463989392
+Φ5 = -0.003231205589856825
+Φ6 = 0.02049643071348101
+σ = 0.672449396826055 C° 
+
+Settings :
+
+file : ../mystations/TG_Montpellier.txt
+p : 6
+method_ : constant_params
+periodicity_model : trigo
+degree_period : 5
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 5
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+n : 1000
+
+
+
+Number of simulations for the last diagnostic : 1000 
+ 
+
+Parameters : 
+
+Φ1 = 0.5226484462183553
+Φ2 = 0.026990192072055365
+Φ3 = 0.0437325166084957
+Φ4 = 0.025328488227699317
+Φ5 = 0.00945294703326876
+Φ6 = 0.017850508650210362
+σ = 0.8205082722060342 C° 
+
+Settings :
+
+file : ../mystations/TN_Montpellier.txt
+p : 6
+method_ : constant_params
+periodicity_model : trigo
+degree_period : 5
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 5
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+n : 1000
+
+
+
+Number of simulations for the last diagnostic : 1000 
+ 
+
+Parameters : 
+
+Φ1 = 0.5226484462183553
+Φ2 = 0.026990192072055365
+Φ3 = 0.0437325166084957
+Φ4 = 0.025328488227699317
+Φ5 = 0.00945294703326876
+Φ6 = 0.017850508650210362
+σ = 0.8205082722060342 C° 
+
+Settings :
+
+file : ../mystations/TN_Montpellier.txt
+p : 6
+method_ : constant_params
+periodicity_model : trigo
+degree_period : 5
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 5
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+n : 1000
+
+
+
+Number of simulations for the last diagnostic : 1000 
+ 
+
+Parameters : 
+
+Φ1 = 0.5226484462183553
+Φ2 = 0.026990192072055365
+Φ3 = 0.0437325166084957
+Φ4 = 0.025328488227699317
+Φ5 = 0.00945294703326876
+Φ6 = 0.017850508650210362
+σ = 0.8205082722060342 C° 
+
+Settings :
+
+file : ../mystations/TN_Montpellier.txt
+p : 6
+method_ : constant_params
+periodicity_model : trigo
+degree_period : 5
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 5
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+n : 1000
+
+
+
+Number of simulations for the last diagnostic : 1000 
+ 
+

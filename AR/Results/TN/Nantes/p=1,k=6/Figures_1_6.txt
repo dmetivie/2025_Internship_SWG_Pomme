@@ -1,0 +1,36 @@
+Settings :
+
+file : ../mystations/TN_Nantes.txt
+p : 1
+method_ : monthlyLL
+periodicity_model : trigo
+degree_period : 6
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 6
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+Number of random initialization : 20
+n : 2000
+
+
+
+Results :
+
+Additive periodicity order : 6
+Multiplicative periodicity order : 6
+AIC_BIC :
+ 
+
+AIC of model : 29202.381313616548
+BIC of model : 29379.972614636707
+
+AIC of AR model on residuals : 29202.381313616548
+BIC of AR model on residuals : 29379.972614636707
+
+AIC of regression to estimate additive seasonality : 64474.15137210294
+BIC of regression to estimate additive seasonality : 64570.34773591373
+
+AIC of regression to estimate mutliplicative seasonality : 40141.88480463685
+BIC of regression to estimate mutliplicative seasonality : 40238.08116844764

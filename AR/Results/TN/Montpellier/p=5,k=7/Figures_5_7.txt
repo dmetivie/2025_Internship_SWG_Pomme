@@ -64,3 +64,45 @@ BIC of regression to estimate additive seasonality : 148186.21812352774
 
 AIC of regression to estimate mutliplicative seasonality : 99002.27064850059
 BIC of regression to estimate mutliplicative seasonality : 99125.93632725038
+AIC_BIC :
+ 
+
+AIC of model : 68446.94730132003
+BIC of model : 69040.52975772589
+
+AIC of AR model on residuals : 68446.94730132003
+BIC of AR model on residuals : 69040.52975772589
+
+AIC of regression to estimate additive seasonality : 148062.55244477795
+BIC of regression to estimate additive seasonality : 148186.21812352774
+
+AIC of regression to estimate mutliplicative seasonality : 99002.27064850059
+BIC of regression to estimate mutliplicative seasonality : 99125.93632725038
+AIC_BIC :
+ 
+
+AIC of model : 68446.94730132003
+BIC of model : 69040.52975772589
+
+AIC of AR model on residuals : 68446.94730132003
+BIC of AR model on residuals : 69040.52975772589
+
+AIC of regression to estimate additive seasonality : 148062.55244477795
+BIC of regression to estimate additive seasonality : 148186.21812352774
+
+AIC of regression to estimate mutliplicative seasonality : 99002.27064850059
+BIC of regression to estimate mutliplicative seasonality : 99125.93632725038
+Settings :
+
+file : ../mystations/TN_Montpellier.txt
+p : 5
+method_ : monthlyLL
+periodicity_model : trigo
+degree_period : 7
+Trendtype : LOESS
+trendparam : nothing
+σ_periodicity_model : trigo
+σ_degree_period : 7
+σ_Trendtype : LOESS
+σ_trendparam : nothing
+Number of random initialization : 20
