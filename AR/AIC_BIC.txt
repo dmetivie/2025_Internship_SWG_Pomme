@@ -1,0 +1,115 @@
+Montpellier|TN
+
+5×12 DataFrame
+ Row │ Station      TypeData  p        k        AIC_complete    BIC_complete  AIC_Res       BIC_Res       AIC_Seas      BIC_Seas      AIC_σSeas     BIC_σSeas
+     │ String       String    Integer  Integer  AbstractFlo…    AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…
+─────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   1 │ Montpellier  TN              6        5       1.33384e5     1.34258e5       68433.5       69126.0     1.48069e5     1.48159e5       98977.3       99068.0
+   2 │ Montpellier  TN              5        5       1.33384e5     1.34159e5       68431.1       69024.7     1.48069e5     1.48159e5       98977.3       99068.0
+   3 │ Montpellier  TN              4        5       1.33386e5     1.34062e5       68429.4       68924.0     1.48069e5     1.48159e5       98977.3       99068.0
+   4 │ Montpellier  TN              8        5       1.33393e5     1.34465e5       68448.7       69339.1     1.48069e5     1.48159e5       98977.3       99068.0
+   5 │ Montpellier  TN              7        5  133393.0           1.34366e5       68445.9       69237.3     1.48069e5     1.48159e5       98977.3       99068.0
+
+
+Montpellier|TG
+
+5×12 DataFrame
+ Row │ Station      TypeData  p        k        AIC_complete  BIC_complete    AIC_Res       BIC_Res       AIC_Seas      BIC_Seas      AIC_σSeas       BIC_σSeas
+     │ String       String    Integer  Integer  AbstractFlo…  AbstractFlo…    AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…    AbstractFlo…
+─────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   1 │ Montpellier  TG              7        3     1.08402e5  109307.0             56370.6       57160.6     1.33457e5     1.33515e5       1.02085e5     1.02143e5
+   2 │ Montpellier  TG              8        3     1.08403e5       1.09407e5       56374.4       57263.2     1.33457e5     1.33515e5       1.02085e5     1.02143e5
+   3 │ Montpellier  TG              7        4     1.08405e5       1.09344e5       56398.5       57188.5     1.33405e5     1.33479e5  102120.0           1.02194e5
+   4 │ Montpellier  TG              6        3     1.08407e5       1.09213e5       56373.5       57064.8     1.33457e5     1.33515e5       1.02085e5     1.02143e5
+   5 │ Montpellier  TG              5        3     1.08407e5       1.09115e5       56371.7       56964.2     1.33457e5     1.33515e5       1.02085e5     1.02143e5
+
+
+Montpellier|TX
+
+5×12 DataFrame
+ Row │ Station      TypeData  p        k        AIC_complete  BIC_complete    AIC_Res       BIC_Res       AIC_Seas        BIC_Seas        AIC_σSeas     BIC_σSeas
+     │ String       String    Integer  Integer  AbstractFlo…  AbstractFlo…    AbstractFlo…  AbstractFlo…  AbstractFlo…    AbstractFlo…    AbstractFlo…  AbstractFlo…
+─────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   1 │ Montpellier  TX              7        4     1.31851e5       1.32794e5       67882.7       68676.8  146804.0             1.46878e5     1.08873e5     1.08948e5
+   2 │ Montpellier  TX              7        3     1.31852e5  132762.0             67850.1       68644.2       1.46843e5  146901.0           1.08801e5     1.08859e5
+   3 │ Montpellier  TX              6        4     1.31861e5       1.32705e5       67889.8       68584.7  146804.0             1.46878e5     1.08873e5     1.08948e5
+   4 │ Montpellier  TX              6        3     1.31862e5       1.32673e5       67857.1       68551.9       1.46843e5  146901.0           1.08801e5     1.08859e5
+   5 │ Montpellier  TX              7        5     1.31862e5       1.32838e5       67911.8       68705.9       1.46794e5       1.46885e5     1.08829e5     1.0892e5
+
+
+Nantes|TN
+
+5×12 DataFrame
+ Row │ Station  TypeData  p        k        AIC_complete  BIC_complete  AIC_Res       BIC_Res       AIC_Seas      BIC_Seas      AIC_σSeas     BIC_σSeas
+     │ String   String    Integer  Integer  AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…
+─────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   1 │ Nantes   TN              3        2       58643.0       59072.2       29146.0       29501.2       64535.3       64572.3       40007.2       40044.2
+   2 │ Nantes   TN              4        2       58643.4       59161.4       29149.2       29593.2       64535.3       64572.3       40007.2       40044.2
+   3 │ Nantes   TN              6        2       58644.9       59340.5       29156.5       29778.0       64535.3       64572.3       40007.2       40044.2
+   4 │ Nantes   TN              5        2       58647.2       59254.0       29155.9       29688.6       64535.3       64572.3       40007.2       40044.2
+   5 │ Nantes   TN              3        3       58648.0       59106.8       29156.7       29511.9       64527.1       64578.9       39977.6       40029.4
+
+
+Nantes|TG
+
+5×12 DataFrame
+ Row │ Station  TypeData  p        k        AIC_complete  BIC_complete  AIC_Res       BIC_Res       AIC_Seas      BIC_Seas      AIC_σSeas     BIC_σSeas
+     │ String   String    Integer  Integer  AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…
+─────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   1 │ Nantes   TG              3        2       51754.4       52186.8       23688.8       24046.7       65040.9       65078.2       43816.7       43854.0
+   2 │ Nantes   TG              4        2       51756.1       52278.0       23693.2       24140.6       65040.9       65078.2       43816.7       43854.0
+   3 │ Nantes   TG              3        5       51757.3       52279.2       23695.9       24053.7       64980.8       65062.8       43951.2       44033.2
+   4 │ Nantes   TG              3        3       51758.3       52220.6       23670.7       24028.6       65043.7       65095.9       43791.4       43843.6
+   5 │ Nantes   TG              4        5       51759.3       52370.7       23700.6       24147.9       64980.8       65062.8       43951.2       44033.2
+
+
+Nantes|TX
+
+5×12 DataFrame
+ Row │ Station  TypeData  p        k        AIC_complete  BIC_complete  AIC_Res       BIC_Res       AIC_Seas      BIC_Seas      AIC_σSeas     BIC_σSeas
+     │ String   String    Integer  Integer  AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…
+─────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   1 │ Nantes   TX              3        2       74580.5       75026.5       33670.7       34039.8       87129.6       87168.0       57840.6       57879.1
+   2 │ Nantes   TX              3        3       74581.7       75058.4       33716.2       34085.4       87133.2       87187.1       57806.9       57860.7
+   3 │ Nantes   TX              6        2       74583.3       75306.2       33680.5       34326.5       87129.6       87168.0       57840.6       57879.1
+   4 │ Nantes   TX              6        3       74584.2       75337.9       33725.5       34371.5       87133.2       87187.1       57806.9       57860.7
+   5 │ Nantes   TX              3        5       74589.6       75128.0       33761.8       34131.0       87107.7       87192.3       57894.4       57979.0
+
+
+Bonn|TN
+
+5×12 DataFrame
+ Row │ Station  TypeData  p        k        AIC_complete  BIC_complete  AIC_Res       BIC_Res       AIC_Seas      BIC_Seas      AIC_σSeas     BIC_σSeas
+     │ String   String    Integer  Integer  AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…
+─────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   1 │ Bonn     TN              5        2       86177.2       86815.0       39234.2       39794.2       98262.8       98301.6       65032.6       65071.5
+   2 │ Bonn     TN              3        2       86177.7       86628.8       39229.0       39602.3       98262.8       98301.6       65032.6       65071.5
+   3 │ Bonn     TN              6        2       86181.1       86912.3       39241.0       39894.3       98262.8       98301.6       65032.6       65071.5
+   4 │ Bonn     TN              4        2       86183.0       86727.5       39237.1       39703.9       98262.8       98301.6       65032.6       65071.5
+   5 │ Bonn     TN              5        3       86188.7       86857.6       39296.0       39856.1       98257.3       98311.8       64915.5       64969.9
+
+
+Bonn|TG
+
+5×12 DataFrame
+ Row │ Station  TypeData  p        k        AIC_complete  BIC_complete  AIC_Res       BIC_Res       AIC_Seas      BIC_Seas      AIC_σSeas     BIC_σSeas
+     │ String   String    Integer  Integer  AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…
+─────┼─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   1 │ Bonn     TG              3        1       77871.8       78291.8       32564.9       32938.3       95959.8       95983.1       61810.6       61833.9
+   2 │ Bonn     TG              3        3       77874.9       78357.2       32744.1       33117.4       95894.5       95949.0       61755.0       61809.5
+   3 │ Bonn     TG              3        2       77877.5       78328.7       32754.2       33127.5       95899.9       95938.8       61779.3       61818.2
+   4 │ Bonn     TG              3        4       77879.5       78392.9       32754.4       33127.8       95893.0       95963.0       61766.6       61836.6
+   5 │ Bonn     TG              4        1       77880.5       78393.9       32576.2       33042.9       95959.8       95983.1       61810.6       61833.9
+
+
+Bonn|TX
+
+5×12 DataFrame
+ Row │ Station  TypeData  p        k        AIC_complete    BIC_complete  AIC_Res       BIC_Res       AIC_Seas       BIC_Seas      AIC_σSeas     BIC_σSeas
+     │ String   String    Integer  Integer  AbstractFlo…    AbstractFlo…  AbstractFlo…  AbstractFlo…  AbstractFlo…   AbstractFlo…  AbstractFlo…  AbstractFlo…
+─────┼────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   1 │ Bonn     TX              4        2       1.20534e5     1.21102e5       49998.8       50485.5  140896.0          1.40937e5       83196.5       83237.1
+   2 │ Bonn     TX              5        2       1.20535e5     1.212e5         50001.4       50585.5  140896.0          1.40937e5       83196.5       83237.1
+   3 │ Bonn     TX              8        2       1.20537e5     1.21494e5       50011.5       50887.6  140896.0          1.40937e5       83196.5       83237.1
+   4 │ Bonn     TX              7        2       1.20537e5     1.21397e5       50009.2       50788.0  140896.0          1.40937e5       83196.5       83237.1
+   5 │ Bonn     TX              4        3  120539.0           1.21139e5       50054.3       50541.1       1.4089e5     1.40947e5       83159.5       83216.3

@@ -220,3 +220,31 @@ end
 PlotMonthlyRealStats(x::AbstractVector, date_vec::AbstractVector, Stats::String, color="#ff6600") = (
     PlotMonthlyRealStats(DataFrame(DATE=date_vec, TEMP=x), Stats, color))
 
+function CompareTrends(df1,df2;title="Comparison of trends between rcp4.5 and rcp8.5",color1="orange",color2="red",span=0.08)
+    date_vec = df1.DATE
+    ticksindexes = findall(istickable10year, date_vec)
+    xticklabel = strfunc.(date_vec[ticksindexes])
+
+    Trends1,Trends2 = map(x->LOESS(x,span),eachcol(df1)[2:4]),map(x->LOESS(x,span),eachcol(df2)[2:4])
+    TypeTempVec=  ["TN","TG","TX"]
+
+    Minvec = map(x->minimum(vcat(x...)),zip(Trends1,Trends2))
+
+    fig = Figure(size=(1000,1500))
+    axvec=[Axis(fig[i, 1]) for i in 1:3]
+    for i in eachindex(Trends1)
+        lines!(axvec[i], Trends1[i] .- Minvec[i], color=color1)
+        lines!(axvec[i], Trends2[i] .- Minvec[i], color=color2)
+        lines!(axvec[i], zeros(length(date_vec)), color="black") 
+        axvec[i].limits = ([1, length(date_vec)], nothing)
+        axvec[i].xticks = (ticksindexes, xticklabel)
+        axvec[i].ylabel = "Temperature (°C)"
+        axvec[i].ylabelsize = 25
+        axvec[i].yticklabelsize = 20
+        axvec[i].xticklabelsize = 20
+        axvec[i].title = TypeTempVec[i]
+        axvec[i].titlesize = 26
+    end
+    return fig
+end
+

@@ -121,3 +121,21 @@ PlotMonthlyStatsAx(fig[1, 1], model.Φ, "Φ₁")
 PlotMonthlyStatsAx(fig[1, 2], model.σ, "σ", unit="°C")
 
 save("Monthly_parameters.pdf", fig; px_per_unit=2.0)
+
+
+
+###Comparison of trends : Nantes rcp4.5 vs Nantes rcp8.5
+
+include("presutils.jl")
+
+folder_station = "../../DRIAS"
+##Station
+file1 = folder_station * "/" * "T_Nantes4.txt"
+file2 = folder_station * "/" * "T_Nantes8.txt"
+
+df1 = extract_series_DRIAS(file1)
+df2 = extract_series_DRIAS(file2)
+
+include("presutils.jl")
+fig = CompareTrends(df1,df2)
+save("CompareTrendsDRIASNantes.pdf", fig; px_per_unit=2.0)

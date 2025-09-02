@@ -386,7 +386,7 @@ function PlotSeasonnality(Model::MonthlyAR)
 end
 
 function PlotSeasonnality(Model::Multi_MonthlyAR, typedata2="TX")
-    fig = Figure(size=(1200, 400))
+    fig = Figure(size=(1200, 1000))
 
     PlotYearCurvesAxes!(fig[1, 1], [Model.period[:, 1]], "Additive seasonality of TN", colors=["orange"])
     PlotYearCurvesAxes!(fig[1, 2], [Model.σ_period[:, 1]], "Multiplicative seasonality of TN", colors=["orange"])
@@ -565,6 +565,7 @@ function Sample_diagnostic(sample_::Tuple, Caracteristics_Series, Model::Multi_M
     if !isnothing(folder)
         mkpath(folder)
         # save(folder * "/Params" * "_$(p)_$(k)" * ".pdf", fig1; px_per_unit=2.0)
+        save(folder * "/Trend_k=$(k)" * ".pdf", fig0; px_per_unit=2.0)
         save(folder * "/Sample_diagnostic_TN" * "_$(p)_$(k)" * ".pdf", fig2; px_per_unit=2.0)
         save(folder * "/Sample_diagnostic_$(typedata2)" * "_$(p)_$(k)" * ".pdf", fig3; px_per_unit=2.0)
         save(folder * "/MonthlyACF_TN" * "_$(p)_$(k)" * ".pdf", fig4; px_per_unit=2.0)

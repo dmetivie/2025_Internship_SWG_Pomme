@@ -136,3 +136,17 @@ for station in ["Montpellier", "Nantes", "Bonn"]
         println(first(sort(Sub_df, :AIC_complete), 5))
     end
 end
+
+
+open("AIC_BIC.txt", "a") do io
+    for station in ["Montpellier", "Nantes", "Bonn"]
+        for type_data in ["TN", "TG", "TX"]
+            Sub_df = @chain DF begin
+                @rsubset :Station == station
+                @rsubset :TypeData == type_data
+            end
+            println(io, "\n\n$(station)|$(type_data)\n")
+            println(io, first(sort(Sub_df, :AIC_complete), 5))
+        end
+    end
+end
