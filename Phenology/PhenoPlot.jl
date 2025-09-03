@@ -162,27 +162,40 @@ end
 
 
 
-function Plot_Pheno_Dates_DB_BB(date_vecDB::Vector{Date}, date_vecBB::Vector{Date}, CPO; sample_DB=nothing, sample_BB=nothing, station_name="", YearCut=nothing)
+function Plot_Pheno_Dates_DB_BB(date_vecDB::Vector{Date}, date_vecBB::Vector{Date}, CPO; sample_DB=nothing, sample_BB=nothing, station_name="", YearCut=nothing, save_file=nothing, loaded_data=nothing)
+
+    if !isnothing(loaded_data)
+        both_dict = load(loaded_data)
+        EB_dict = both_dict["EB"]
+        BB_dict = both_dict["BB"]
+    end
 
     fig = Figure(size=(900, 400))
 
     ScaleDateDB(date_) = ScaleDate(date_, CPO, false)
     ScaleDateBB(date_) = ScaleDate(date_, CPO, true)
 
-    NDSCPO_DB = ScaleDateDB.(date_vecDB)
+    NDSCPO_DB = ScaleDateDB.(date_vecDB) #NDSCPO : Number of dates since chilling period onset
     NDSCPO_BB = ScaleDateBB.(date_vecBB)
 
     #We concatanate the dates of each series to have the max and the min NDSCPO
-    Conc_date_vecs_DB = isnothing(sample_DB) ? date_vecDB : [date_vecDB; reduce(vcat, sample_DB)]
-    Conc_date_vecs_BB = isnothing(sample_BB) ? date_vecBB : [date_vecBB; reduce(vcat, sample_BB)]
+    Conc_date_vecs_DB = isnothing(sample_DB) ? date_vecDB : ([date_vecDB; reduce(vcat, sample_DB)])
+    Conc_date_vecs_BB = isnothing(sample_BB) ? date_vecBB : ([date_vecBB; reduce(vcat, sample_BB)])
 
     #The dates of the first and fifteen day of each month.
     Dates_month = interleave2(first_of_month.(1:12), fifteen_of_month.(1:12))
     Names_month = interleave2(name_first_of_month.(1:12), name_fifteen_of_month.(1:12)) #Their string associated for the tickslabel.
     NDSCPO_month = ScaleDateDB.(Dates_month) #And their NDSCPO
 
-    NDSCPO_inf = maximum(NDSCPO_month[NDSCPO_month.<=minimum(ScaleDateDB.(Conc_date_vecs_DB))]) #The optimal NDSCPO_month to minimise the true NDSCPO.
-    NDSCPO_sup = minimum(NDSCPO_month[NDSCPO_month.>=maximum(ScaleDateDB.(Conc_date_vecs_BB))]) #The optimal NDSCPO_month to maximise the true NDSCPO.
+    if isnothing(loaded_data)
+        NDSCPO_inf = maximum(NDSCPO_month[NDSCPO_month.<=minimum(ScaleDateDB.(Conc_date_vecs_DB))]) #The optimal NDSCPO_month to minimise the true NDSCPO.
+        NDSCPO_sup = minimum(NDSCPO_month[NDSCPO_month.>=maximum(ScaleDateDB.(Conc_date_vecs_BB))]) #The optimal NDSCPO_month to maximise the true NDSCPO.
+    else
+        raw_NDSCPO_inf = minimum([ScaleDateDB.(Conc_date_vecs_DB); EB_dict["NDSCPO"]; EB_dict["minimum"]])
+        NDSCPO_inf = maximum(NDSCPO_month[NDSCPO_month.<=raw_NDSCPO_inf])
+        raw_NDSCPO_sup = maximum([ScaleDateDB.(Conc_date_vecs_BB); BB_dict["NDSCPO"]; BB_dict["maximum"]])
+        NDSCPO_sup = minimum(NDSCPO_month[NDSCPO_month.>=raw_NDSCPO_sup])
+    end
 
     Names_month = Names_month[NDSCPO_sup.>=NDSCPO_month.>=NDSCPO_inf]
     NDSCPO_month = NDSCPO_month[NDSCPO_sup.>=NDSCPO_month.>=NDSCPO_inf]
@@ -203,40 +216,80 @@ function Plot_Pheno_Dates_DB_BB(date_vecDB::Vector{Date}, date_vecBB::Vector{Dat
     #For exemple is the EB happens the 15/12/2010, I consider that it belongs to the year 2011, so I had the time to reach 2011.
     #If the CPO is very early (eg the 1st of august 2010) and the BB is very late (e.g the 15th of august 2010), I don't want to consider this BB
     #to belong to year 2011 so I consider EB to belongs to 2011 at least two months before 2011 not before.
-
-    for (sample_, colors, SD_func) in zip([sample_DB, sample_BB], [[("#e5ca20", 0.2), ("#e5ca20", 0.5)], [("#009bff", 0.2), ("#009bff", 0.5)]], [ScaleDateDB, ScaleDateBB])
+    Dictionnaries = (Dict(), Dict())
+    for (sample_, colors, SD_func, Dict_) in zip([sample_DB, sample_BB], [[("#e5ca20", 0.2), ("#e5ca20", 0.5)], [("#009bff", 0.2), ("#009bff", 0.5)]], [ScaleDateDB, ScaleDateBB], Dictionnaries)
         if !isnothing(sample_)
             Conc_sets = reduce(vcat, sample_)
 
             years_ = unique(year.(Conc_sets + min(Month(2), Year(1) - Month(CPO[1]) - Day(CPO[2]))))
 
             DictYearsVec = [SD_func.(Conc_sets[inyear.(Conc_sets, year_)]) for year_ in years_]
+            if isnothing(save_file)
+                push!(pltvec, band!(ax, years_, minimum.(DictYearsVec), maximum.(DictYearsVec), color=colors[1]))
+                push!(pltvec, band!(ax, years_, quantile.(DictYearsVec, 0.25), quantile.(DictYearsVec, 0.75), color=colors[2]))
+            else
+                Dict_["minimum"] = minimum.(DictYearsVec)
+                Dict_["maximum"] = maximum.(DictYearsVec)
+                Dict_["q25"] = quantile.(DictYearsVec, 0.25)
+                Dict_["q75"] = quantile.(DictYearsVec, 0.75)
+                push!(pltvec, band!(ax, years_, Dict_["minimum"], Dict_["maximum"], color=colors[1]))
+                push!(pltvec, band!(ax, years_, Dict_["q25"], Dict_["q75"], color=colors[2]))
+            end
+        end
+    end
 
-            push!(pltvec, band!(ax, years_, minimum.(DictYearsVec), maximum.(DictYearsVec), color=colors[1]))
-            push!(pltvec, band!(ax, years_, quantile.(DictYearsVec, 0.25), quantile.(DictYearsVec, 0.75), color=colors[2]))
+    #Plot data from loaded file
+    if !isnothing(loaded_data)
+        for (dict_, color_) in zip([EB_dict, BB_dict], ["brown4", "magenta"])
+            years = dict_["years"]
+            push!(pltvec, lines!(ax, years, dict_["minimum"], color=color_, linestyle=(:dot, :loose)))
+            push!(pltvec, lines!(ax, years, dict_["maximum"], color=color_, linestyle=(:dot, :loose)))
+            push!(pltvec, lines!(ax, years, dict_["q25"], color=color_, linestyle=(:dash, :dense)))
+            push!(pltvec, lines!(ax, years, dict_["q75"], color=color_, linestyle=(:dash, :dense)))
+            push!(pltvec, lines!(ax, years, dict_["NDSCPO"], color=color_,))
         end
     end
 
     #NDSCPO plots
     push!(pltvec, lines!(ax, year.(date_vecDB + min(Month(2), Year(1) - Month(CPO[1]) - Day(CPO[2]))), NDSCPO_DB, color="#ff6600"))
     push!(pltvec, lines!(ax, year.(date_vecBB), NDSCPO_BB, color="green"))
+    
+    if !isnothing(save_file)
+        Dictionnaries[1]["years"] = year.(date_vecDB + min(Month(2), Year(1) - Month(CPO[1]) - Day(CPO[2])))
+        Dictionnaries[1]["NDSCPO"] = NDSCPO_DB
+        Dictionnaries[2]["years"] = year.(date_vecBB)
+        Dictionnaries[2]["NDSCPO"] = NDSCPO_BB
+        save(save_file, "EB", Dictionnaries[1], "BB", Dictionnaries[2])
+    end
 
     #Cut
     isnothing(YearCut) ? nothing : lines!(ax, [YearCut, YearCut], [NDSCPO_inf, NDSCPO_sup], color="purple")
 
     #Legend
-    Legend(fig[3:4, 5], pltvec[[1, 2, 5]], ["Simulated EB\nMin-Max interval",
-        "Simulated EB\n[0.25 ; 0.75]\nquantile interval",
-        "EB pred from recorded\ntemperatures in $(station_name)"])
+    if isnothing(loaded_data)
+        Legend(fig[3:4, 5], pltvec[[1, 2, 5]], ["Min-Max interval of predictions\n on sim temperatures",
+                "Quartile interval of predictions\n on sim temperatures",
+                "Predictions on recorded\ntemperatures in $(station_name)"], "Endodormancy break", framevisible=false)
 
-    Legend(fig[1:2, 5], pltvec[[3, 4, 6]], ["Simulated BB\nMin-Max interval",
-        "Simulated BB\n[0.25 ; 0.75]\nquantile interval",
-        "BB pred from recorded\ntemperatures in $(station_name)"])
+        Legend(fig[1:2, 5], pltvec[[3, 4, 6]], ["Min-Max interval of predictions\n on sim temperatures",
+                "Quartile interval of predictions\n on sim temperatures",
+                "Predictions on recorded\ntemperatures in $(station_name)"], "Budburst", framevisible=false)
+    else
+        Legend(fig[3:4, 5], pltvec[[1, 2, 15, 9]], ["Min-Max interval of predictions\n on sim temperatures",
+                "Quartile interval of predictions\n on sim temperatures", "Predictions on $(station_name) simulations", "Predictions on recorded temperatures"], "Endodormancy break", framevisible=false)
 
+        Legend(fig[1:2, 5], pltvec[[3, 4, 16, 14]], ["Min-Max interval of predictions\n on sim temperatures",
+                "Quartile interval of predictions\n on sim temperatures",
+                "Predictions on $(station_name) simulations", "Predictions on recorded temperatures"], "Budburst", framevisible=false)
+    end
     return fig
 end
 
 
+
+# ["Simulated EB\nMin-Max interval",
+#         "Simulated EB\n[0.25 ; 0.75]\nquantile interval",
+#         "EB pred from recorded\ntemperatures in $(station_name)"]
 
 function Plot_Pheno_Dates_DB_BB(date_vecsDB, date_vecsBB, CPO;
     DB_colors=nothing,
@@ -245,7 +298,8 @@ function Plot_Pheno_Dates_DB_BB(date_vecsDB, date_vecsBB, CPO;
     BB_label=nothing,
     dashindexes=Integer[],
     size=(800, 400),
-    breakpoints=true)
+    breakpoints=true,
+    comments="")
 
     fig = Figure(size=size)
 
@@ -278,7 +332,7 @@ function Plot_Pheno_Dates_DB_BB(date_vecsDB, date_vecsBB, CPO;
     ax.ylabel = "Date"
     ax.ylabelpadding = 5.
 
-    ax.title = "Predicted Endodormancy Break and Budburst dates for each year"
+    ax.title = "Predicted Endodormancy Break and Budburst dates for each year $(comments)"
 
     pltvec = Plot[]
 
@@ -304,8 +358,8 @@ function Plot_Pheno_Dates_DB_BB(date_vecsDB, date_vecsBB, CPO;
     end
 
     #Label
-    isnothing(DB_label) ? nothing : Legend(fig[3:4, 5], pltvec[1:length(date_vecsDB)], DB_label)
-    isnothing(BB_label) ? nothing : Legend(fig[1:2, 5], pltvec[length(date_vecsDB)+1:end], BB_label)
+    isnothing(DB_label) ? nothing : Legend(fig[3:4, 5], pltvec[1:length(date_vecsDB)], DB_label, "Endodormancy break", framevisible=false)
+    isnothing(BB_label) ? nothing : Legend(fig[1:2, 5], pltvec[length(date_vecsDB)+1:end], BB_label, "Budburst", framevisible=false)
 
     return fig
 end
@@ -352,7 +406,7 @@ function Plot_Freeze_Risk(TN_vecs, dates_vecs_TN, date_vecsBB;
         end
     end
 
-    isnothing(label) ? nothing : Legend(fig[1:2, 3], pltvec, label)
+    isnothing(label) ? nothing : Legend(fig[1:2, 3], pltvec, label, framevisible=false)
 
     return fig
 end
@@ -389,7 +443,7 @@ function Plot_Freeze_Risk_Bar(TN_vec, dates_vec_TN, date_vecBB;
         plt = barplot!(ax, year.(date_vecBB2), Counter_vec, color=color)
     end
 
-    isnothing(label) ? nothing : Legend(fig[1:2, 3], [plt], [label])
+    isnothing(label) ? nothing : Legend(fig[1:2, 3], [plt], [label], framevisible=false)
 
     return fig
 end
@@ -440,17 +494,17 @@ function Plot_Freeze_Risk_sample(TN_vecs, Date_vec, date_vecsBB; threshold=-2., 
 
     Dist = [DiscreteNonParametric(0:(size(Mat_freq)[1]-1), Mat_freq[:, j]) for j in 1:size(Mat_freq)[2]]
 
-    fig = Figure(size=(1300,400))
-    ax1,plt = lines(fig[1, 1], year_vec, mean.(Dist))
+    fig = Figure(size=(1300, 400))
+    ax1, plt = lines(fig[1, 1], year_vec, mean.(Dist))
     ax1.xlabel = "Year"
     ax1.ylabel = "Number of days"
     ax1.title = "Annual mean"
 
-    ax2,plt = lines(fig[1, 2], year_vec, std.(Dist))
+    ax2, plt = lines(fig[1, 2], year_vec, std.(Dist))
     ax2.xlabel = "Year"
     ax2.title = "Annual variance"
 
-    ax3,plt = lines(fig[1, 3], year_vec, findlast.(x -> x > 0, eachcol(Mat)) .- 1)
+    ax3, plt = lines(fig[1, 3], year_vec, findlast.(x -> x > 0, eachcol(Mat)) .- 1)
     ax3.xlabel = "Year"
     ax3.title = "Annual Max"
 
@@ -472,9 +526,9 @@ function Plot_Freeze_Risk_distribution(TN_vecs, Date_vec, date_vecsBB, years; th
 
     pltvec = Plot[]
     for year_ in years
-        push!(pltvec,lines!(ax, days_vec, (pdf(Dist[findfirst(x -> x == year_, year_vec)], days_vec))))
+        push!(pltvec, lines!(ax, days_vec, (pdf(Dist[findfirst(x -> x == year_, year_vec)], days_vec))))
     end
-    Legend(fig[1,2],pltvec,string.(years))
+    Legend(fig[1, 2], pltvec, string.(years))
     return fig
 end
 
@@ -545,10 +599,10 @@ function PlotHistogram(date_vecDB::Vector{Date}, date_vecBB::Vector{Date}, CPO, 
 
     #Legend
     if stationlegend
-        Legend(fig[2, 1], pltvec[1:2], ["Simulated EB Histogram", "Predicted EB in $(station_name)"])
-        Legend(fig[2, 2], pltvec[3:4], ["Simulated BB Histogram", "Predicted BB in $(station_name)"])
+        Legend(fig[2, 1], pltvec[1:2], ["Simulated EB Histogram", "Predicted EB in $(station_name)"], framevisible=false)
+        Legend(fig[2, 2], pltvec[3:4], ["Simulated BB Histogram", "Predicted BB in $(station_name)"], framevisible=false)
     else
-        Legend(fig[1, 3], pltvec[[1, 3]], ["Simulated EB Histogram", "Simulated BB Histogram"])
+        Legend(fig[1, 3], pltvec[[1, 3]], ["Simulated EB Histogram", "Simulated BB Histogram"], framevisible=false)
     end
 
     return fig
