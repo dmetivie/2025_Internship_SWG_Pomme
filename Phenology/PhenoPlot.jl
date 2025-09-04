@@ -267,20 +267,20 @@ function Plot_Pheno_Dates_DB_BB(date_vecDB::Vector{Date}, date_vecBB::Vector{Dat
 
     #Legend
     if isnothing(loaded_data)
-        Legend(fig[3:4, 5], pltvec[[1, 2, 5]], ["Min-Max interval of predictions\n on sim temperatures",
-                "Quartile interval of predictions\n on sim temperatures",
+        Legend(fig[3:4, 5], pltvec[[1, 2, 5]], ["Min-Max interval of predictions\non simulated temperatures",
+                "Quartile interval of predictions\non simulated temperatures",
                 "Predictions on recorded\ntemperatures in $(station_name)"], "Endodormancy break", framevisible=false)
 
-        Legend(fig[1:2, 5], pltvec[[3, 4, 6]], ["Min-Max interval of predictions\n on sim temperatures",
-                "Quartile interval of predictions\n on sim temperatures",
+        Legend(fig[1:2, 5], pltvec[[3, 4, 6]], ["Min-Max interval of predictions\non simulated temperatures",
+                "Quartile interval of predictions\non simulated temperatures",
                 "Predictions on recorded\ntemperatures in $(station_name)"], "Budburst", framevisible=false)
     else
-        Legend(fig[3:4, 5], pltvec[[1, 2, 15, 9]], ["Min-Max interval of predictions\n on sim temperatures",
-                "Quartile interval of predictions\n on sim temperatures", "Predictions on $(station_name) simulations", "Predictions on recorded temperatures"], "Endodormancy break", framevisible=false)
+        Legend(fig[3:4, 5], pltvec[[1, 2, 15, 9]], ["Min-Max interval of predictions\non simulated temperatures",
+                "Quartile interval of predictions\non simulated temperatures", "Predictions on $(station_name) simulation", "Predictions on recorded temperatures"], "Endodormancy break", framevisible=false)
 
-        Legend(fig[1:2, 5], pltvec[[3, 4, 16, 14]], ["Min-Max interval of predictions\n on sim temperatures",
-                "Quartile interval of predictions\n on sim temperatures",
-                "Predictions on $(station_name) simulations", "Predictions on recorded temperatures"], "Budburst", framevisible=false)
+        Legend(fig[1:2, 5], pltvec[[3, 4, 16, 14]], ["Min-Max interval of predictions\non simulated temperatures",
+                "Quartile interval of predictions\non simulated temperatures",
+                "Predictions on $(station_name) simulation", "Predictions on recorded temperatures"], "Budburst", framevisible=false)
     end
     return fig
 end
