@@ -162,7 +162,7 @@ end
 
 
 
-function Plot_Pheno_Dates_DB_BB(date_vecDB::Vector{Date}, date_vecBB::Vector{Date}, CPO; sample_DB=nothing, sample_BB=nothing, station_name="", YearCut=nothing, save_file=nothing, loaded_data=nothing)
+function Plot_Pheno_Dates_DB_BB(date_vecDB::Vector{Date}, date_vecBB::Vector{Date}, CPO; sample_DB=nothing, sample_BB=nothing, station_name="", YearCut=nothing, save_file=nothing, loaded_data=nothing, display_legend=true)
 
     if !isnothing(loaded_data)
         both_dict = load(loaded_data)
@@ -170,7 +170,7 @@ function Plot_Pheno_Dates_DB_BB(date_vecDB::Vector{Date}, date_vecBB::Vector{Dat
         BB_dict = both_dict["BB"]
     end
 
-    fig = Figure(size=(900, 400))
+    fig = display_legend ? Figure(size=(900, 400)) : Figure(size=(600, 400))
 
     ScaleDateDB(date_) = ScaleDate(date_, CPO, false)
     ScaleDateBB(date_) = ScaleDate(date_, CPO, true)
@@ -208,7 +208,7 @@ function Plot_Pheno_Dates_DB_BB(date_vecDB::Vector{Date}, date_vecBB::Vector{Dat
     ax.ylabel = "Date"
     ax.ylabelpadding = 5.
 
-    ax.title = "Predicted Endodormancy Break and Budburst dates for each year, $(station_name)"
+    # ax.title = "Predicted Endodormancy Break and Budburst dates for each year, $(station_name)"
 
     pltvec = Plot[]
 
@@ -266,21 +266,23 @@ function Plot_Pheno_Dates_DB_BB(date_vecDB::Vector{Date}, date_vecBB::Vector{Dat
     isnothing(YearCut) ? nothing : lines!(ax, [YearCut, YearCut], [NDSCPO_inf, NDSCPO_sup], color="purple")
 
     #Legend
-    if isnothing(loaded_data)
-        Legend(fig[3:4, 5], pltvec[[1, 2, 5]], ["Min-Max interval of predictions\non simulated temperatures",
-                "Quartile interval of predictions\non simulated temperatures",
-                "Predictions on recorded\ntemperatures in $(station_name)"], "Endodormancy break", framevisible=false)
+    if display_legend
+        if isnothing(loaded_data)
+            Legend(fig[3:4, 5], pltvec[[1, 2, 5]], ["Min-Max interval of predictions\non simulated temperatures",
+                    "Quartile interval of predictions\non simulated temperatures",
+                    "Predictions on recorded\ntemperatures in $(station_name)"], "Endodormancy break", framevisible=false)
 
-        Legend(fig[1:2, 5], pltvec[[3, 4, 6]], ["Min-Max interval of predictions\non simulated temperatures",
-                "Quartile interval of predictions\non simulated temperatures",
-                "Predictions on recorded\ntemperatures in $(station_name)"], "Budburst", framevisible=false)
-    else
-        Legend(fig[3:4, 5], pltvec[[1, 2, 15, 9]], ["Min-Max interval of predictions\non simulated temperatures",
-                "Quartile interval of predictions\non simulated temperatures", "Predictions on $(station_name) simulation", "Predictions on recorded temperatures"], "Endodormancy break", framevisible=false)
+            Legend(fig[1:2, 5], pltvec[[3, 4, 6]], ["Min-Max interval of predictions\non simulated temperatures",
+                    "Quartile interval of predictions\non simulated temperatures",
+                    "Predictions on recorded\ntemperatures in $(station_name)"], "Budburst", framevisible=false)
+        else
+            Legend(fig[3:4, 5], pltvec[[1, 2, 15, 9]], ["Min-Max interval of predictions\non simulated temperatures",
+                    "Quartile interval of predictions\non simulated temperatures", "Predictions on $(station_name) simulation", "Predictions on recorded temperatures"], "Endodormancy break", framevisible=false)
 
-        Legend(fig[1:2, 5], pltvec[[3, 4, 16, 14]], ["Min-Max interval of predictions\non simulated temperatures",
-                "Quartile interval of predictions\non simulated temperatures",
-                "Predictions on $(station_name) simulation", "Predictions on recorded temperatures"], "Budburst", framevisible=false)
+            Legend(fig[1:2, 5], pltvec[[3, 4, 16, 14]], ["Min-Max interval of predictions\non simulated temperatures",
+                    "Quartile interval of predictions\non simulated temperatures",
+                    "Predictions on $(station_name) simulation", "Predictions on recorded temperatures"], "Budburst", framevisible=false)
+        end
     end
     return fig
 end
@@ -332,7 +334,7 @@ function Plot_Pheno_Dates_DB_BB(date_vecsDB, date_vecsBB, CPO;
     ax.ylabel = "Date"
     ax.ylabelpadding = 5.
 
-    ax.title = "Predicted Endodormancy Break and Budburst dates for each year $(comments)"
+    # ax.title = "Predicted Endodormancy Break and Budburst dates for each year $(comments)"
 
     pltvec = Plot[]
 
@@ -390,7 +392,7 @@ function Plot_Freeze_Risk(TN_vecs, dates_vecs_TN, date_vecsBB;
     ax = Axis(fig[1:2, 1:2], yticks=Ω)
     ax.xlabel = "Year"
     ax.ylabel = "Days"
-    ax.title = "Number of days with TN ≤ -2°C after budburst"
+    # ax.title = "Number of days with TN ≤ -2°C after budburst"
 
     pltvec = Plot[]
     K = length(Counter_vecs)
@@ -432,7 +434,7 @@ function Plot_Freeze_Risk_Bar(TN_vec, dates_vec_TN, date_vecBB;
     ax.xticklabelrotation = 65 * (2π) / 360
     ax.xlabel = "Year"
     ax.ylabel = "Days"
-    ax.title = "Number of days with TN ≤ -2°C after budburst"
+    # ax.title = "Number of days with TN ≤ -2°C after budburst"
     ax.titlesize = 17
 
     println(Counter_vec)
@@ -488,13 +490,13 @@ function Plot_Freeze_Risk_heatmap(TN_vecs, Date_vec, date_vecsBB; threshold=-2.,
 end
 
 
-function Plot_Freeze_Risk_sample(TN_vecs, Date_vec, date_vecsBB; threshold=-2., PeriodOfInterest=Month(3), CPO=(10, 30))
+function Plot_Freeze_Risk_sample(TN_vecs, Date_vec, date_vecsBB; threshold=-2., PeriodOfInterest=Month(3), CPO=(10, 30), size_fig=(1300, 400))
     Mat, year_vec, days_vec = FreezingRiskMatrix(TN_vecs, Date_vec, date_vecsBB; threshold=threshold, PeriodOfInterest=PeriodOfInterest, CPO=CPO)
     Mat_freq = Mat / length(TN_vecs)
 
     Dist = [DiscreteNonParametric(0:(size(Mat_freq)[1]-1), Mat_freq[:, j]) for j in 1:size(Mat_freq)[2]]
 
-    fig = Figure(size=(1300, 400))
+    fig = Figure(size=size_fig)
     ax1, plt = lines(fig[1, 1], year_vec, mean.(Dist))
     ax1.xlabel = "Year"
     ax1.ylabel = "Number of days"
@@ -576,7 +578,7 @@ function PlotHistogram(date_vecDB::Vector{Date}, date_vecBB::Vector{Date}, CPO, 
     ax.xticklabelrotation = 45
     ax.xlabelpadding = 5.
 
-    ax.title = "Histograms of predicted EB and BB dates for the year $(year) in $(station_name)"
+    # ax.title = "Histograms of predicted EB and BB dates for the year $(year) in $(station_name)"
     ax.titlesize = 17
 
     pltvec = Plot[]

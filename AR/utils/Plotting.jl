@@ -28,7 +28,8 @@ function PlotYearCurvesAxes!(fig, curvesvec::AbstractVector, title::String="", b
         yticklabelsvisible=false,
         xgridvisible=false,
         xticksvisible=false,
-        xticklabelspace=5.0)
+        # xticklabelspace=5.0,
+        xticklabelsize=18)
     # xticklabelrotation=45.0)
     ax2.limits = ([0; n_days], nothing)
     ax = Axis(fig, xticks=[0; cumsum(DaysPerMonth(ReferenceYear))], xticklabelsvisible=false)
@@ -48,11 +49,17 @@ function PlotYearCurvesAxes!(fig, curvesvec::AbstractVector, title::String="", b
     end
     pltvec = [pltlines; pltbands]
     ax.title = title
-    ax.xlabel = "Day"
-    ax.xlabelpadding = 30.0
-    ylabel ? ax.ylabel = "Temperature (°C)" : nothing
+    ax.titlesize = 19
+    # ax.xlabel = "Day"
+    # ax.xticklabelspace = 20.0
+    if ylabel
+        ax.ylabel = "Temperature (°C)"
+        ax.ylabelsize = 18
+    end
+
     ax.xticks = [0; cumsum(DaysPerMonth(ReferenceYear))]
     ax.limits = ([0; n_days], nothing)
+    ax.yticklabelsize = 18
     return pltvec
 end
 
@@ -191,8 +198,12 @@ Plot the monthly statistics in RealStats, the range of the monthly stats from si
 """
 function PlotMonthlyStatsAx!(fig, RealStats::AbstractVector, SimulatedStats::AbstractMatrix, Stats::String, comment=nothing; ylabel=true)
     ax = Axis(fig)
-    ax.title = isnothing(comment) ? "Real monthly $(Stats) vs range of simulated monthly $(Stats)" : "Real monthly $(Stats) vs range of simulated monthly $(Stats) $(comment)"
+    ax.title = isnothing(comment) ? "Real monthly $(Stats) vs range of simulated monthly $(Stats)" : "$(comment) Real monthly $(Stats) vs\n range of simulated monthly $(Stats)"
     ax.xticks = (1:12, Month_vec_low)
+    ax.xticklabelsize = 18
+    ax.ylabelsize = 18
+    ax.yticklabelsize = 18
+    ax.titlesize = 19
     # ax.xticklabelrotation = 45.0
     ylabel ? ax.ylabel = "Temperature (°C)" : nothing
     pltvec = Plot[]
@@ -231,13 +242,14 @@ function WrapPlotMonthlyStats(df_month::DataFrame, sample_::AbstractVector, samp
     PlotMonthlyStats(df_month.MONTHLY_MAX, max_ts, "maximum", comment)
 end
 
-
-function PlotMonthlyStatsAx(subfig, Stats_vec::AbstractVector, Stats::String; unit="", title="Monthly $(Stats) parameters", color="purple")
+# "Monthly $(Stats) parameters"
+function PlotMonthlyStatsAx(subfig, Stats_vec::AbstractVector, Stats::String; unit="", title="Estimation mensuelle de $(Stats)", color="purple")
     ax = Axis(subfig)
     ax.title = title
-    ax.titlesize = 22
+    ax.titlesize = 16
     ax.xticks = (1:12, Month_vec2)
     ax.ylabel = unit != "" ? Stats * " (" * unit * ")" : Stats
+    ax.xticklabelrotation = 45.0
     scatterlines!(ax, 1:12, Stats_vec, color=color)
     return ax
 end
@@ -257,7 +269,7 @@ function PlotMonthlyStatsAx(subfig, Stats_vec_mat::Matrix, Stats::String; unit="
             plt = scatterlines!(ax, 1:12, Stats_vec, color=color)
         end
     end
-    return ax, plt
+    return ax
 end
 
 
@@ -302,15 +314,15 @@ function PlotTrend(Model::MonthlyAR)
 
     fig = Figure(size=(1200, 400))
 
-    ax1, plt = lines(fig[1, 1], Model.trend .- minimum(Model.trend), color="green")
-    lines!(ax1, zeros(length(Model.trend)), color="black")
+    ax1, plt = lines(fig[1, 1], Model.trend, color="green")
+    # lines!(ax1, zeros(length(Model.trend)), color="black")
     ax1.limits = ([1, n_days], nothing)
     ax1.xticks = (ticksindexes, xticklabel)
     ax1.ylabel = "Temperature (°C)"
     ax1.ylabelsize = 25
     ax1.yticklabelsize = 20
     ax1.xticklabelsize = 20
-    ax1.title = "Additive Trend"
+    ax1.title = "Tendance additive Mₜ"
     ax1.titlesize = 26
 
     ax2, plt = lines(fig[1, 2], Model.σ_trend, color="green")
@@ -318,7 +330,7 @@ function PlotTrend(Model::MonthlyAR)
     ax2.xticks = (ticksindexes, xticklabel)
     ax2.yticklabelsize = 20
     ax2.xticklabelsize = 20
-    ax2.title = "Multiplicative Trend"
+    ax2.title = "Tendance multiplicative σMₜ"
     ax2.titlesize = 26
     return fig
 
@@ -375,11 +387,43 @@ function PlotTrend(Model::Multi_MonthlyAR, typedata2="TX")
 end
 
 
+function PlotσTrend(Model::Multi_MonthlyAR, typedata2="TG")
+    n_days = length(Model.date_vec)
+    # xlimits = [-Int(floor(0.02*n_days)), n_days + Int(floor(0.05*n_days))]
+    ticksindexes = findall(istickable10year, Model.date_vec)
+    xticklabel = strfunc.(Model.date_vec[ticksindexes])
+
+    fig = Figure(size=(1200, 500))
+
+
+    ax2, plt = lines(fig[1, 1], Model.σ_trend[:, 1], color="green")
+    ax2.limits = ([1, n_days], nothing)
+    ax2.xticks = (ticksindexes, xticklabel)
+    ax2.yticklabelsize = 20
+    ax2.xticklabelsize = 20
+    ax2.title = "Multiplicative Trend of TN"
+    ax2.titlesize = 26
+
+
+    ax4, plt = lines(fig[1, 2], Model.σ_trend[:, 2], color="green")
+    ax4.limits = ([1, n_days], nothing)
+    ax4.xticks = (ticksindexes, xticklabel)
+    ax4.yticklabelsize = 20
+    ax4.xticklabelsize = 20
+    ax4.title = "Multiplicative Trend of $(typedata2)"
+    ax4.titlesize = 26
+
+    return fig
+end
+
+
+
+
 function PlotSeasonnality(Model::MonthlyAR)
     fig = Figure(size=(1200, 400))
 
-    PlotYearCurvesAxes!(fig[1, 1], [Model.period], "Additive seasonality", colors=["orange"])
-    PlotYearCurvesAxes!(fig[1, 2], [Model.σ_period], "Multiplicative seasonality", colors=["orange"])
+    PlotYearCurvesAxes!(fig[1, 1], [Model.period], "Saisonnalité additive Sₜ", colors=["orange"])
+    PlotYearCurvesAxes!(fig[1, 2], [Model.σ_period], "Saisonnalité multiplicative σSₜ", colors=["orange"], ylabel=false)
 
     return fig
 
@@ -407,6 +451,7 @@ function Sample_diagnostic(sample_, date_vec, period, avg_day, max_day, df_month
     max_ts = [[maximum(ts[idx_m[m]]) for m in 1:12] for ts in sample_] |> stack
 
     fig = Figure(size=size)
+    legendsize = 14
 
     if format_ == "horizontal"
         figvec = [(fig[1:2, 1:3], fig[3, 2]),
@@ -426,30 +471,30 @@ function Sample_diagnostic(sample_, date_vec, period, avg_day, max_day, df_month
 
     ylabelBoolVec = format_ == "horizontal" ? [true, false, false, true, false, false] : [true, false, true, false, true, false]
 
-    plt1 = PlotYearCurvesAxes!(figvec[1][1], [period, mean.(year_sample)], "Average daily temperature during a year (centered)", ylabel=ylabelBoolVec[1])
-    Legend(figvec[1][2], plt1, ["Periodicity estimation", "Mean simulated temperatures"])
+    plt1 = PlotYearCurvesAxes!(figvec[1][1], [period, mean.(year_sample)], "A. Average daily temperature during a year", ylabel=ylabelBoolVec[1])
+    Legend(figvec[1][2], plt1, ["Periodicity estimation", "Mean simulated temperatures"], labelsize=legendsize)
 
     plt2 = PlotYearCurvesAxes!(figvec[2][1], [period, avg_day, max_day],
-        "Average daily temperature during a year (centered)",
+        "B. Simulated vs recorded daily temperatures during a year",
         [(minimum.(year_sample), maximum.(year_sample)), (quantile.(year_sample, 0.25), quantile.(year_sample, 0.75))],
         [("#009bff", 0.2), ("#009bff", 0.5)],
         colors=["blue", "orange", "red"],
         ylabel=ylabelBoolVec[2])
-    Legend(figvec[2][2], plt2, ["Periodicity estimation", "Average recorded temperatures", "Maximum recorded temperatures", "Simulated temperatures range", "Simulated temperatures quantile interval, p ∈ [0.25,0.75]"])
+    Legend(figvec[2][2], plt2, ["Periodicity estimation", "Average recorded temperatures", "Maximum recorded temperatures", "Simulated temperatures range", "Simulated temperatures quantile interval, p ∈ [0.25,0.75]"], labelsize=legendsize)
 
     plt3 = PlotYearCurvesAxes!(figvec[3][1], [maximum.(year_sample) .- minimum.(year_sample), quantile.(year_sample, 0.75) .- quantile.(year_sample, 0.25)],
-        "Simulated temperatures interquartile range",
+        "C. Simulated temperatures interquartile range",
         ylabel=ylabelBoolVec[3])
-    Legend(figvec[3][2], plt3, ["Simulated temperatures range", "Simulated temperatures interquartile range, p ∈ [0.25,0.75]"])
+    Legend(figvec[3][2], plt3, ["Simulated temperatures range", "Simulated temperatures interquartile range, p ∈ [0.25,0.75]"], labelsize=legendsize)
 
-    plt4 = PlotMonthlyStatsAx!(figvec[4][1], df_month.MONTHLY_MEAN, mean_ts, "mean", ylabel=ylabelBoolVec[4])
-    Legend(figvec[4][2], plt4, ["Range of simulated monthly mean", "Simulated monthly mean quantile interval, p ∈ [0.25,0.75]", "Real monthly mean"])
+    plt4 = PlotMonthlyStatsAx!(figvec[4][1], df_month.MONTHLY_MEAN, mean_ts, "mean", "D.", ylabel=ylabelBoolVec[4])
+    Legend(figvec[4][2], plt4, ["Range of simulated monthly mean", "Simulated monthly mean quantile interval, p ∈ [0.25,0.75]", "Real monthly mean"], labelsize=legendsize)
 
-    plt5 = PlotMonthlyStatsAx!(figvec[5][1], df_month.MONTHLY_STD, std_ts, "standard deviation", ylabel=ylabelBoolVec[5])
-    Legend(figvec[5][2], plt5, ["Range of simulated monthly standard deviation", "Simulated monthly standard deviation quantile interval, p ∈ [0.25,0.75]", "Real monthly standard deviation"])
+    plt5 = PlotMonthlyStatsAx!(figvec[5][1], df_month.MONTHLY_STD, std_ts, "standard deviation", "E.", ylabel=ylabelBoolVec[5])
+    Legend(figvec[5][2], plt5, ["Range of simulated monthly standard deviation", "Simulated monthly standard deviation quantile interval, p ∈ [0.25,0.75]", "Real monthly standard deviation"], labelsize=legendsize)
 
-    plt6 = PlotMonthlyStatsAx!(figvec[6][1], df_month.MONTHLY_MAX, max_ts, "maximum", ylabel=ylabelBoolVec[6])
-    Legend(figvec[6][2], plt6, ["Range of simulated monthly maximum", "Simulated monthly maximum quantile interval, p ∈ [0.25,0.75]", "Real monthly maximum"])
+    plt6 = PlotMonthlyStatsAx!(figvec[6][1], df_month.MONTHLY_MAX, max_ts, "maximum", "F.", ylabel=ylabelBoolVec[6])
+    Legend(figvec[6][2], plt6, ["Range of simulated monthly maximum", "Simulated monthly maximum quantile interval, p ∈ [0.25,0.75]", "Real monthly maximum"], labelsize=legendsize)
 
     return fig
 end

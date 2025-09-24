@@ -1,5 +1,10 @@
+import Pkg
+Pkg.activate(@__DIR__)
+
 include("utils/Structure.jl")
 cd((@__DIR__))
+
+using Latexify
 
 folder_station = "../mystations"
 folder_results = "Results" #do not write "/" at the end
@@ -147,6 +152,55 @@ open("AIC_BIC.txt", "a") do io
             end
             println(io, "\n\n$(station)|$(type_data)\n")
             println(io, first(sort(Sub_df, :AIC_complete), 5))
+        end
+    end
+end
+
+
+open("AIC_BIC_latex.txt", "a") do io
+    for station in ["Montpellier", "Nantes", "Bonn"]
+        for type_data in ["TN", "TG", "TX"]
+            Sub_df = @chain DF begin
+                @rsubset :Station == station
+                @rsubset :TypeData == type_data
+                @select(:p,:q=:k,:AIC=:AIC_complete,:BIC=:BIC_complete )
+            end
+            println(io, "\n\n$(station)|$(type_data)\n")
+            Sub_df_sorted = first(sort(Sub_df, :AIC), 5)
+            Sub_df_sorted[:,3:4] = round.(Sub_df_sorted[:,3:4];digits=2)
+            println(io, latexify(Sub_df_sorted; env = :table, booktabs = true, latex = false))
+        end
+    end
+end
+
+
+open("AIC_BIC2.txt", "a") do io
+    for station in ["Montpellier", "Nantes", "Bonn"]
+        for type_data in ["TN", "TG", "TX"]
+            Sub_df = @chain DF begin
+                @rsubset :Station == station
+                @rsubset :TypeData == type_data
+            end
+            println(io, "\n\n$(station)|$(type_data)\n")
+            println(io, first(sort(Sub_df, :BIC_complete), 5))
+        end
+    end
+end
+
+
+
+open("AIC_BIC2_latex.txt", "a") do io
+    for station in ["Montpellier", "Nantes", "Bonn"]
+        for type_data in ["TN", "TG", "TX"]
+            Sub_df = @chain DF begin
+                @rsubset :Station == station
+                @rsubset :TypeData == type_data
+                @select(:p,:q=:k,:AIC=:AIC_complete,:BIC=:BIC_complete )
+            end
+            println(io, "\n\n$(station)|$(type_data)\n")
+            Sub_df_sorted = first(sort(Sub_df, :BIC), 5)
+            Sub_df_sorted[:,3:4] = round.(Sub_df_sorted[:,3:4];digits=2)
+            println(io, latexify(Sub_df_sorted; env = :table, booktabs = true, latex = false))
         end
     end
 end

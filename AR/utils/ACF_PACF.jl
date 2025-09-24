@@ -132,13 +132,13 @@ Plot the boxplots of the mean monthly ACF of the scenarios in samples and if ask
 """
 function Plot_Sample_MonthlyACF(samples::AbstractVector, sample_timeline::AbstractVector{Date}, true_matrix=nothing, comment="")
     list_matrix = Sample_MonthlyACF(samples, sample_timeline)
-    fig = Figure(size=(800, 800))
-    supertitle = Label(fig[1, 1:4], "Monthly average ACF " * comment, fontsize=20)
+    fig = Figure(size=(800, 700))
+    # supertitle = Label(fig[1, 1:4], "Monthly average ACF " * comment, fontsize=20)
     ax_vec = Axis[]
     min_y, max_y = 0, 0
     for i in 1:11
         sample_acf = invert([matrix_[i, :] for matrix_ in list_matrix])
-        ax, _ = CairoMakie.barplot(fig[((i-1)÷4)+2, (i-1)%4+1], 1:10, maximum.(sample_acf); fillto=minimum.(sample_acf), color=("#009bff", 0.5))
+        ax, _ = CairoMakie.barplot(fig[((i-1)÷4)+1, (i-1)%4+1], 1:10, maximum.(sample_acf); fillto=minimum.(sample_acf), color=("#009bff", 0.5))
         scatter!(ax, 1:10, median.(sample_acf), color=("#009bff", 0.8), marker=:hline, markersize=15)
         ax.title = Month_vec[i]
         isnothing(true_matrix) ? nothing : scatter!(ax, 1:10, true_matrix[i, :], color="#e57420", marker=:hline, markersize=15)
@@ -149,7 +149,7 @@ function Plot_Sample_MonthlyACF(samples::AbstractVector, sample_timeline::Abstra
     end
     ##### Same part as inside the for loop but we keep plot1 and plot2 for legends.
     sample_acf = invert([matrix_[12, :] for matrix_ in list_matrix])
-    ax, plot1 = CairoMakie.barplot(fig[((12-1)÷4)+2, (12-1)%4+1], 1:10, maximum.(sample_acf); fillto=minimum.(sample_acf), color=("#009bff", 0.5))
+    ax, plot1 = CairoMakie.barplot(fig[((12-1)÷4)+1, (12-1)%4+1], 1:10, maximum.(sample_acf); fillto=minimum.(sample_acf), color=("#009bff", 0.5))
     plot2 = scatter!(ax, 1:10, median.(sample_acf), color=("#009bff", 0.8), marker=:hline, markersize=15)
     ax.title = Month_vec[12]
     isnothing(true_matrix) ? nothing : plot3 = scatter!(ax, 1:10, true_matrix[12, :], color="#e57420", marker=:hline, markersize=15)
@@ -163,7 +163,7 @@ function Plot_Sample_MonthlyACF(samples::AbstractVector, sample_timeline::Abstra
         ax.xgridvisible = false
         ax.xticks = 0:10
     end
-    Legend(fig[5, 1:4], [plot1, plot2, plot3], ["Range of means autocorrelations of the simulated temperatures", "Median of means autocorrelations of the simulated temperatures", "mean autocorrelation of the recorded temperatures"])
+    Legend(fig[4, 1:4], [plot1, plot2, plot3], ["Range of means autocorrelations of the simulated temperatures", "Median of means autocorrelations of the simulated temperatures", "mean autocorrelation of the recorded temperatures"])
     return fig
 end
 Plot_Sample_MonthlyACF(samples::AbstractVector, sample_timeline::AbstractVector{Date}, Monthly_temp::AbstractVector{T}, comment="") where T<:AbstractVector = Plot_Sample_MonthlyACF(samples, sample_timeline, MatrixMonthlyACF(Monthly_temp), comment)
@@ -214,13 +214,13 @@ Plot the boxplots of the mean monthly PACF of the scenarios in samples and if as
 """
 function Plot_Sample_MonthlyPACF(samples::AbstractVector, sample_timeline::AbstractVector{Date}, true_matrix=nothing, comment="")
     list_matrix = Sample_MonthlyPACF(samples, sample_timeline)
-    fig = Figure(size=(800, 800))
-    supertitle = Label(fig[1, 1:4], "Monthly average PACF " * comment, fontsize=20)
+    fig = Figure(size=(800, 700))
+    # supertitle = Label(fig[1, 1:4], "Monthly average PACF " * comment, fontsize=20)
     ax_vec = Axis[]
     min_y, max_y = 0, 0
     for i in 1:11
         sample_pacf = invert([matrix_[i, :] for matrix_ in list_matrix])
-        ax, _ = CairoMakie.barplot(fig[((i-1)÷4)+2, (i-1)%4+1], 1:10, maximum.(sample_pacf); fillto=minimum.(sample_pacf), color=("#009bff", 0.5))
+        ax, _ = CairoMakie.barplot(fig[((i-1)÷4)+1, (i-1)%4+1], 1:10, maximum.(sample_pacf); fillto=minimum.(sample_pacf), color=("#009bff", 0.5))
         scatter!(ax, 1:10, median.(sample_pacf), color=("#009bff", 0.8), marker=:hline, markersize=15)
         ax.title = Month_vec[i]
         isnothing(true_matrix) ? nothing : scatter!(ax, 1:10, true_matrix[i, :], color="#e57420", marker=:hline, markersize=15)
@@ -231,7 +231,7 @@ function Plot_Sample_MonthlyPACF(samples::AbstractVector, sample_timeline::Abstr
     end
     ##### Same part as inside the for loop but we keep plot1 and plot2 for legends.
     sample_pacf = invert([matrix_[12, :] for matrix_ in list_matrix])
-    ax, plot1 = CairoMakie.barplot(fig[((12-1)÷4)+2, (12-1)%4+1], 1:10, maximum.(sample_pacf); fillto=minimum.(sample_pacf), color=("#009bff", 0.5))
+    ax, plot1 = CairoMakie.barplot(fig[((12-1)÷4)+1, (12-1)%4+1], 1:10, maximum.(sample_pacf); fillto=minimum.(sample_pacf), color=("#009bff", 0.5))
     plot2 = scatter!(ax, 1:10, median.(sample_pacf), color=("#009bff", 0.8), marker=:hline, markersize=15)
     ax.title = Month_vec[12]
     isnothing(true_matrix) ? nothing : plot3 = scatter!(ax, 1:10, true_matrix[12, :], color="#e57420", marker=:hline, markersize=15)
@@ -245,7 +245,7 @@ function Plot_Sample_MonthlyPACF(samples::AbstractVector, sample_timeline::Abstr
         ax.xgridvisible = false
         ax.xticks = 0:10
     end
-    Legend(fig[5, 1:4], [plot1, plot2, plot3], ["Range of means PACF of the simulated temperatures", "Median of means PACF of the simulated temperatures", "mean PACF of the recorded temperatures"])
+    Legend(fig[4, 1:4], [plot1, plot2, plot3], ["Range of means PACF of the simulated temperatures", "Median of means PACF of the simulated temperatures", "mean PACF of the recorded temperatures"])
     return fig
 end
 Plot_Sample_MonthlyPACF(samples::AbstractVector, sample_timeline::AbstractVector{Date}, Monthly_temp::AbstractVector{T}, comment="") where T<:AbstractVector = Plot_Sample_MonthlyPACF(samples, sample_timeline, MatrixMonthlyPACF(Monthly_temp), comment)
@@ -280,13 +280,13 @@ end
 
 function Plot_Sample_MonthlyCC(samplesTN::AbstractVector, samplesTX::AbstractVector, sample_timeline::AbstractVector{Date}, true_matrix=nothing, comment="", typedata2="TX")
     list_matrix = Sample_MonthlyCC(samplesTN, samplesTX, sample_timeline)
-    fig = Figure(size=(800, 800))
-    supertitle = Label(fig[1, 1:4], "Monthly average correlation between the residuals of TNₜ and $(typedata2)ₜ₊ₛ\n" * comment, fontsize=20)
+    fig = Figure(size=(800, 600))
+    # supertitle = Label(fig[1, 1:4], "Monthly average correlation between the residuals of TNₜ and $(typedata2)ₜ₊ₛ\n" * comment, fontsize=20)
     ax_vec = Axis[]
     min_y, max_y = 0, 0
     for i in 1:11
         sample_cc = invert([matrix_[i, :] for matrix_ in list_matrix])
-        ax, _ = CairoMakie.barplot(fig[((i-1)÷4)+2, (i-1)%4+1], -4:4, maximum.(sample_cc); fillto=minimum.(sample_cc), color=("#009bff", 0.5))
+        ax, _ = CairoMakie.barplot(fig[((i-1)÷4)+1, (i-1)%4+1], -4:4, maximum.(sample_cc); fillto=minimum.(sample_cc), color=("#009bff", 0.5))
         scatter!(ax, -4:4, median.(sample_cc), color=("#009bff", 0.8), marker=:hline, markersize=15)
         ax.title = Month_vec[i]
         i > 8 ? ax.xlabel = "s" : nothing
@@ -298,7 +298,7 @@ function Plot_Sample_MonthlyCC(samplesTN::AbstractVector, samplesTX::AbstractVec
     end
     ##### Same part as inside the for loop but we keep plot1 and plot2 for legends.
     sample_cc = invert([matrix_[12, :] for matrix_ in list_matrix])
-    ax, plot1 = CairoMakie.barplot(fig[((12-1)÷4)+2, (12-1)%4+1], -4:4, maximum.(sample_cc); fillto=minimum.(sample_cc), color=("#009bff", 0.5))
+    ax, plot1 = CairoMakie.barplot(fig[((12-1)÷4)+1, (12-1)%4+1], -4:4, maximum.(sample_cc); fillto=minimum.(sample_cc), color=("#009bff", 0.5))
     plot2 = scatter!(ax, -4:4, median.(sample_cc), color=("#009bff", 0.8), marker=:hline, markersize=15)
     ax.title = Month_vec[12]
     ax.xlabel = "s"
@@ -314,7 +314,7 @@ function Plot_Sample_MonthlyCC(samplesTN::AbstractVector, samplesTX::AbstractVec
         ax.xticks = -4:4
         ax.xticklabelsize = 11
     end
-    Legend(fig[5, 1:4], [plot1, plot2, plot3], ["Range of means CC of the simulated temperatures", "Median of means CC of the simulated temperatures", "mean CC of the recorded temperatures"])
+    Legend(fig[4, 1:4], [plot1, plot2, plot3], ["Range of means CC of the simulated temperatures", "Median of means CC of the simulated temperatures", "mean CC of the recorded temperatures"])
     return fig
 end
 Plot_Sample_MonthlyCC(samplesTN::AbstractVector, samplesTX::AbstractVector, sample_timeline::AbstractVector{Date}, Monthly_tempX::AbstractVector{T}, Monthly_tempY::AbstractVector{T}, comment="", typedata2="TX") where T<:AbstractVector = Plot_Sample_MonthlyCC(samplesTN, samplesTX, sample_timeline, MatrixMonthlyCC(Monthly_tempX, Monthly_tempY), comment, typedata2)

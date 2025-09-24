@@ -94,7 +94,7 @@ function MonthlyConcatanatedEstimation(Monthly_temp::AbstractVector, p::Integer=
         append!(Φ_month_concat, p == 1 ? Estimation[1] : [Estimation[1]])
         append!(σ_month_concat, Estimation[2])
     end
-    return (stack(Φ_month_concat), σ_month_concat)
+    return (stack(Φ_month_concat,dims=1), σ_month_concat)
 end
 
 """

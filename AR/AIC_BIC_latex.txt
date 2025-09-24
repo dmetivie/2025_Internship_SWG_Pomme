@@ -1,0 +1,144 @@
+
+
+Montpellier|TN
+
+\begin{tabular}{cccc}
+\toprule
+p & q & AIC & BIC\\
+\midrule
+6 & 5 & 133383.62 & 134257.53\\
+5 & 5 & 133384.31 & 134159.29\\
+4 & 5 & 133385.57 & 134061.61\\
+8 & 5 & 133392.81 & 134464.58\\
+7 & 5 & 133392.98 & 134365.81\\
+\bottomrule
+\end{tabular}
+
+
+
+Montpellier|TG
+
+\begin{tabular}{cccc}
+\toprule
+p & q & AIC & BIC\\
+\midrule
+7 & 3 & 108401.77 & 109306.98\\
+8 & 3 & 108403.46 & 109407.42\\
+7 & 4 & 108405.39 & 109343.52\\
+6 & 3 & 108406.76 & 109213.22\\
+5 & 3 & 108407.07 & 109114.78\\
+\bottomrule
+\end{tabular}
+
+
+
+Montpellier|TX
+
+\begin{tabular}{cccc}
+\toprule
+p & q & AIC & BIC\\
+\midrule
+7 & 4 & 131851.2 & 132794.22\\
+7 & 3 & 131852.09 & 132762.02\\
+6 & 4 & 131861.1 & 132704.85\\
+6 & 3 & 131861.9 & 132672.56\\
+7 & 5 & 131862.12 & 132838.22\\
+\bottomrule
+\end{tabular}
+
+
+
+Nantes|TN
+
+\begin{tabular}{cccc}
+\toprule
+p & q & AIC & BIC\\
+\midrule
+3 & 2 & 58643.02 & 59072.2 \\
+4 & 2 & 58643.39 & 59161.37 \\
+6 & 2 & 58644.9 & 59340.47 \\
+5 & 2 & 58647.18 & 59253.96 \\
+3 & 3 & 58648.04 & 59106.82 \\
+\bottomrule
+\end{tabular}
+
+
+
+Nantes|TG
+
+\begin{tabular}{cccc}
+\toprule
+p & q & AIC & BIC\\
+\midrule
+3 & 2 & 51754.4 & 52186.85\\
+4 & 2 & 51756.07 & 52277.99\\
+3 & 5 & 51757.33 & 52279.24\\
+3 & 3 & 51758.29 & 52220.56\\
+4 & 5 & 51759.32 & 52370.71\\
+\bottomrule
+\end{tabular}
+
+
+
+Nantes|TX
+
+\begin{tabular}{cccc}
+\toprule
+p & q & AIC & BIC\\
+\midrule
+3 & 2 & 74580.46 & 75026.49\\
+3 & 3 & 74581.66 & 75058.45\\
+6 & 2 & 74583.28 & 75306.16\\
+6 & 3 & 74584.25 & 75337.88\\
+3 & 5 & 74589.64 & 75127.95\\
+\bottomrule
+\end{tabular}
+
+
+
+Bonn|TN
+
+\begin{tabular}{cccc}
+\toprule
+p & q & AIC & BIC\\
+\midrule
+5 & 2 & 86177.19 & 86815.03\\
+3 & 2 & 86177.69 & 86628.85\\
+6 & 2 & 86181.15 & 86912.34\\
+4 & 2 & 86183.04 & 86727.54\\
+5 & 3 & 86188.66 & 86857.62\\
+\bottomrule
+\end{tabular}
+
+
+
+Bonn|TG
+
+\begin{tabular}{cccc}
+\toprule
+p & q & AIC & BIC\\
+\midrule
+3 & 1 & 77871.76 & 78291.81\\
+3 & 3 & 77874.91 & 78357.18\\
+3 & 2 & 77877.54 & 78328.7\\
+3 & 4 & 77879.51 & 78392.9\\
+4 & 1 & 77880.47 & 78393.86\\
+\bottomrule
+\end{tabular}
+
+
+
+Bonn|TX
+
+\begin{tabular}{cccc}
+\toprule
+p & q & AIC & BIC\\
+\midrule
+4 & 2 & 120534.42 & 121102.31\\
+5 & 2 & 120534.56 & 121199.8\\
+8 & 2 & 120537.11 & 121494.41\\
+7 & 2 & 120537.33 & 121397.27\\
+4 & 3 & 120539.02 & 121139.35\\
+\bottomrule
+\end{tabular}
+
